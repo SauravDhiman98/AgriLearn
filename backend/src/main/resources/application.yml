@@ -1,0 +1,100 @@
+spring:
+  application:
+    name: agrilearn-backend
+
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/agrilearn}
+    username: ${DB_USERNAME:agrilearn}
+    password: ${DB_PASSWORD:agrilearn123}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 2
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+        default_schema: public
+
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    locations: classpath:db/migration
+
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      timeout: 2000ms
+
+  mail:
+    host: ${MAIL_HOST:smtp.gmail.com}
+    port: ${MAIL_PORT:587}
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+
+  servlet:
+    multipart:
+      max-file-size: 500MB
+      max-request-size: 500MB
+
+server:
+  port: 8080
+  servlet:
+    context-path: /api/v1
+
+# JWT Configuration
+jwt:
+  secret: ${JWT_SECRET:agrilearn-jwt-secret-key-change-in-production-minimum-256-bits-long}
+  expiration: 86400000       # 24 hours in ms
+  refresh-expiration: 604800000  # 7 days in ms
+
+# MinIO / File Storage
+minio:
+  url: ${MINIO_URL:http://localhost:9000}
+  access-key: ${MINIO_ACCESS_KEY:agrilearn}
+  secret-key: ${MINIO_SECRET_KEY:agrilearn123}
+  bucket:
+    videos: agrilearn-videos
+    thumbnails: agrilearn-thumbnails
+    documents: agrilearn-documents
+    avatars: agrilearn-avatars
+
+# Razorpay Payment Gateway
+razorpay:
+  key-id: ${RAZORPAY_KEY_ID:}
+  key-secret: ${RAZORPAY_KEY_SECRET:}
+
+# Springdoc OpenAPI
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    operationsSorter: method
+
+# Logging
+logging:
+  file:
+    name: logs/agrilearn.log
+  level:
+    root: INFO
+    com.agrilearn: DEBUG
+    org.springframework.web: INFO
+    org.springframework.security: INFO
+    org.hibernate.SQL: DEBUG
+  pattern:
+    console: "%clr(%d{yyyy-MM-dd HH:mm:ss.SSS}){faint} %clr(%5p) %clr(---){faint} %clr([%15.15t]){faint} %clr(%-40.40logger{39}){cyan} %clr(:){faint} %m%n%wEx"
+    org.springframework.security: INFO
+    org.hibernate.SQL: INFO

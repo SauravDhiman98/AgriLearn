@@ -1,0 +1,89 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: agrilearn-postgres
+    environment:
+      POSTGRES_DB: agrilearn
+      POSTGRES_USER: agrilearn
+      POSTGRES_PASSWORD: agrilearn123
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - agrilearn-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: agrilearn-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - agrilearn-network
+
+  minio:
+    image: minio/minio:latest
+    container_name: agrilearn-minio
+    environment:
+      MINIO_ROOT_USER: agrilearn
+      MINIO_ROOT_PASSWORD: agrilearn123
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    command: server /data --console-address ":9001"
+    volumes:
+      - minio_data:/data
+    networks:
+      - agrilearn-network
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: agrilearn-backend
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+      DB_URL: jdbc:postgresql://postgres:5432/agrilearn
+      DB_USERNAME: agrilearn
+      DB_PASSWORD: agrilearn123
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      JWT_SECRET: agrilearn-jwt-secret-key-change-in-production-min-256-bits
+      MINIO_URL: http://minio:9000
+      MINIO_ACCESS_KEY: agrilearn
+      MINIO_SECRET_KEY: agrilearn123
+    ports:
+      - "8080:8080"
+    depends_on:
+      - postgres
+      - redis
+      - minio
+    networks:
+      - agrilearn-network
+
+  web:
+    build:
+      context: ./web
+      dockerfile: Dockerfile
+    container_name: agrilearn-web
+    environment:
+      VITE_API_BASE_URL: http://localhost:8080/api/v1
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+    networks:
+      - agrilearn-network
+
+volumes:
+  postgres_data:
+  redis_data:
+  minio_data:
+
+networks:
+  agrilearn-network:
+    driver: bridge
