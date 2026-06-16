@@ -3,12 +3,12 @@ spring:
     name: agrilearn-backend
 
   datasource:
-    # Railway: set SPRING_DATASOURCE_URL, SPRING_DATASOURCE_USERNAME, SPRING_DATASOURCE_PASSWORD
-    # These Spring Boot standard env vars take priority and are unambiguous.
-    # Local dev fallback uses DB_URL / DB_USERNAME / DB_PASSWORD.
-    url: ${SPRING_DATASOURCE_URL:${DB_URL:jdbc:postgresql://localhost:5432/agrilearn}}
-    username: ${SPRING_DATASOURCE_USERNAME:${DB_USERNAME:agrilearn}}
-    password: ${SPRING_DATASOURCE_PASSWORD:${DB_PASSWORD:agrilearn123}}
+    # On Railway: DATABASE_URL is auto-injected by PostgreSQL plugin.
+    # DataSourceConfig.java parses it automatically (no manual variable setup needed).
+    # Local dev: uses DB_URL / DB_USERNAME / DB_PASSWORD below.
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/agrilearn}
+    username: ${DB_USERNAME:agrilearn}
+    password: ${DB_PASSWORD:agrilearn123}
     driver-class-name: org.postgresql.Driver
     hikari:
       maximum-pool-size: 10
