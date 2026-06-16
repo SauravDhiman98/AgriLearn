@@ -1,9 +1,8 @@
 [build]
 builder = "dockerfile"
-dockerfilePath = "backend/Dockerfile"
+dockerfilePath = "Dockerfile"
 
 [deploy]
-startCommand = ""
 healthcheckPath = "/api/v1/actuator/health"
 healthcheckTimeout = 120
 restartPolicyType = "on_failure"
