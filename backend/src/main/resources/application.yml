@@ -2,18 +2,7 @@ spring:
   application:
     name: agrilearn-backend
 
-  datasource:
-    # On Railway: DATABASE_URL is auto-injected by PostgreSQL plugin.
-    # DataSourceConfig.java parses it automatically (no manual variable setup needed).
-    # Local dev: uses DB_URL / DB_USERNAME / DB_PASSWORD below.
-    url: ${DB_URL:jdbc:postgresql://localhost:5432/agrilearn}
-    username: ${DB_USERNAME:agrilearn}
-    password: ${DB_PASSWORD:agrilearn123}
-    driver-class-name: org.postgresql.Driver
-    hikari:
-      maximum-pool-size: 10
-      minimum-idle: 2
-      connection-timeout: 30000
+  # datasource is configured in DataSourceConfig.java — handles both Railway (DATABASE_URL) and local dev
 
   jpa:
     hibernate:
