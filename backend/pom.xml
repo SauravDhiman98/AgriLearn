@@ -77,10 +77,13 @@
         </dependency>
 
         <!-- Redis -->
+        <!-- Removed: not used in current implementation -->
+        <!--
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-data-redis</artifactId>
         </dependency>
+        -->
 
         <!-- WebSocket for Live Classes -->
         <dependency>

@@ -3,13 +3,16 @@ spring:
     name: agrilearn-backend
 
   datasource:
-    url: ${DB_URL:jdbc:postgresql://localhost:5432/agrilearn}
-    username: ${DB_USERNAME:agrilearn}
-    password: ${DB_PASSWORD:agrilearn123}
+    # Railway PostgreSQL plugin provides PGHOST/PGPORT/PGDATABASE/PGUSER/PGPASSWORD automatically.
+    # Local dev uses DB_URL / DB_USERNAME / DB_PASSWORD.
+    url: ${DB_URL:jdbc:postgresql://${PGHOST:localhost}:${PGPORT:5432}/${PGDATABASE:agrilearn}}
+    username: ${DB_USERNAME:${PGUSER:agrilearn}}
+    password: ${DB_PASSWORD:${PGPASSWORD:agrilearn123}}
     driver-class-name: org.postgresql.Driver
     hikari:
       maximum-pool-size: 10
       minimum-idle: 2
+      connection-timeout: 30000
 
   jpa:
     hibernate:
@@ -25,12 +28,6 @@ spring:
     enabled: true
     baseline-on-migrate: true
     locations: classpath:db/migration
-
-  data:
-    redis:
-      host: ${REDIS_HOST:localhost}
-      port: ${REDIS_PORT:6379}
-      timeout: 2000ms
 
   mail:
     host: ${MAIL_HOST:smtp.gmail.com}
@@ -50,7 +47,7 @@ spring:
       max-request-size: 500MB
 
 server:
-  port: 8080
+  port: ${PORT:8080}
   servlet:
     context-path: /api/v1
 
@@ -87,14 +84,12 @@ springdoc:
 # Logging
 logging:
   file:
-    name: logs/agrilearn.log
+    name: ${LOG_FILE:logs/agrilearn.log}
   level:
     root: INFO
-    com.agrilearn: DEBUG
+    com.agrilearn: ${LOG_LEVEL_APP:DEBUG}
     org.springframework.web: INFO
     org.springframework.security: INFO
-    org.hibernate.SQL: DEBUG
-  pattern:
-    console: "%clr(%d{yyyy-MM-dd HH:mm:ss.SSS}){faint} %clr(%5p) %clr(---){faint} %clr([%15.15t]){faint} %clr(%-40.40logger{39}){cyan} %clr(:){faint} %m%n%wEx"
-    org.springframework.security: INFO
     org.hibernate.SQL: INFO
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} %5p --- [%15.15t] %-40.40logger{39} : %m%n%wEx"
