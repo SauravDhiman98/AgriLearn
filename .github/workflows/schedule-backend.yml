@@ -1,0 +1,62 @@
+name: Schedule Railway Backend
+
+on:
+  schedule:
+    - cron: '30 12 * * *'   # 6:00 PM IST (12:30 UTC) — START
+    - cron: '30 21 * * *'   # 3:00 AM IST (21:30 UTC) — STOP
+  workflow_dispatch:         # allow manual trigger from GitHub UI
+    inputs:
+      action:
+        description: 'Action to perform'
+        required: true
+        default: 'start'
+        type: choice
+        options:
+          - start
+          - stop
+
+jobs:
+  manage-service:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install Railway CLI
+        run: npm install -g @railway/cli
+
+      - name: Determine action
+        id: action
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "action=${{ github.event.inputs.action }}" >> $GITHUB_OUTPUT
+          elif [ "$(date -u +%H:%M)" \> "12:00" ] && [ "$(date -u +%H:%M)" \< "21:00" ]; then
+            echo "action=start" >> $GITHUB_OUTPUT
+          else
+            echo "action=stop" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Start Railway service (scale up)
+        if: steps.action.outputs.action == 'start'
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+        run: |
+          echo "Starting AgriLearn backend..."
+          railway service --service ${{ secrets.RAILWAY_SERVICE_ID }} up || true
+          # Trigger a new deployment
+          curl -s -X POST \
+            -H "Authorization: Bearer $RAILWAY_TOKEN" \
+            -H "Content-Type: application/json" \
+            -d '{"query":"mutation { deploymentCreate(input: { serviceId: \"${{ secrets.RAILWAY_SERVICE_ID }}\", environmentId: \"${{ secrets.RAILWAY_ENVIRONMENT_ID }}\" }) { id } }"}' \
+            https://backboard.railway.app/graphql/v2
+          echo "Service started."
+
+      - name: Stop Railway service (scale down)
+        if: steps.action.outputs.action == 'stop'
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+        run: |
+          echo "Stopping AgriLearn backend..."
+          curl -s -X POST \
+            -H "Authorization: Bearer $RAILWAY_TOKEN" \
+            -H "Content-Type: application/json" \
+            -d '{"query":"mutation { serviceInstanceUpdate(environmentId: \"${{ secrets.RAILWAY_ENVIRONMENT_ID }}\", serviceId: \"${{ secrets.RAILWAY_SERVICE_ID }}\", input: { numReplicas: 0 }) }"}' \
+            https://backboard.railway.app/graphql/v2
+          echo "Service stopped (0 replicas)."
