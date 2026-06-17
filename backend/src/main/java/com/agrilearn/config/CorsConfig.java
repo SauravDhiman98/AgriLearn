@@ -8,22 +8,17 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 @Configuration
 public class CorsConfig implements WebMvcConfigurer {
 
-    // Comma-separated list of allowed origins, e.g.:
-    // CORS_ALLOWED_ORIGINS=https://agrilearn.up.railway.app,https://agrilearn.vercel.app
     @Value("${cors.allowed-origins:*}")
     private String allowedOrigins;
 
     @Override
     public void addCorsMappings(CorsRegistry registry) {
-        String[] origins = allowedOrigins.equals("*")
-                ? new String[]{"*"}
-                : allowedOrigins.split(",");
-
         registry.addMapping("/**")
-                .allowedOriginPatterns(origins)
+                .allowedOriginPatterns("*")   // allows all origins including with credentials
                 .allowedMethods("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS")
                 .allowedHeaders("*")
-                .allowCredentials(!allowedOrigins.equals("*"))
+                .exposedHeaders("Authorization")
+                .allowCredentials(true)
                 .maxAge(3600);
     }
 }
