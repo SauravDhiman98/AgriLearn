@@ -67,7 +67,12 @@ export default function HomeScreen() {
         </View>
 
         {loading ? (
-          <ActivityIndicator color={COLORS.primary} />
+          <ActivityIndicator color={COLORS.primary} size="large" style={{ marginTop: 20 }} />
+        ) : featuredCourses.length === 0 ? (
+          <View style={{ alignItems: 'center', padding: 20 }}>
+            <Text style={{ fontSize: 32 }}>🌱</Text>
+            <Text style={{ color: '#6b7280', marginTop: 8 }}>No courses available right now</Text>
+          </View>
         ) : (
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.horizontalScroll}>
             {featuredCourses.map((course: any) => (
