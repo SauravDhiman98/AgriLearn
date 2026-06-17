@@ -4,7 +4,7 @@ on:
   schedule:
     - cron: '30 12 * * *'   # 6:00 PM IST (12:30 UTC) — START
     - cron: '30 21 * * *'   # 3:00 AM IST (21:30 UTC) — STOP
-  workflow_dispatch:         # allow manual trigger from GitHub UI
+  workflow_dispatch:
     inputs:
       action:
         description: 'Action to perform'
@@ -19,44 +19,62 @@ jobs:
   manage-service:
     runs-on: ubuntu-latest
     steps:
-      - name: Install Railway CLI
-        run: npm install -g @railway/cli
+      - name: Checkout code
+        uses: actions/checkout@v4
 
       - name: Determine action
         id: action
         run: |
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             echo "action=${{ github.event.inputs.action }}" >> $GITHUB_OUTPUT
-          elif [ "$(date -u +%H:%M)" \> "12:00" ] && [ "$(date -u +%H:%M)" \< "21:00" ]; then
-            echo "action=start" >> $GITHUB_OUTPUT
           else
-            echo "action=stop" >> $GITHUB_OUTPUT
+            HOUR=$(date -u +%H)
+            if [ "$HOUR" -eq 12 ]; then
+              echo "action=start" >> $GITHUB_OUTPUT
+            else
+              echo "action=stop" >> $GITHUB_OUTPUT
+            fi
           fi
 
-      - name: Start Railway service (scale up)
-        if: steps.action.outputs.action == 'start'
-        env:
-          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
-        run: |
-          echo "Starting AgriLearn backend..."
-          railway service --service ${{ secrets.RAILWAY_SERVICE_ID }} up || true
-          # Trigger a new deployment
-          curl -s -X POST \
-            -H "Authorization: Bearer $RAILWAY_TOKEN" \
-            -H "Content-Type: application/json" \
-            -d '{"query":"mutation { deploymentCreate(input: { serviceId: \"${{ secrets.RAILWAY_SERVICE_ID }}\", environmentId: \"${{ secrets.RAILWAY_ENVIRONMENT_ID }}\" }) { id } }"}' \
-            https://backboard.railway.app/graphql/v2
-          echo "Service started."
-
-      - name: Stop Railway service (scale down)
+      - name: Stop service — remove active deployment
         if: steps.action.outputs.action == 'stop'
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+          SERVICE_ID: ${{ secrets.RAILWAY_SERVICE_ID }}
+          ENVIRONMENT_ID: ${{ secrets.RAILWAY_ENVIRONMENT_ID }}
         run: |
-          echo "Stopping AgriLearn backend..."
+          # Get the active deployment ID first
+          DEPLOYMENT_ID=$(curl -s -X POST \
+            -H "Authorization: Bearer $RAILWAY_TOKEN" \
+            -H "Content-Type: application/json" \
+            -d "{\"query\":\"{ deployments(input: { serviceId: \\\"$SERVICE_ID\\\", environmentId: \\\"$ENVIRONMENT_ID\\\" }) { edges { node { id status } } } }\"}" \
+            https://backboard.railway.app/graphql/v2 | \
+            grep -o '"id":"[^"]*"' | head -1 | cut -d'"' -f4)
+
+          echo "Active deployment ID: $DEPLOYMENT_ID"
+
+          if [ -n "$DEPLOYMENT_ID" ]; then
+            curl -s -X POST \
+              -H "Authorization: Bearer $RAILWAY_TOKEN" \
+              -H "Content-Type: application/json" \
+              -d "{\"query\":\"mutation { deploymentRemove(id: \\\"$DEPLOYMENT_ID\\\") }\"}" \
+              https://backboard.railway.app/graphql/v2
+            echo "✅ Service stopped."
+          else
+            echo "No active deployment found."
+          fi
+
+      - name: Start service — trigger new deployment
+        if: steps.action.outputs.action == 'start'
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+          SERVICE_ID: ${{ secrets.RAILWAY_SERVICE_ID }}
+          ENVIRONMENT_ID: ${{ secrets.RAILWAY_ENVIRONMENT_ID }}
+        run: |
           curl -s -X POST \
             -H "Authorization: Bearer $RAILWAY_TOKEN" \
             -H "Content-Type: application/json" \
-            -d '{"query":"mutation { serviceInstanceUpdate(environmentId: \"${{ secrets.RAILWAY_ENVIRONMENT_ID }}\", serviceId: \"${{ secrets.RAILWAY_SERVICE_ID }}\", input: { numReplicas: 0 }) }"}' \
+            -d "{\"query\":\"mutation { serviceInstanceRedeploy(environmentId: \\\"$ENVIRONMENT_ID\\\", serviceId: \\\"$SERVICE_ID\\\") }\"}" \
             https://backboard.railway.app/graphql/v2
-          echo "Service stopped (0 replicas)."
+          echo "✅ Service started."
+
