@@ -2,7 +2,16 @@ spring:
   application:
     name: agrilearn-backend
 
-  # datasource is configured in DataSourceConfig.java — handles both Railway (DATABASE_URL) and local dev
+  # datasource — set SPRING_DATASOURCE_URL / USERNAME / PASSWORD in Railway
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/agrilearn}
+    username: ${SPRING_DATASOURCE_USERNAME:agrilearn}
+    password: ${SPRING_DATASOURCE_PASSWORD:agrilearn123}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 2
+      connection-timeout: 30000
 
   jpa:
     hibernate:
