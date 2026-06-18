@@ -39,7 +39,6 @@
       "enabled": false
     },
     "plugins": [
-      "expo-notifications",
       "expo-secure-store"
     ]
   }
