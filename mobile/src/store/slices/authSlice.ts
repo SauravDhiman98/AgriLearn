@@ -54,8 +54,11 @@ const authSlice = createSlice({
     logout(state) {
       state.user = null; state.accessToken = null; state.refreshToken = null
       state.isAuthenticated = false
-      SecureStore.deleteItemAsync('accessToken')
-      SecureStore.deleteItemAsync('refreshToken')
+      // Fire-and-forget — don't await in sync reducer
+      Promise.all([
+        SecureStore.deleteItemAsync('accessToken'),
+        SecureStore.deleteItemAsync('refreshToken'),
+      ]).catch(() => {})
     },
     hydrateAuth(state, action: PayloadAction<{ accessToken: string; user: User }>) {
       state.accessToken = action.payload.accessToken
