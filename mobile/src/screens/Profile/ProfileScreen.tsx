@@ -16,7 +16,7 @@ export default function ProfileScreen() {
             {user?.firstName} {user?.lastName}
           </Text>
           <Text style={{color:'#6b7280',marginBottom:24}}>{user?.email}</Text>
-          <Text style={{color:'#6b7280',marginBottom:24'}}>Role: {user?.role}</Text>
+          <Text style={{color:'#6b7280',marginBottom:24}}>Role: {user?.role}</Text>
           <TouchableOpacity
             onPress={() => dispatch(logout())}
             style={{backgroundColor:'#dc2626',padding:14,borderRadius:10,alignItems:'center'}}>
