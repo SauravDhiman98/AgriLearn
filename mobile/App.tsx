@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 import { Provider } from 'react-redux'
-import { NavigationContainer } from '@react-navigation/native'
+import { NavigationContainer, DarkTheme, DefaultTheme } from '@react-navigation/native'
 import { SafeAreaProvider } from 'react-native-safe-area-context'
 import { StatusBar } from 'expo-status-bar'
 import { View, Text } from 'react-native'
@@ -8,6 +8,7 @@ import './src/i18n'
 import RootNavigator from './src/navigation/RootNavigator'
 import { store } from './src/store'
 import React from 'react'
+import { ThemeProvider, useTheme } from './src/context/ThemeContext'
 
 class ErrorBoundary extends React.Component<{children: React.ReactNode}, {hasError: boolean, error: string}> {
   constructor(props: any) {
@@ -30,16 +31,25 @@ class ErrorBoundary extends React.Component<{children: React.ReactNode}, {hasErr
   }
 }
 
+function ThemedApp() {
+  const { isDark } = useTheme()
+  return (
+    <SafeAreaProvider>
+      <NavigationContainer theme={isDark ? DarkTheme : DefaultTheme}>
+        <RootNavigator />
+        <StatusBar style={isDark ? 'light' : 'dark'} />
+      </NavigationContainer>
+    </SafeAreaProvider>
+  )
+}
+
 export default function App() {
   return (
     <ErrorBoundary>
       <Provider store={store}>
-        <SafeAreaProvider>
-          <NavigationContainer>
-            <RootNavigator />
-            <StatusBar style="auto" />
-          </NavigationContainer>
-        </SafeAreaProvider>
+        <ThemeProvider>
+          <ThemedApp />
+        </ThemeProvider>
       </Provider>
     </ErrorBoundary>
   )

@@ -5,31 +5,31 @@ import CoursesScreen from '../screens/Courses/CoursesScreen'
 import ForumScreen from '../screens/Forum/ForumScreen'
 import MarketplaceScreen from '../screens/Marketplace/MarketplaceScreen'
 import ProfileScreen from '../screens/Profile/ProfileScreen'
+import { useTheme } from '../context/ThemeContext'
 
 const Tab = createBottomTabNavigator()
 
-const tabIcon = (name: string, focused: boolean, color: string) => {
-  const icons: Record<string, string> = {
-    Home: '🏠', Courses: '📚', Forum: '💬', Marketplace: '🛒', Profile: '👤',
-  }
-  return null // Use a proper icon library (e.g., @expo/vector-icons) in production
-}
-
 export default function TabNavigator() {
   const { t } = useTranslation()
+  const { colors } = useTheme()
 
   return (
     <Tab.Navigator
       screenOptions={{
-        tabBarActiveTintColor: '#16a34a',
-        tabBarInactiveTintColor: '#9ca3af',
-        tabBarStyle: { borderTopWidth: 1, borderTopColor: '#e5e7eb', paddingBottom: 4 },
-        headerStyle: { backgroundColor: '#16a34a' },
+        tabBarActiveTintColor: colors.primary,
+        tabBarInactiveTintColor: colors.textMuted,
+        tabBarStyle: {
+          backgroundColor: colors.tabBar,
+          borderTopColor: colors.tabBarBorder,
+          borderTopWidth: 1,
+          paddingBottom: 4,
+        },
+        headerStyle: { backgroundColor: colors.header },
         headerTintColor: '#fff',
         headerTitleStyle: { fontWeight: 'bold' },
       }}>
       <Tab.Screen name="Home" component={HomeScreen}
-        options={{ title: 'AgriLearn', tabBarLabel: 'Home' }} />
+        options={{ title: 'Tassy Point', tabBarLabel: 'Home' }} />
       <Tab.Screen name="Courses" component={CoursesScreen}
         options={{ title: 'Courses', tabBarLabel: 'Courses' }} />
       <Tab.Screen name="Forum" component={ForumScreen}

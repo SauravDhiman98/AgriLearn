@@ -5,24 +5,23 @@ import { useSelector } from 'react-redux'
 import { RootState } from '../../store'
 import { courseApi } from '../../api/services'
 import CourseCard from '../../components/course/CourseCard'
-import { Sprout, Users, BookOpen, Video, MessageSquare, ShoppingBag, Award, Star } from 'lucide-react'
+import { Sprout, Users, BookOpen, Video, MessageSquare, ShoppingBag, Star } from 'lucide-react'
 
 const CATEGORIES = [
-  { key: 'CROP_SCIENCE', emoji: '🌾', label: 'Crop Science' },
-  { key: 'SOIL_HEALTH', emoji: '🪱', label: 'Soil Health' },
-  { key: 'ORGANIC_FARMING', emoji: '🌿', label: 'Organic Farming' },
-  { key: 'IRRIGATION', emoji: '💧', label: 'Irrigation' },
-  { key: 'PEST_MANAGEMENT', emoji: '🐛', label: 'Pest Management' },
-  { key: 'HORTICULTURE', emoji: '🍎', label: 'Horticulture' },
-  { key: 'ANIMAL_HUSBANDRY', emoji: '🐄', label: 'Animal Husbandry' },
-  { key: 'AGRIBUSINESS', emoji: '📊', label: 'Agribusiness' },
+  { key: 'UPSC', emoji: '📚', label: 'UPSC' },
+  { key: 'SSC', emoji: '📝', label: 'SSC' },
+  { key: 'IBPS', emoji: '🏦', label: 'IBPS / Bank' },
+  { key: 'RAILWAY', emoji: '🚂', label: 'Railway' },
+  { key: 'STATE_PSC', emoji: '🏛️', label: 'State PSC' },
+  { key: 'DEFENSE', emoji: '🪖', label: 'Defence' },
+  { key: 'TEACHING', emoji: '🎓', label: 'Teaching' },
+  { key: 'OTHER', emoji: '📊', label: 'Other Exams' },
 ]
 
 const STATS = [
   { icon: Users, value: '1 Lakh+', label: 'Active Learners' },
   { icon: BookOpen, value: '500+', label: 'Expert Courses' },
-  { icon: Video, value: '200+', label: 'Live Classes/Month' },
-  { icon: Award, value: '50,000+', label: 'Certificates Issued' },
+  { icon: Video, value: '200+', label: 'Video Lectures' },
 ]
 
 export default function HomePage() {
@@ -36,7 +35,7 @@ export default function HomePage() {
   return (
     <div>
       {/* Hero Section */}
-      <section className="bg-gradient-to-br from-green-700 via-green-600 to-emerald-700 text-white">
+      <section style={{ background: 'linear-gradient(135deg, #194552 0%, #1d6b7a 50%, #155060 100%)' }} className="text-white">
         <div className="max-w-7xl mx-auto px-4 py-20 sm:py-28">
           <div className="max-w-3xl">
             <div className="flex items-center gap-2 mb-4">
@@ -90,7 +89,7 @@ export default function HomePage() {
       {/* Categories */}
       <section className="py-14 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4">
-          <h2 className="text-2xl font-bold text-gray-900 mb-8 text-center">Explore by Category</h2>
+          <h2 className="text-2xl font-bold text-gray-900 mb-8 text-center">Explore by Exam</h2>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
             {CATEGORIES.map(cat => (
               <Link key={cat.key} to={`/courses?category=${cat.key}`}
@@ -137,15 +136,15 @@ export default function HomePage() {
       {/* Features */}
       <section className="py-14 bg-green-50">
         <div className="max-w-7xl mx-auto px-4">
-          <h2 className="text-2xl font-bold text-center text-gray-900 mb-12">Everything you need to grow</h2>
+          <h2 className="text-2xl font-bold text-center text-gray-900 mb-12">Everything you need to crack exam</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {[
-              { icon: Video, title: 'Live Classes', desc: 'Join live sessions with agriculture experts and ask questions in real-time.' },
-              { icon: MessageSquare, title: 'Community Forum', desc: 'Connect with 1 lakh+ farmers. Ask questions, share knowledge, solve problems together.' },
-              { icon: ShoppingBag, title: 'Agri Marketplace', desc: 'Buy seeds, fertilizers, tools, and more. Sell your produce directly to buyers.' },
-              { icon: Star, title: 'Certified Courses', desc: 'Earn certificates recognized by agri-institutes and government programs.' },
+              { icon: Video, title: 'Video Lectures', desc: 'Watch high-quality recorded video lectures by top subject experts anytime, anywhere.' },
+              { icon: MessageSquare, title: 'Community Forum', desc: 'Connect with 1 lakh+ students. Ask questions, share knowledge, solve doubts together.' },
+              { icon: ShoppingBag, title: 'Study Material', desc: 'Access notes, PDFs, practice papers, and mock tests for all competitive exams.' },
+              { icon: Star, title: 'Top Educators', desc: 'Courses designed by experienced educators and subject matter experts.' },
               { icon: BookOpen, title: 'Regional Languages', desc: 'Learn in Hindi, Marathi, Punjabi, Gujarati, Tamil and more.' },
-              { icon: Award, title: 'Expert Instructors', desc: 'Courses designed by ICAR scientists, KVK experts, and successful farmers.' },
+              { icon: Users, title: 'Expert Instructors', desc: 'Learn from experienced faculty who have guided thousands of successful candidates.' },
             ].map(({ icon: Icon, title, desc }) => (
               <div key={title} className="bg-white rounded-xl p-6 shadow-sm">
                 <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center mb-4">
@@ -175,7 +174,7 @@ export default function HomePage() {
 
       {/* Logged-in CTA — continue learning */}
       {isAuthenticated && (
-        <section className="py-16 bg-green-700">
+        <section style={{ background: '#194552' }} className="py-16">
           <div className="max-w-3xl mx-auto px-4 text-center">
             <h2 className="text-3xl font-bold text-white mb-4">
               Welcome back, {user?.firstName}! 👋

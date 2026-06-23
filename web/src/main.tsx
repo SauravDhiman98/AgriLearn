@@ -9,6 +9,7 @@ import './i18n'
 import './index.css'
 import App from './App'
 import { store } from './store'
+import { ThemeProvider } from './context/ThemeContext'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -21,8 +22,10 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
     <Provider store={store}>
       <QueryClientProvider client={queryClient}>
         <BrowserRouter>
-          <App />
-          <ToastContainer position="top-right" autoClose={3000} />
+          <ThemeProvider>
+            <App />
+            <ToastContainer position="top-right" autoClose={3000} />
+          </ThemeProvider>
         </BrowserRouter>
       </QueryClientProvider>
     </Provider>

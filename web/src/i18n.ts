@@ -12,7 +12,7 @@ i18n
           nav: {
             home: 'Home',
             courses: 'Courses',
-            liveClasses: 'Live Classes',
+            liveClasses: 'Video Lecture',
             forum: 'Community',
             marketplace: 'Marketplace',
             dashboard: 'Dashboard',
@@ -50,7 +50,7 @@ i18n
           nav: {
             home: 'होम',
             courses: 'कोर्स',
-            liveClasses: 'लाइव क्लास',
+            liveClasses: 'वीडियो लेक्चर',
             forum: 'समुदाय',
             marketplace: 'मार्केटप्लेस',
             dashboard: 'डैशबोर्ड',
