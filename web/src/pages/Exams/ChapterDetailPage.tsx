@@ -4,6 +4,7 @@ import { Link, useParams } from 'react-router-dom'
 import { examApi } from '../../api/services'
 import { useTheme } from '../../context/ThemeContext'
 import { ChevronLeft, FileText, Video, Brain, ExternalLink, Play } from 'lucide-react'
+import mammoth from 'mammoth'
 
 type Tab = 'notes' | 'videos' | 'tests'
 
@@ -15,6 +16,49 @@ function resolveUrl(url: string | null | undefined): string | null {
   if (!url) return null
   if (url.startsWith('http://') || url.startsWith('https://')) return url
   return API_ORIGIN + url
+}
+
+/** Fetch DOCX and render as HTML using mammoth */
+function DocxViewer({ url, title }: { url: string; title: string }) {
+  const [html, setHtml] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
+  const [loading, setLoading] = useState(true)
+  const { isDark } = useTheme()
+  const text = isDark ? '#f9fafb' : '#111827'
+  const muted = isDark ? '#9ca3af' : '#6b7280'
+
+  useEffect(() => {
+    setHtml(null); setError(null); setLoading(true)
+    fetch(url)
+      .then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.arrayBuffer() })
+      .then(buf => mammoth.convertToHtml({ arrayBuffer: buf }))
+      .then(result => setHtml(result.value))
+      .catch(err => setError(err.message))
+      .finally(() => setLoading(false))
+  }, [url])
+
+  if (loading) return (
+    <div style={{ padding: '60px', textAlign: 'center', color: muted }}>
+      <div style={{ fontSize: '32px', marginBottom: '12px' }}>⏳</div>
+      Loading document...
+    </div>
+  )
+  if (error) return (
+    <div style={{ padding: '40px', textAlign: 'center' }}>
+      <div style={{ fontSize: '40px', marginBottom: '12px' }}>⚠️</div>
+      <p style={{ color: muted, marginBottom: '16px' }}>Could not preview document: {error}</p>
+      <a href={url} download={title}
+        style={{ padding: '10px 24px', backgroundColor: '#194552', color: '#fff', borderRadius: '9px', textDecoration: 'none', fontWeight: '600' }}>
+        ⬇ Download Instead
+      </a>
+    </div>
+  )
+  return (
+    <div
+      style={{ padding: '28px 36px', overflowY: 'auto', maxHeight: '80vh', color: text, lineHeight: '1.8', fontSize: '15px' }}
+      dangerouslySetInnerHTML={{ __html: html || '' }}
+    />
+  )
 }
 
 export default function ChapterDetailPage() {
@@ -150,32 +194,9 @@ export default function ChapterDetailPage() {
                         />
                       )}
 
-                      {/* DOC/DOCX - Google Docs viewer for public URLs, download for localhost */}
+                      {/* DOC/DOCX - use mammoth.js for inline preview */}
                       {resolvedUrl && (activeNote.fileType === 'doc' || activeNote.fileType === 'docx') && (
-                        resolvedUrl.startsWith('http://localhost') || resolvedUrl.startsWith('http://127')
-                          ? (
-                            <div style={{ padding: '40px', textAlign: 'center' }}>
-                              <div style={{ fontSize: '56px', marginBottom: '16px' }}>📄</div>
-                              <p style={{ color: text, fontWeight: '700', fontSize: '16px', marginBottom: '6px' }}>{activeNote.fileName || activeNote.title}</p>
-                              <p style={{ color: muted, fontSize: '13px', marginBottom: '6px' }}>
-                                {activeNote.fileSize ? `${(activeNote.fileSize / 1024).toFixed(0)} KB` : ''} · {activeNote.fileType?.toUpperCase()} document
-                              </p>
-                              <p style={{ color: muted, fontSize: '12px', marginBottom: '24px' }}>
-                                📌 Inline preview not available for local files. Download to view.
-                              </p>
-                              <a href={resolvedUrl} download={activeNote.fileName}
-                                style={{ padding: '12px 28px', backgroundColor: '#194552', color: '#fff', borderRadius: '9px', textDecoration: 'none', fontSize: '15px', fontWeight: '600' }}>
-                                ⬇ Download & Open
-                              </a>
-                            </div>
-                          )
-                          : (
-                            <iframe
-                              src={`https://docs.google.com/gview?url=${encodeURIComponent(resolvedUrl)}&embedded=true`}
-                              title={activeNote.title}
-                              style={{ width: '100%', height: '80vh', border: 'none', display: 'block' }}
-                            />
-                          )
+                        <DocxViewer url={resolvedUrl} title={activeNote.fileName || activeNote.title} />
                       )}
 
                       {/* Other file types */}
