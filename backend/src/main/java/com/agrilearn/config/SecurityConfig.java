@@ -30,12 +30,13 @@ public class SecurityConfig {
 
     private static final String[] PUBLIC_ENDPOINTS = {
         "/auth/**",
+        "/files/**",                 // local dev file serving
         "/courses/public/**",
         "/forum/posts/public/**",
         "/marketplace/products/public/**",
         "/quizzes/course/**",
         "/actuator/health",
-        "/actuator/health/**",   // liveness + readiness probes
+        "/actuator/health/**",
         "/actuator/info",
         "/swagger-ui/**",
         "/api-docs/**",

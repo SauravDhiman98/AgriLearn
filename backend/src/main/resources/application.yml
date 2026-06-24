@@ -69,11 +69,14 @@ minio:
   access-key: ${MINIO_ACCESS_KEY:agrilearn}
   secret-key: ${MINIO_SECRET_KEY:agrilearn123}
   region: ${MINIO_REGION:us-east-1}
+  # Set minio.local=true for local dev (no MinIO/B2 needed — files stored on disk)
+  local: ${MINIO_LOCAL:true}
+  local-dir: ${MINIO_LOCAL_DIR:uploads}
   bucket:
-    videos: agrilearn-videos
-    thumbnails: agrilearn-thumbnails
-    documents: agrilearn-documents
-    avatars: agrilearn-avatars
+    videos: ${MINIO_BUCKET_VIDEOS:agrilearn-videos}
+    thumbnails: ${MINIO_BUCKET_THUMBNAILS:agrilearn-thumbnails}
+    documents: ${MINIO_BUCKET_DOCUMENTS:agrilearn-documents}
+    avatars: ${MINIO_BUCKET_AVATARS:agrilearn-avatars}
 
 # Razorpay Payment Gateway
 razorpay:
