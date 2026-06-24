@@ -1,7 +1,6 @@
 package com.agrilearn.dto;
 
-import lombok.Data;
-import lombok.EqualsAndHashCode;
+import lombok.*;
 
 import java.util.List;
 import java.util.Map;
@@ -27,6 +26,7 @@ public class ExamDto {
         private String icon;
         private String slug;
         private List<SubjectResponse> subjects;
+        private List<SectionResponse> sections;
     }
 
     @Data
@@ -75,10 +75,44 @@ public class ExamDto {
     }
 
     @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Builder
     public static class NotesResponse {
         private Long id;
         private String title;
         private String content;
+        private int orderIndex;
+        private String fileUrl;
+        private String fileName;
+        private Long fileSize;
+        private String fileType;
+    }
+
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Builder
+    public static class CreateSectionRequest {
+        private String title;
+        private String description;
+        private String sectionType;
+        private String tableHeaders;
+        private String tableRows;
+        private int orderIndex;
+    }
+
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Builder
+    public static class SectionResponse {
+        private Long id;
+        private String title;
+        private String description;
+        private String sectionType;
+        private String tableHeaders;
+        private String tableRows;
         private int orderIndex;
     }
 

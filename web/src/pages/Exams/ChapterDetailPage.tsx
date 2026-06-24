@@ -86,7 +86,7 @@ export default function ChapterDetailPage() {
           <>
             {/* Notes Tab */}
             {activeTab === 'notes' && (
-              <div style={{ display: 'grid', gridTemplateColumns: chapter?.notes?.length > 1 ? '280px 1fr' : '1fr', gap: '20px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: chapter?.notes?.length > 1 ? '260px 1fr' : '1fr', gap: '20px' }}>
                 {chapter?.notes?.length > 1 && (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                     {chapter.notes.map((note: any) => (
@@ -94,22 +94,66 @@ export default function ChapterDetailPage() {
                         textAlign: 'left', padding: '12px 14px', borderRadius: '10px', border: `1px solid ${border}`,
                         backgroundColor: selectedNote?.id === note.id ? (isDark ? '#1d4ed8' : '#dbeafe') : cardBg,
                         color: text, cursor: 'pointer', fontSize: '14px', fontWeight: '500',
+                        display: 'flex', alignItems: 'center', gap: '8px',
                       }}>
+                        <span>{note.fileType === 'pdf' ? '📄' : note.fileType ? '📝' : '📃'}</span>
                         {note.title}
                       </button>
                     ))}
                   </div>
                 )}
-                {selectedNote || chapter?.notes?.[0] ? (
-                  <div style={{ backgroundColor: cardBg, borderRadius: '14px', padding: '28px', border: `1px solid ${border}` }}>
-                    <h2 style={{ fontSize: '18px', fontWeight: '700', color: text, marginBottom: '20px', borderBottom: `1px solid ${border}`, paddingBottom: '12px' }}>
-                      {(selectedNote || chapter.notes[0]).title}
-                    </h2>
-                    <div style={{ color: text, lineHeight: '1.8', fontSize: '15px', whiteSpace: 'pre-wrap' }}>
-                      {(selectedNote || chapter.notes[0]).content}
+                {(selectedNote || chapter?.notes?.[0]) ? (() => {
+                  const activeNote = selectedNote || chapter.notes[0]
+                  return (
+                    <div style={{ backgroundColor: cardBg, borderRadius: '14px', border: `1px solid ${border}`, overflow: 'hidden' }}>
+                      {/* Note header with download */}
+                      <div style={{ padding: '16px 20px', borderBottom: `1px solid ${border}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <h2 style={{ fontSize: '17px', fontWeight: '700', color: text, margin: 0 }}>
+                          {activeNote.title}
+                        </h2>
+                        {activeNote.fileUrl && (
+                          <a href={activeNote.fileUrl} download={activeNote.fileName || activeNote.title}
+                            target="_blank" rel="noreferrer"
+                            style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 14px', backgroundColor: '#194552', color: '#fff', borderRadius: '8px', textDecoration: 'none', fontSize: '13px', fontWeight: '600' }}>
+                            ⬇ Download
+                          </a>
+                        )}
+                      </div>
+
+                      {/* PDF viewer */}
+                      {activeNote.fileUrl && activeNote.fileType === 'pdf' && (
+                        <iframe
+                          src={`${activeNote.fileUrl}#toolbar=1&navpanes=0`}
+                          title={activeNote.title}
+                          style={{ width: '100%', height: '80vh', border: 'none', display: 'block' }}
+                        />
+                      )}
+
+                      {/* DOC/other file - show download prompt */}
+                      {activeNote.fileUrl && activeNote.fileType !== 'pdf' && (
+                        <div style={{ padding: '40px', textAlign: 'center' }}>
+                          <div style={{ fontSize: '48px', marginBottom: '12px' }}>📄</div>
+                          <p style={{ color: text, fontWeight: '600', marginBottom: '6px' }}>{activeNote.fileName || activeNote.title}</p>
+                          <p style={{ color: muted, fontSize: '13px', marginBottom: '20px' }}>
+                            {activeNote.fileSize ? `${(activeNote.fileSize / 1024 / 1024).toFixed(2)} MB` : ''} · {activeNote.fileType?.toUpperCase()}
+                          </p>
+                          <a href={activeNote.fileUrl} download={activeNote.fileName}
+                            target="_blank" rel="noreferrer"
+                            style={{ padding: '10px 24px', backgroundColor: '#194552', color: '#fff', borderRadius: '9px', textDecoration: 'none', fontSize: '14px', fontWeight: '600' }}>
+                            ⬇ Download File
+                          </a>
+                        </div>
+                      )}
+
+                      {/* Plain text notes */}
+                      {!activeNote.fileUrl && (
+                        <div style={{ padding: '24px', color: text, lineHeight: '1.8', fontSize: '15px', whiteSpace: 'pre-wrap' }}>
+                          {activeNote.content}
+                        </div>
+                      )}
                     </div>
-                  </div>
-                ) : (
+                  )
+                })() : (
                   <div style={{ textAlign: 'center', padding: '40px', color: muted }}>No notes available for this chapter.</div>
                 )}
               </div>

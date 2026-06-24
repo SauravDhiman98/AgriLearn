@@ -5,7 +5,9 @@ import com.agrilearn.entity.*;
 import com.agrilearn.exception.ResourceNotFoundException;
 import com.agrilearn.repository.*;
 import com.agrilearn.service.ExamService;
+import com.agrilearn.service.MinioService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,6 +27,11 @@ public class ExamServiceImpl implements ExamService {
     private final ChapterNotesRepository notesRepo;
     private final ChapterVideoRepository videoRepo;
     private final McqTestRepository testRepo;
+    private final ExamSectionRepository sectionRepo;
+    private final MinioService minioService;
+
+    @Value("${minio.bucket.documents}")
+    private String documentsBucket;
 
     @Override
     @Transactional(readOnly = true)
@@ -47,7 +54,21 @@ public class ExamServiceImpl implements ExamService {
         r.setSubjects(subjectRepo.findByExamIdOrderByOrderIndexAsc(id).stream()
                 .map(this::toSubjectResponse)
                 .collect(Collectors.toList()));
+        r.setSections(sectionRepo.findByExamIdOrderByOrderIndex(id).stream()
+                .map(this::toSectionResponse)
+                .collect(Collectors.toList()));
         return r;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<ExamDto.SectionResponse> getSectionsByExam(Long examId) {
+        if (!examRepo.existsById(examId)) {
+            throw new ResourceNotFoundException("Exam", examId);
+        }
+        return sectionRepo.findByExamIdOrderByOrderIndex(examId).stream()
+                .map(this::toSectionResponse)
+                .collect(Collectors.toList());
     }
 
     @Override
@@ -99,6 +120,33 @@ public class ExamServiceImpl implements ExamService {
                 .slug(req.getSlug())
                 .build();
         return toExamResponse(examRepo.save(exam));
+    }
+
+    @Override
+    public ExamDto.SectionResponse createSection(Long examId, ExamDto.CreateSectionRequest req) {
+        Exam exam = examRepo.findById(examId).orElseThrow(() -> new ResourceNotFoundException("Exam", examId));
+        ExamSection section = ExamSection.builder()
+                .exam(exam)
+                .title(req.getTitle())
+                .description(req.getDescription())
+                .sectionType(req.getSectionType() == null || req.getSectionType().isBlank() ? "CUSTOM" : req.getSectionType())
+                .tableHeaders(req.getTableHeaders())
+                .tableRows(req.getTableRows())
+                .orderIndex(req.getOrderIndex())
+                .build();
+        return toSectionResponse(sectionRepo.save(section));
+    }
+
+    @Override
+    public ExamDto.SectionResponse updateSection(Long sectionId, ExamDto.CreateSectionRequest req) {
+        ExamSection section = sectionRepo.findById(sectionId).orElseThrow(() -> new ResourceNotFoundException("Section", sectionId));
+        section.setTitle(req.getTitle());
+        section.setDescription(req.getDescription());
+        section.setSectionType(req.getSectionType() == null || req.getSectionType().isBlank() ? "CUSTOM" : req.getSectionType());
+        section.setTableHeaders(req.getTableHeaders());
+        section.setTableRows(req.getTableRows());
+        section.setOrderIndex(req.getOrderIndex());
+        return toSectionResponse(sectionRepo.save(section));
     }
 
     @Override
@@ -163,10 +211,17 @@ public class ExamServiceImpl implements ExamService {
 
     @Override
     public void deleteNotes(Long notesId) {
-        if (!notesRepo.existsById(notesId)) {
-            throw new ResourceNotFoundException("Notes", notesId);
+        ChapterNotes notes = notesRepo.findById(notesId).orElseThrow(() -> new ResourceNotFoundException("Notes", notesId));
+        if (notes.getFileUrl() != null && !notes.getFileUrl().isBlank()) {
+            minioService.deleteFile(documentsBucket, notes.getFileUrl());
         }
-        notesRepo.deleteById(notesId);
+        notesRepo.delete(notes);
+    }
+
+    @Override
+    public void deleteSection(Long sectionId) {
+        ExamSection section = sectionRepo.findById(sectionId).orElseThrow(() -> new ResourceNotFoundException("Section", sectionId));
+        sectionRepo.delete(section);
     }
 
     @Override
@@ -243,7 +298,23 @@ public class ExamServiceImpl implements ExamService {
         r.setTitle(notes.getTitle());
         r.setContent(notes.getContent());
         r.setOrderIndex(notes.getOrderIndex());
+        r.setFileUrl(resolveNotesFileUrl(notes.getFileUrl()));
+        r.setFileName(notes.getFileName());
+        r.setFileSize(notes.getFileSize());
+        r.setFileType(notes.getFileType());
         return r;
+    }
+
+    private ExamDto.SectionResponse toSectionResponse(ExamSection section) {
+        return ExamDto.SectionResponse.builder()
+                .id(section.getId())
+                .title(section.getTitle())
+                .description(section.getDescription())
+                .sectionType(section.getSectionType())
+                .tableHeaders(section.getTableHeaders())
+                .tableRows(section.getTableRows())
+                .orderIndex(section.getOrderIndex())
+                .build();
     }
 
     private ExamDto.VideoResponse toVideoResponse(ChapterVideo video) {
@@ -266,5 +337,12 @@ public class ExamServiceImpl implements ExamService {
         r.setTimeLimitMinutes(test.getTimeLimitMinutes());
         r.setNotesId(test.getNotes() != null ? test.getNotes().getId() : null);
         return r;
+    }
+
+    private String resolveNotesFileUrl(String storedObjectName) {
+        if (storedObjectName == null || storedObjectName.isBlank()) {
+            return null;
+        }
+        return minioService.getPresignedUrl(documentsBucket, storedObjectName, 3600);
     }
 }

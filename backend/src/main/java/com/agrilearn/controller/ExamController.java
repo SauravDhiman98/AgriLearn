@@ -30,6 +30,11 @@ public class ExamController {
         return ResponseEntity.ok(examService.getExamById(id));
     }
 
+    @GetMapping("/exams/{examId}/sections")
+    public ResponseEntity<List<ExamDto.SectionResponse>> getSections(@PathVariable Long examId) {
+        return ResponseEntity.ok(examService.getSectionsByExam(examId));
+    }
+
     @GetMapping("/subjects/{id}")
     public ResponseEntity<ExamDto.SubjectDetailResponse> getSubject(@PathVariable Long id) {
         return ResponseEntity.ok(examService.getSubjectById(id));
@@ -67,6 +72,29 @@ public class ExamController {
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ExamDto.ExamResponse> createExam(@RequestBody ExamDto.CreateExamRequest req) {
         return ResponseEntity.ok(examService.createExam(req));
+    }
+
+    @PostMapping("/admin/exams/{examId}/sections")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ExamDto.SectionResponse> createSection(
+            @PathVariable Long examId,
+            @RequestBody ExamDto.CreateSectionRequest req) {
+        return ResponseEntity.ok(examService.createSection(examId, req));
+    }
+
+    @PutMapping("/admin/sections/{sectionId}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ExamDto.SectionResponse> updateSection(
+            @PathVariable Long sectionId,
+            @RequestBody ExamDto.CreateSectionRequest req) {
+        return ResponseEntity.ok(examService.updateSection(sectionId, req));
+    }
+
+    @DeleteMapping("/admin/sections/{sectionId}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Void> deleteSection(@PathVariable Long sectionId) {
+        examService.deleteSection(sectionId);
+        return ResponseEntity.noContent().build();
     }
 
     @PostMapping("/admin/exams/{examId}/subjects")

@@ -175,6 +175,85 @@ export default function AdminExamContent() {
     loadChapterContent(selectedChapter!)
   }
 
+  // Section management state
+  const [adminTab, setAdminTab] = useState<'content' | 'sections'>('content')
+  const [sections, setSections] = useState<any[]>([])
+  const [showAddSection, setShowAddSection] = useState(false)
+  const [editSection, setEditSection] = useState<any | null>(null)
+  const [sectionForm, setSectionForm] = useState({
+    title: '', description: '', sectionType: 'OVERVIEW',
+    tableHeaders: '', tableRows: '',
+  })
+  // Dynamic table builder
+  const [tableHeaders, setTableHeaders] = useState<string[]>(['Particulars', 'Details'])
+  const [tableRows, setTableRows] = useState<string[][]>([['', '']])
+
+  // File upload state for notes
+  const [noteUploadType, setNoteUploadType] = useState<'text' | 'file'>('file')
+  const [noteFile, setNoteFile] = useState<File | null>(null)
+  const [noteFileTitle, setNoteFileTitle] = useState('')
+
+  const loadSections = (exam: Exam) => {
+    examApi.getSections(exam.id).then(r => setSections(r.data || [])).catch(console.error)
+  }
+
+  const handleAddSection = async () => {
+    if (!selectedExam) return
+    setSaving(true)
+    try {
+      const data = {
+        ...sectionForm,
+        tableHeaders: tableHeaders.filter(h => h.trim()) ? JSON.stringify(tableHeaders.filter(h => h.trim())) : null,
+        tableRows: tableRows.length ? JSON.stringify(tableRows.filter(r => r.some(c => c.trim()))) : null,
+      }
+      if (editSection) {
+        await examApi.updateSection(editSection.id, data)
+        flash('ok', 'Section updated!')
+      } else {
+        await examApi.createSection(selectedExam.id, data)
+        flash('ok', 'Section added!')
+      }
+      setShowAddSection(false); setEditSection(null)
+      setSectionForm({ title: '', description: '', sectionType: 'OVERVIEW', tableHeaders: '', tableRows: '' })
+      setTableHeaders(['Particulars', 'Details']); setTableRows([['', '']])
+      loadSections(selectedExam)
+    } catch { flash('err', 'Failed to save section') } finally { setSaving(false) }
+  }
+
+  const handleDeleteSection = async (sectionId: number) => {
+    if (!confirm('Delete this section?')) return
+    await examApi.deleteSection(sectionId)
+    loadSections(selectedExam!)
+  }
+
+  const openEditSection = (section: any) => {
+    setEditSection(section)
+    setSectionForm({ title: section.title, description: section.description || '', sectionType: section.sectionType, tableHeaders: '', tableRows: '' })
+    try { setTableHeaders(JSON.parse(section.tableHeaders || '["Particulars","Details"]')) } catch { setTableHeaders(['Particulars', 'Details']) }
+    try { setTableRows(JSON.parse(section.tableRows || '[["",""]]')) } catch { setTableRows([['', '']]) }
+    setShowAddSection(true)
+  }
+
+  const handleUploadNotesFile = async () => {
+    if (!selectedChapter || !noteFile || !noteFileTitle.trim()) return
+    setSaving(true)
+    try {
+      const fd = new FormData()
+      fd.append('file', noteFile)
+      fd.append('title', noteFileTitle)
+      await examApi.uploadNotesFile(selectedChapter.id, fd)
+      flash('ok', 'Notes file uploaded!')
+      setShowAddNote(false); setNoteFile(null); setNoteFileTitle('')
+      loadChapterContent(selectedChapter)
+    } catch { flash('err', 'Failed to upload file') } finally { setSaving(false) }
+  }
+
+  // load sections when exam is selected
+  const loadSubjectsAndSections = (exam: Exam) => {
+    loadSubjects(exam)
+    loadSections(exam)
+  }
+
   const inputStyle: React.CSSProperties = {
     width: '100%',
     padding: '9px 12px',
@@ -253,10 +332,26 @@ export default function AdminExamContent() {
         </div>
       )}
 
-      <p style={{ color: muted, fontSize: '14px', marginBottom: '20px' }}>
-        Select an exam → add subjects → add chapters → add notes/videos/MCQs
+      <p style={{ color: muted, fontSize: '14px', marginBottom: '16px' }}>
+        Select an exam → manage subjects/chapters/notes/videos OR add exam info sections (overview, dates, eligibility etc.)
       </p>
 
+      {/* Admin sub-tabs */}
+      {selectedExam && (
+        <div style={{ display: 'flex', gap: '8px', marginBottom: '20px' }}>
+          {([['content', '📚 Subjects & Content'], ['sections', '📋 Exam Info Sections']] as const).map(([key, label]) => (
+            <button key={key} onClick={() => setAdminTab(key)} style={{
+              padding: '8px 18px', borderRadius: '8px', border: `1px solid ${border}`, cursor: 'pointer',
+              fontWeight: '600', fontSize: '13px',
+              backgroundColor: adminTab === key ? '#194552' : inputBg,
+              color: adminTab === key ? '#fff' : text,
+            }}>{label}</button>
+          ))}
+        </div>
+      )}
+
+      {(!selectedExam || adminTab === 'content') && (
+      <>
       <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap', alignItems: 'flex-start' }}>
         <div style={colStyle}>
           <div style={colHeader}>
@@ -265,7 +360,7 @@ export default function AdminExamContent() {
           {exams.map(exam => (
             <div
               key={exam.id}
-              onClick={() => loadSubjects(exam)}
+              onClick={() => loadSubjectsAndSections(exam)}
               style={{ ...itemRow, backgroundColor: selectedExam?.id === exam.id ? (isDark ? '#374151' : '#e0f2fe') : 'transparent' }}
             >
               <span style={{ fontSize: '18px' }}>{exam.icon}</span>
@@ -402,7 +497,100 @@ export default function AdminExamContent() {
           </div>
         </div>
       )}
+      </> )} {/* end adminTab content */}
 
+      {/* === Exam Info Sections Panel === */}
+      {selectedExam && adminTab === 'sections' && (
+        <div style={{ backgroundColor: cardBg, borderRadius: '12px', border: `1px solid ${border}`, overflow: 'hidden' }}>
+          <div style={{ ...colHeader, padding: '16px 20px' }}>
+            <span style={{ fontWeight: '700', fontSize: '15px', color: text }}>📋 Exam Info Sections — {selectedExam.name}</span>
+            <button style={btnSm} onClick={() => { setEditSection(null); setSectionForm({ title: '', description: '', sectionType: 'OVERVIEW', tableHeaders: '', tableRows: '' }); setTableHeaders(['Particulars', 'Details']); setTableRows([['', '']]); setShowAddSection(true) }}>
+              <Plus style={{ width: '13px', height: '13px' }} /> Add Section
+            </button>
+          </div>
+          <p style={{ padding: '0 20px 12px', fontSize: '13px', color: muted }}>
+            Sections appear on the exam detail page — Overview, Important Dates, Eligibility, Syllabus, etc.
+          </p>
+          {sections.length === 0 && <p style={{ padding: '16px 20px', color: muted, fontSize: '14px' }}>No sections yet. Click "Add Section" to get started.</p>}
+          {sections.map((sec: any) => (
+            <div key={sec.id} style={{ borderTop: `1px solid ${border}`, padding: '14px 20px', display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
+              <div style={{ flex: 1 }}>
+                <div style={{ display: 'flex', gap: '10px', alignItems: 'center', marginBottom: '4px' }}>
+                  <span style={{ fontWeight: '700', fontSize: '14px', color: text }}>{sec.title}</span>
+                  <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '12px', backgroundColor: isDark ? '#374151' : '#f1f5f9', color: muted }}>{sec.sectionType}</span>
+                </div>
+                {sec.description && <p style={{ fontSize: '13px', color: muted, marginBottom: '4px' }}>{sec.description.substring(0, 100)}{sec.description.length > 100 ? '...' : ''}</p>}
+                {sec.tableHeaders && <p style={{ fontSize: '12px', color: muted }}>📊 Table with {(() => { try { return JSON.parse(sec.tableHeaders).length } catch { return '?' } })()} columns</p>}
+              </div>
+              <div style={{ display: 'flex', gap: '6px' }}>
+                <button onClick={() => openEditSection(sec)} style={{ padding: '6px 12px', border: `1px solid ${border}`, borderRadius: '7px', backgroundColor: inputBg, cursor: 'pointer', fontSize: '12px', color: text }}>✏️ Edit</button>
+                <button onClick={() => handleDeleteSection(sec.id)} style={{ padding: '6px 10px', border: '1px solid #fca5a5', borderRadius: '7px', backgroundColor: cardBg, cursor: 'pointer', color: '#dc2626' }}>
+                  <Trash2 style={{ width: '13px', height: '13px' }} />
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* === Add / Edit Section Modal === */}
+      {showAddSection && (
+        <Modal title={editSection ? `Edit Section: ${editSection.title}` : `Add Section to ${selectedExam?.name}`} onClose={() => { setShowAddSection(false); setEditSection(null) }} cardBg={cardBg} border={border} text={text} muted={muted}>
+          <Field label="Title *" muted={muted}>
+            <input style={inputStyle} value={sectionForm.title} onChange={e => setSectionForm(p => ({ ...p, title: e.target.value }))} placeholder="e.g. Overview, Important Dates, Eligibility..." />
+          </Field>
+          <Field label="Section Type" muted={muted}>
+            <select style={inputStyle} value={sectionForm.sectionType} onChange={e => setSectionForm(p => ({ ...p, sectionType: e.target.value }))}>
+              {['OVERVIEW', 'DATES', 'ELIGIBILITY', 'SYLLABUS', 'APPLICATION', 'RESERVATIONS', 'CUSTOM'].map(t => (
+                <option key={t} value={t}>{t}</option>
+              ))}
+            </select>
+          </Field>
+          <Field label="Description / Intro text" muted={muted}>
+            <textarea style={{ ...inputStyle, minHeight: '80px', resize: 'vertical' }} value={sectionForm.description} onChange={e => setSectionForm(p => ({ ...p, description: e.target.value }))} placeholder="Optional paragraph text shown above the table..." />
+          </Field>
+
+          {/* Dynamic table builder */}
+          <div style={{ marginBottom: '16px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+              <label style={{ fontSize: '13px', fontWeight: '600', color: muted }}>Table (optional)</label>
+              <div style={{ display: 'flex', gap: '6px' }}>
+                <button style={{ ...btnSm, fontSize: '12px' }} onClick={() => setTableHeaders(h => [...h, ''])}>+ Column</button>
+                <button style={{ ...btnSm, fontSize: '12px' }} onClick={() => setTableRows(r => [...r, tableHeaders.map(() => '')])}>+ Row</button>
+              </div>
+            </div>
+            {/* Header row */}
+            <div style={{ display: 'flex', gap: '6px', marginBottom: '6px' }}>
+              {tableHeaders.map((h, i) => (
+                <div key={i} style={{ display: 'flex', flex: 1, gap: '4px', alignItems: 'center' }}>
+                  <input style={{ ...inputStyle, fontWeight: '600', fontSize: '12px' }} value={h} onChange={e => setTableHeaders(hs => hs.map((v, j) => j === i ? e.target.value : v))} placeholder={`Header ${i + 1}`} />
+                  {tableHeaders.length > 1 && (
+                    <button onClick={() => { setTableHeaders(hs => hs.filter((_, j) => j !== i)); setTableRows(rs => rs.map(r => r.filter((_, j) => j !== i))) }}
+                      style={{ padding: '4px 6px', border: '1px solid #fca5a5', borderRadius: '5px', cursor: 'pointer', backgroundColor: cardBg, color: '#dc2626', fontSize: '12px' }}>✕</button>
+                  )}
+                </div>
+              ))}
+            </div>
+            {/* Data rows */}
+            {tableRows.map((row, ri) => (
+              <div key={ri} style={{ display: 'flex', gap: '6px', marginBottom: '4px', alignItems: 'center' }}>
+                {tableHeaders.map((_, ci) => (
+                  <input key={ci} style={{ ...inputStyle, flex: 1, fontSize: '12px' }}
+                    value={row[ci] || ''}
+                    onChange={e => setTableRows(rs => rs.map((r, rj) => rj === ri ? r.map((c, cj) => cj === ci ? e.target.value : c) : r))}
+                    placeholder={`Row ${ri + 1}, Col ${ci + 1}`} />
+                ))}
+                <button onClick={() => setTableRows(rs => rs.filter((_, j) => j !== ri))}
+                  style={{ padding: '4px 8px', border: '1px solid #fca5a5', borderRadius: '5px', cursor: 'pointer', backgroundColor: cardBg, color: '#dc2626', fontSize: '12px' }}>✕</button>
+              </div>
+            ))}
+          </div>
+
+          <button style={btnPrimary} onClick={handleAddSection} disabled={!sectionForm.title || saving}>
+            {saving ? 'Saving...' : editSection ? '💾 Update Section' : '+ Add Section'}
+          </button>
+        </Modal>
+      )}
       {showAddSubject && (
         <Modal title={`Add Subject to ${selectedExam?.name}`} onClose={() => setShowAddSubject(false)} cardBg={cardBg} border={border} text={text} muted={muted}>
           <Field label="Subject Name *" muted={muted}>
@@ -436,18 +624,46 @@ export default function AdminExamContent() {
 
       {showAddNote && (
         <Modal title={`Add Notes to "${selectedChapter?.title}"`} onClose={() => setShowAddNote(false)} cardBg={cardBg} border={border} text={text} muted={muted}>
-          <Field label="Notes Title *" muted={muted}>
-            <input style={inputStyle} value={noteForm.title} onChange={e => setNoteForm(p => ({ ...p, title: e.target.value }))} placeholder="e.g. Key Points, Overview..." />
-          </Field>
-          <Field label="Content *" muted={muted}>
-            <textarea style={{ ...inputStyle, minHeight: '180px', resize: 'vertical', fontFamily: 'monospace', fontSize: '13px' }}
-              value={noteForm.content} onChange={e => setNoteForm(p => ({ ...p, content: e.target.value }))}
-              placeholder="Paste or type your notes here. These notes will be used to auto-generate MCQ tests via AI." />
-          </Field>
-          <p style={{ fontSize: '12px', color: muted, marginBottom: '14px' }}>💡 Tip: After adding notes, click the 🧠 button to auto-generate MCQ questions using AI.</p>
-          <button style={btnPrimary} onClick={handleAddNote} disabled={!noteForm.title || !noteForm.content || saving}>
-            {saving ? 'Saving...' : '+ Add Notes'}
-          </button>
+          <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
+            {(['file', 'text'] as const).map(t => (
+              <button key={t} onClick={() => setNoteUploadType(t)} style={{
+                padding: '7px 16px', borderRadius: '8px', border: `1px solid ${border}`,
+                cursor: 'pointer', fontWeight: '600', fontSize: '13px',
+                backgroundColor: noteUploadType === t ? '#194552' : inputBg,
+                color: noteUploadType === t ? '#fff' : text,
+              }}>{t === 'file' ? '📎 Upload PDF/DOC' : '📝 Plain Text'}</button>
+            ))}
+          </div>
+          {noteUploadType === 'file' ? (
+            <>
+              <Field label="Title *" muted={muted}>
+                <input style={inputStyle} value={noteFileTitle} onChange={e => setNoteFileTitle(e.target.value)} placeholder="e.g. Chapter 1 Notes PDF" />
+              </Field>
+              <Field label="File (PDF or DOC) *" muted={muted}>
+                <input type="file" accept=".pdf,.doc,.docx" style={{ ...inputStyle, padding: '7px' }}
+                  onChange={e => setNoteFile(e.target.files?.[0] || null)} />
+              </Field>
+              {noteFile && <p style={{ fontSize: '12px', color: muted, marginBottom: '10px' }}>Selected: {noteFile.name} ({(noteFile.size / 1024).toFixed(0)} KB)</p>}
+              <button style={btnPrimary} onClick={handleUploadNotesFile} disabled={!noteFileTitle || !noteFile || saving}>
+                {saving ? 'Uploading...' : '⬆ Upload Notes'}
+              </button>
+            </>
+          ) : (
+            <>
+              <Field label="Notes Title *" muted={muted}>
+                <input style={inputStyle} value={noteForm.title} onChange={e => setNoteForm(p => ({ ...p, title: e.target.value }))} placeholder="e.g. Key Points, Overview..." />
+              </Field>
+              <Field label="Content *" muted={muted}>
+                <textarea style={{ ...inputStyle, minHeight: '180px', resize: 'vertical', fontFamily: 'monospace', fontSize: '13px' }}
+                  value={noteForm.content} onChange={e => setNoteForm(p => ({ ...p, content: e.target.value }))}
+                  placeholder="Paste or type your notes here. These notes will be used to auto-generate MCQ tests via AI." />
+              </Field>
+              <p style={{ fontSize: '12px', color: muted, marginBottom: '14px' }}>💡 After adding notes, click the 🧠 button to auto-generate MCQ questions using AI.</p>
+              <button style={btnPrimary} onClick={handleAddNote} disabled={!noteForm.title || !noteForm.content || saving}>
+                {saving ? 'Saving...' : '+ Add Notes'}
+              </button>
+            </>
+          )}
         </Modal>
       )}
 

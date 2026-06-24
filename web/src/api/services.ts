@@ -106,6 +106,7 @@ export const marketplaceApi = {
 export const examApi = {
   getAll: () => apiClient.get('/exams'),
   getById: (id: number) => apiClient.get(`/exams/${id}`),
+  getSections: (examId: number) => apiClient.get(`/exams/${examId}/sections`),
   getSubject: (id: number) => apiClient.get(`/subjects/${id}`),
   getChapter: (id: number) => apiClient.get(`/exam-chapters/${id}`),
   getTest: (id: number) => apiClient.get(`/mcq-tests/${id}`),
@@ -118,12 +119,20 @@ export const examApi = {
   createSubject: (examId: number, data: any) => apiClient.post(`/admin/exams/${examId}/subjects`, data),
   createChapter: (subjectId: number, data: any) => apiClient.post(`/admin/subjects/${subjectId}/chapters`, data),
   createNotes: (chapterId: number, data: any) => apiClient.post(`/admin/chapters/${chapterId}/notes`, data),
+  uploadNotesFile: (chapterId: number, formData: FormData) =>
+    apiClient.post(`/admin/chapters/${chapterId}/notes/upload`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    }),
   updateNotes: (notesId: number, data: any) => apiClient.put(`/admin/notes/${notesId}`, data),
   createVideo: (chapterId: number, data: any) => apiClient.post(`/admin/chapters/${chapterId}/videos`, data),
   generateMcq: (notesId: number, chapterId: number, questionCount = 10) =>
     apiClient.post(`/admin/notes/${notesId}/generate-mcq?chapterId=${chapterId}&questionCount=${questionCount}`),
   deleteNotes: (id: number) => apiClient.delete(`/admin/notes/${id}`),
   deleteVideo: (id: number) => apiClient.delete(`/admin/videos/${id}`),
+  // Sections
+  createSection: (examId: number, data: any) => apiClient.post(`/admin/exams/${examId}/sections`, data),
+  updateSection: (sectionId: number, data: any) => apiClient.put(`/admin/sections/${sectionId}`, data),
+  deleteSection: (sectionId: number) => apiClient.delete(`/admin/sections/${sectionId}`),
 }
 
 export const subscriptionApi = {
