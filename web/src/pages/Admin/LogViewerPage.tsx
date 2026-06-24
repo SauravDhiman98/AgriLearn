@@ -5,6 +5,7 @@ import {
   Search, ToggleLeft, ToggleRight, Settings, AlertCircle,
   Info, Bug, AlertTriangle
 } from 'lucide-react'
+import { useTheme } from '../../context/ThemeContext'
 
 // ── Types ──────────────────────────────────────────────────────────────────
 interface LogEntry {
@@ -56,6 +57,7 @@ const LEVELS = ['ALL', 'ERROR', 'WARN', 'INFO', 'DEBUG', 'TRACE']
 
 // ── Log Viewer Page ────────────────────────────────────────────────────────
 export default function LogViewerPage() {
+  const { isDark } = useTheme()
   const [entries, setEntries] = useState<LogEntry[]>([])
   const [stats, setStats]   = useState<LogStats | null>(null)
   const [levels, setLevels] = useState<Record<string, string>>({})
@@ -68,6 +70,12 @@ export default function LogViewerPage() {
   const [lastId, setLastId] = useState(0)
   const [page] = useState(0)
   const PAGE_SIZE = 300
+  const bg = isDark ? '#111827' : '#f9fafb'
+  const cardBg = isDark ? '#1f2937' : '#ffffff'
+  const border = isDark ? '#374151' : '#e5e7eb'
+  const text = isDark ? '#f9fafb' : '#111827'
+  const muted = isDark ? '#9ca3af' : '#6b7280'
+  const inputBg = isDark ? '#374151' : '#ffffff'
 
   const terminalRef = useRef<HTMLDivElement>(null)
   const intervalRef = useRef<number | null>(null)
@@ -173,20 +181,20 @@ export default function LogViewerPage() {
   }
 
   return (
-    <div className="flex flex-col h-screen bg-gray-950 text-gray-100 font-mono text-xs overflow-hidden">
+    <div className="flex flex-col h-screen bg-gray-950 text-gray-100 font-mono text-xs overflow-hidden" style={{ backgroundColor: bg, color: text }}>
 
       {/* ── Header ─────────────────────────────────────────────────────── */}
-      <div className="flex items-center justify-between px-4 py-2 bg-gray-900 border-b border-gray-700 shrink-0">
+      <div className="flex items-center justify-between px-4 py-2 bg-gray-900 border-b border-gray-700 shrink-0" style={{ backgroundColor: cardBg, borderColor: border }}>
         <div className="flex items-center gap-3">
           <Activity className="w-5 h-5 text-green-400" />
-          <span className="text-sm font-bold text-white tracking-wide">AgriLearn Log Viewer</span>
+          <span className="text-sm font-bold text-white tracking-wide" style={{ color: text }}>AgriLearn Log Viewer</span>
           {loading && <RefreshCw className="w-4 h-4 text-blue-400 animate-spin" />}
         </div>
 
         {/* Stats chips */}
         {stats && (
           <div className="flex items-center gap-2 text-xs">
-            <span className="px-2 py-0.5 rounded bg-gray-800 text-gray-400">
+            <span className="px-2 py-0.5 rounded bg-gray-800 text-gray-400" style={{ backgroundColor: inputBg, color: muted }}>
               {stats.totalBuffered} buffered
             </span>
             <span className="px-2 py-0.5 rounded bg-red-900/50 text-red-400">{stats.errors} errors</span>
@@ -200,18 +208,21 @@ export default function LogViewerPage() {
           <button onClick={() => setIsLive(!isLive)}
             className={`flex items-center gap-1.5 px-3 py-1 rounded text-xs font-medium border transition ${
               isLive ? 'bg-green-900/40 border-green-600 text-green-400' : 'bg-gray-800 border-gray-600 text-gray-400'
-            }`}>
+            }`}
+            style={!isLive ? { backgroundColor: inputBg, borderColor: border, color: muted } : undefined}>
             {isLive ? <ToggleRight className="w-4 h-4" /> : <ToggleLeft className="w-4 h-4" />}
             {isLive ? 'LIVE' : 'PAUSED'}
           </button>
 
           <button onClick={fetchLogs} title="Refresh"
-            className="p-1.5 rounded bg-gray-800 hover:bg-gray-700 text-gray-300 border border-gray-600 transition">
+            className="p-1.5 rounded bg-gray-800 hover:bg-gray-700 text-gray-300 border border-gray-600 transition"
+            style={{ backgroundColor: inputBg, borderColor: border, color: text }}>
             <RefreshCw className="w-4 h-4" />
           </button>
 
           <button onClick={handleDownload} title="Download logs"
-            className="p-1.5 rounded bg-gray-800 hover:bg-gray-700 text-gray-300 border border-gray-600 transition">
+            className="p-1.5 rounded bg-gray-800 hover:bg-gray-700 text-gray-300 border border-gray-600 transition"
+            style={{ backgroundColor: inputBg, borderColor: border, color: text }}>
             <Download className="w-4 h-4" />
           </button>
 
@@ -223,14 +234,15 @@ export default function LogViewerPage() {
           <button onClick={() => { setShowSettings(!showSettings); if (!showSettings) fetchLevels() }}
             className={`p-1.5 rounded border transition ${
               showSettings ? 'bg-blue-900/40 border-blue-600 text-blue-400' : 'bg-gray-800 border-gray-600 text-gray-300 hover:bg-gray-700'
-            }`} title="Log level settings">
+            }`} title="Log level settings"
+            style={!showSettings ? { backgroundColor: inputBg, borderColor: border, color: text } : undefined}>
             <Settings className="w-4 h-4" />
           </button>
         </div>
       </div>
 
       {/* ── Filter bar ─────────────────────────────────────────────────── */}
-      <div className="flex items-center gap-3 px-4 py-2 bg-gray-900 border-b border-gray-700 shrink-0">
+      <div className="flex items-center gap-3 px-4 py-2 bg-gray-900 border-b border-gray-700 shrink-0" style={{ backgroundColor: cardBg, borderColor: border }}>
         {/* Level filter buttons */}
         <div className="flex gap-1">
           {LEVELS.map(lvl => (
@@ -244,15 +256,16 @@ export default function LogViewerPage() {
                   : lvl === 'TRACE' ? 'bg-gray-700 border-gray-500 text-white'
                   : 'bg-green-700 border-green-500 text-white'
                   : 'bg-gray-800 border-gray-600 text-gray-400 hover:bg-gray-700'
-              }`}>
+              }`}
+              style={selectedLevel !== lvl ? { backgroundColor: inputBg, borderColor: border, color: muted } : undefined}>
               {lvl}
             </button>
           ))}
         </div>
 
         {/* Keyword search */}
-        <div className="flex-1 flex items-center gap-2 bg-gray-800 border border-gray-600 rounded px-2 py-0.5">
-          <Search className="w-3 h-3 text-gray-500 shrink-0" />
+        <div className="flex-1 flex items-center gap-2 bg-gray-800 border border-gray-600 rounded px-2 py-0.5" style={{ backgroundColor: inputBg, borderColor: border }}>
+          <Search className="w-3 h-3 text-gray-500 shrink-0" style={{ color: muted }} />
           <input
             type="text"
             placeholder="Search logs... (logger, message)"
@@ -260,29 +273,31 @@ export default function LogViewerPage() {
             onChange={e => setKeyword(e.target.value)}
             onKeyDown={e => { if (e.key === 'Enter') { fetchLogs(); setLastId(0) } }}
             className="flex-1 bg-transparent text-gray-200 placeholder-gray-600 outline-none text-xs"
+            style={{ color: text }}
           />
           {keyword && (
             <button onClick={() => { setKeyword(''); setLastId(0) }}
-              className="text-gray-500 hover:text-gray-300 text-xs">✕</button>
+              className="text-gray-500 hover:text-gray-300 text-xs" style={{ color: muted }}>✕</button>
           )}
         </div>
-        <span className="text-gray-600 text-xs shrink-0">{entries.length} shown</span>
+        <span className="text-gray-600 text-xs shrink-0" style={{ color: muted }}>{entries.length} shown</span>
       </div>
 
       {/* ── Settings panel (log levels) ─────────────────────────────────── */}
       {showSettings && (
-        <div className="bg-gray-900 border-b border-gray-700 px-4 py-3 shrink-0">
-          <p className="text-gray-400 text-xs font-semibold mb-2 uppercase tracking-wider">
+        <div className="bg-gray-900 border-b border-gray-700 px-4 py-3 shrink-0" style={{ backgroundColor: cardBg, borderColor: border }}>
+          <p className="text-gray-400 text-xs font-semibold mb-2 uppercase tracking-wider" style={{ color: muted }}>
             Dynamic Log Levels
           </p>
           <div className="flex flex-wrap gap-3">
             {Object.entries(levels).map(([logger, level]) => (
-              <div key={logger} className="flex items-center gap-2 bg-gray-800 rounded px-2 py-1 border border-gray-700">
-                <span className="text-gray-400 text-xs max-w-[200px] truncate" title={logger}>{logger}</span>
+              <div key={logger} className="flex items-center gap-2 bg-gray-800 rounded px-2 py-1 border border-gray-700" style={{ backgroundColor: inputBg, borderColor: border }}>
+                <span className="text-gray-400 text-xs max-w-[200px] truncate" title={logger} style={{ color: muted }}>{logger}</span>
                 <select
                   value={level}
                   onChange={e => handleSetLevel(logger, e.target.value)}
-                  className="bg-gray-700 text-gray-200 text-xs rounded border border-gray-600 px-1 py-0.5 outline-none cursor-pointer">
+                  className="bg-gray-700 text-gray-200 text-xs rounded border border-gray-600 px-1 py-0.5 outline-none cursor-pointer"
+                  style={{ backgroundColor: cardBg, color: text, borderColor: border }}>
                   {['TRACE','DEBUG','INFO','WARN','ERROR','OFF'].map(l => (
                     <option key={l} value={l}>{l}</option>
                   ))}
@@ -295,9 +310,10 @@ export default function LogViewerPage() {
 
       {/* ── Terminal output ─────────────────────────────────────────────── */}
       <div ref={terminalRef}
-        className="flex-1 overflow-y-auto px-2 py-1 space-y-0.5 bg-gray-950">
+        className="flex-1 overflow-y-auto px-2 py-1 space-y-0.5 bg-gray-950"
+        style={{ backgroundColor: bg }}>
         {entries.length === 0 && !loading && (
-          <div className="flex flex-col items-center justify-center h-full text-gray-600">
+          <div className="flex flex-col items-center justify-center h-full text-gray-600" style={{ color: muted }}>
             <Activity className="w-10 h-10 mb-3 opacity-30" />
             <p>No log entries in buffer.</p>
             <p className="mt-1 text-xs">Start the backend or adjust the level filter.</p>
@@ -307,17 +323,18 @@ export default function LogViewerPage() {
         {entries.map(entry => (
           <div key={entry.id}
             className={`rounded px-2 py-0.5 hover:bg-gray-800/50 cursor-pointer select-text ${LEVEL_BG[entry.level] ?? ''}`}
+            style={{ backgroundColor: entry.level === 'INFO' || entry.level === 'DEBUG' || entry.level === 'TRACE' ? 'transparent' : undefined }}
             onClick={() => entry.hasException && toggleExpand(entry.id)}>
             <div className="flex items-start gap-2 leading-5">
-              <span className="shrink-0 text-gray-600 w-[170px]">{entry.timestamp}</span>
+              <span className="shrink-0 text-gray-600 w-[170px]" style={{ color: muted }}>{entry.timestamp}</span>
               <span className="shrink-0 w-3">{LEVEL_ICONS[entry.level]}</span>
               <span className={`shrink-0 w-[46px] ${LEVEL_STYLES[entry.level] ?? ''}`}>
                 {entry.level}
               </span>
-              <span className="text-gray-500 w-[200px] shrink-0 truncate" title={entry.logger}>
+              <span className="text-gray-500 w-[200px] shrink-0 truncate" title={entry.logger} style={{ color: muted }}>
                 {entry.loggerShort}
               </span>
-              <span className="text-gray-500 shrink-0">:</span>
+              <span className="text-gray-500 shrink-0" style={{ color: muted }}>:</span>
               <span className={`flex-1 break-all ${entry.level === 'ERROR' ? 'text-red-300' : entry.level === 'WARN' ? 'text-yellow-200' : 'text-gray-200'}`}>
                 {entry.message}
               </span>
@@ -335,9 +352,9 @@ export default function LogViewerPage() {
       </div>
 
       {/* ── Footer ─────────────────────────────────────────────────────── */}
-      <div className="flex items-center justify-between px-4 py-1 bg-gray-900 border-t border-gray-700 text-gray-600 text-xs shrink-0">
-        <span>AgriLearn Backend Log Viewer · Admin Only</span>
-        <span className={isLive ? 'text-green-500' : 'text-gray-500'}>
+      <div className="flex items-center justify-between px-4 py-1 bg-gray-900 border-t border-gray-700 text-gray-600 text-xs shrink-0" style={{ backgroundColor: cardBg, borderColor: border, color: muted }}>
+        <span style={{ color: muted }}>AgriLearn Backend Log Viewer · Admin Only</span>
+        <span className={isLive ? 'text-green-500' : 'text-gray-500'} style={!isLive ? { color: muted } : undefined}>
           {isLive ? '● LIVE (polling every 2s)' : '○ Paused'}
         </span>
       </div>

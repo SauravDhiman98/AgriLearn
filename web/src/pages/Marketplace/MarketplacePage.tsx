@@ -5,6 +5,7 @@ import { marketplaceApi } from '../../api/services'
 import { addToCart } from '../../store/slices/cartSlice'
 import { Search, ShoppingCart, Star } from 'lucide-react'
 import { toast } from 'react-toastify'
+import { useTheme } from '../../context/ThemeContext'
 
 const CATEGORIES = [
   'SEEDS', 'FERTILIZERS', 'PESTICIDES', 'TOOLS',
@@ -13,9 +14,16 @@ const CATEGORIES = [
 
 export default function MarketplacePage() {
   const dispatch = useDispatch()
+  const { isDark } = useTheme()
   const [search, setSearch] = useState('')
   const [category, setCategory] = useState('')
   const [page, setPage] = useState(0)
+  const bg = isDark ? '#111827' : '#f9fafb'
+  const cardBg = isDark ? '#1f2937' : '#ffffff'
+  const border = isDark ? '#374151' : '#e5e7eb'
+  const text = isDark ? '#f9fafb' : '#111827'
+  const muted = isDark ? '#9ca3af' : '#6b7280'
+  const inputBg = isDark ? '#374151' : '#ffffff'
 
   const { data, isLoading } = useQuery(
     ['products', search, category, page],
@@ -35,16 +43,16 @@ export default function MarketplacePage() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-8">
-      <h1 className="text-2xl font-bold text-gray-900 mb-6">🛒 Agri Marketplace</h1>
+    <div className="max-w-7xl mx-auto px-4 py-8" style={{ backgroundColor: bg, minHeight: '100vh', color: text }}>
+      <h1 className="text-2xl font-bold text-gray-900 mb-6" style={{ color: text }}>🛒 Agri Marketplace</h1>
 
       <div className="flex gap-3 mb-6">
         <div className="flex-1 relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" style={{ color: muted }} />
           <input value={search} onChange={e => setSearch(e.target.value)}
-            placeholder="Search seeds, fertilizers, tools..." className="input-field pl-10" />
+            placeholder="Search seeds, fertilizers, tools..." className="input-field pl-10" style={{ backgroundColor: inputBg, color: text, border: `1px solid ${border}` }} />
         </div>
-        <select className="input-field w-auto" value={category} onChange={e => setCategory(e.target.value)}>
+        <select className="input-field w-auto" value={category} onChange={e => setCategory(e.target.value)} style={{ backgroundColor: inputBg, color: text, border: `1px solid ${border}` }}>
           <option value="">All Categories</option>
           {CATEGORIES.map(c => <option key={c} value={c}>{c.replace(/_/g, ' ')}</option>)}
         </select>
@@ -53,7 +61,7 @@ export default function MarketplacePage() {
       {isLoading ? (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {[...Array(8)].map((_, i) => (
-            <div key={i} className="card animate-pulse">
+            <div key={i} className="card animate-pulse" style={{ backgroundColor: cardBg, border: `1px solid ${border}` }}>
               <div className="aspect-square bg-gray-200" />
               <div className="p-3 space-y-2">
                 <div className="h-4 bg-gray-200 rounded" />
@@ -65,8 +73,8 @@ export default function MarketplacePage() {
       ) : data?.content?.length > 0 ? (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {data.content.map((product: any) => (
-            <div key={product.id} className="card hover:shadow-md transition-shadow">
-              <div className="aspect-square bg-gray-50 overflow-hidden">
+            <div key={product.id} className="card hover:shadow-md transition-shadow" style={{ backgroundColor: cardBg, border: `1px solid ${border}` }}>
+              <div className="aspect-square bg-gray-50 overflow-hidden" style={{ backgroundColor: isDark ? '#374151' : '#f9fafb' }}>
                 {product.imageUrl ? (
                   <img src={product.imageUrl} alt={product.name} className="w-full h-full object-cover" />
                 ) : (
@@ -74,14 +82,14 @@ export default function MarketplacePage() {
                 )}
               </div>
               <div className="p-3">
-                <h3 className="font-medium text-gray-900 text-sm line-clamp-2">{product.name}</h3>
+                <h3 className="font-medium text-gray-900 text-sm line-clamp-2" style={{ color: text }}>{product.name}</h3>
                 <div className="flex items-center gap-1 mt-1 mb-2">
                   <Star className="w-3 h-3 text-yellow-400 fill-current" />
-                  <span className="text-xs text-gray-500">{product.rating?.toFixed(1)}</span>
+                  <span className="text-xs text-gray-500" style={{ color: muted }}>{product.rating?.toFixed(1)}</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="font-bold text-gray-900">₹{product.price?.toLocaleString()}</span>
-                  <span className="text-xs text-gray-400">/{product.unit || 'piece'}</span>
+                  <span className="font-bold text-gray-900" style={{ color: text }}>₹{product.price?.toLocaleString()}</span>
+                  <span className="text-xs text-gray-400" style={{ color: muted }}>/{product.unit || 'piece'}</span>
                 </div>
                 <button onClick={() => handleAddToCart(product)}
                   className="btn-primary w-full text-xs py-1.5 mt-2 flex items-center justify-center gap-1">
@@ -92,7 +100,7 @@ export default function MarketplacePage() {
           ))}
         </div>
       ) : (
-        <div className="text-center py-16 text-gray-500">
+        <div className="text-center py-16 text-gray-500" style={{ color: muted }}>
           <div className="text-4xl mb-3">🛒</div>
           <p>No products found</p>
         </div>

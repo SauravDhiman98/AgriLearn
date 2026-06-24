@@ -4,15 +4,23 @@ import { useDispatch, useSelector } from 'react-redux'
 import { AppDispatch, RootState } from '../../store'
 import { loginAsync } from '../../store/slices/authSlice'
 import { Leaf, Eye, EyeOff, AlertCircle, CheckCircle } from 'lucide-react'
+import { useTheme } from '../../context/ThemeContext'
 
 export default function LoginPage() {
   const dispatch = useDispatch<AppDispatch>()
   const navigate = useNavigate()
+  const { isDark } = useTheme()
   const { loading, error, isAuthenticated } = useSelector((s: RootState) => s.auth)
   const [form, setForm] = useState({ email: '', password: '' })
   const [showPass, setShowPass] = useState(false)
   const [localError, setLocalError] = useState('')
   const [success, setSuccess] = useState(false)
+  const bg = isDark ? '#111827' : '#f9fafb'
+  const cardBg = isDark ? '#1f2937' : '#ffffff'
+  const border = isDark ? '#374151' : '#e5e7eb'
+  const text = isDark ? '#f9fafb' : '#111827'
+  const muted = isDark ? '#9ca3af' : '#6b7280'
+  const inputBg = isDark ? '#374151' : '#ffffff'
 
   // Redirect if already logged in
   useEffect(() => {
@@ -45,17 +53,17 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center bg-gray-50 py-12 px-4">
+    <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center bg-gray-50 py-12 px-4" style={{ backgroundColor: bg, minHeight: '100vh', color: text }}>
       <div className="w-full max-w-md">
-        <div className="card p-8">
+        <div className="card p-8" style={{ backgroundColor: cardBg, border: `1px solid ${border}` }}>
           <div className="flex justify-center mb-6">
             <div className="flex items-center gap-2 text-green-700 font-bold text-2xl">
               <Leaf className="w-7 h-7" />
               AgriLearn
             </div>
           </div>
-          <h1 className="text-2xl font-bold text-gray-900 text-center mb-2">Welcome back!</h1>
-          <p className="text-gray-500 text-center text-sm mb-6">Login to continue your learning journey</p>
+          <h1 className="text-2xl font-bold text-gray-900 text-center mb-2" style={{ color: text }}>Welcome back!</h1>
+          <p className="text-gray-500 text-center text-sm mb-6" style={{ color: muted }}>Login to continue your learning journey</p>
 
           {/* Error banner */}
           {localError && (
@@ -75,19 +83,20 @@ export default function LoginPage() {
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1" style={{ color: text }}>Email</label>
               <input
                 type="email"
                 required
                 value={form.email}
                 onChange={e => handleChange('email', e.target.value)}
                 className="input-field"
+                style={{ backgroundColor: inputBg, color: text, border: `1px solid ${border}` }}
                 placeholder="you@example.com"
                 autoComplete="email"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1" style={{ color: text }}>Password</label>
               <div className="relative">
                 <input
                   type={showPass ? 'text' : 'password'}
@@ -95,6 +104,7 @@ export default function LoginPage() {
                   value={form.password}
                   onChange={e => handleChange('password', e.target.value)}
                   className="input-field pr-10"
+                  style={{ backgroundColor: inputBg, color: text, border: `1px solid ${border}` }}
                   placeholder="Enter your password"
                   autoComplete="current-password"
                 />
@@ -102,6 +112,7 @@ export default function LoginPage() {
                   type="button"
                   onClick={() => setShowPass(!showPass)}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  style={{ color: muted }}
                 >
                   {showPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
@@ -128,7 +139,7 @@ export default function LoginPage() {
             </button>
           </form>
 
-          <p className="text-center text-sm text-gray-500 mt-6">
+          <p className="text-center text-sm text-gray-500 mt-6" style={{ color: muted }}>
             Don't have an account?{' '}
             <Link to="/register" className="text-green-600 font-medium hover:text-green-700">Sign up free</Link>
           </p>

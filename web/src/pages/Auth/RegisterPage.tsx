@@ -4,6 +4,7 @@ import { useDispatch, useSelector } from 'react-redux'
 import { AppDispatch, RootState } from '../../store'
 import { registerAsync } from '../../store/slices/authSlice'
 import { Leaf, AlertCircle } from 'lucide-react'
+import { useTheme } from '../../context/ThemeContext'
 
 const ROLES = [
   { value: 'STUDENT', label: '🎓 Student', desc: 'I\'m studying agriculture' },
@@ -24,12 +25,19 @@ const LANGUAGES = [
 export default function RegisterPage() {
   const dispatch = useDispatch<AppDispatch>()
   const navigate = useNavigate()
+  const { isDark } = useTheme()
   const { loading, error, isAuthenticated } = useSelector((s: RootState) => s.auth)
   const [form, setForm] = useState({
     firstName: '', lastName: '', email: '', password: '',
     role: 'STUDENT', preferredLanguage: 'en',
   })
   const [localError, setLocalError] = useState('')
+  const bg = isDark ? '#111827' : '#f9fafb'
+  const cardBg = isDark ? '#1f2937' : '#ffffff'
+  const border = isDark ? '#374151' : '#e5e7eb'
+  const text = isDark ? '#f9fafb' : '#111827'
+  const muted = isDark ? '#9ca3af' : '#6b7280'
+  const inputBg = isDark ? '#374151' : '#ffffff'
 
   useEffect(() => {
     if (isAuthenticated) navigate('/dashboard', { replace: true })
@@ -51,17 +59,17 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center bg-gray-50 py-12 px-4">
+    <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center bg-gray-50 py-12 px-4" style={{ backgroundColor: bg, minHeight: '100vh', color: text }}>
       <div className="w-full max-w-lg">
-        <div className="card p-8">
+        <div className="card p-8" style={{ backgroundColor: cardBg, border: `1px solid ${border}` }}>
           <div className="flex justify-center mb-4">
             <div className="flex items-center gap-2 text-green-700 font-bold text-2xl">
               <Leaf className="w-7 h-7" />
               AgriLearn
             </div>
           </div>
-          <h1 className="text-2xl font-bold text-gray-900 text-center mb-1">Create your account</h1>
-          <p className="text-gray-500 text-center text-sm mb-6">Start learning agriculture for free</p>
+          <h1 className="text-2xl font-bold text-gray-900 text-center mb-1" style={{ color: text }}>Create your account</h1>
+          <p className="text-gray-500 text-center text-sm mb-6" style={{ color: muted }}>Start learning agriculture for free</p>
 
           {localError && (
             <div className="flex items-start gap-2 bg-red-50 border border-red-200 text-red-700 rounded-lg p-3 text-sm mb-4">
@@ -73,7 +81,7 @@ export default function RegisterPage() {
           <form onSubmit={handleSubmit} className="space-y-4">
             {/* Role selection */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">I am a...</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2" style={{ color: text }}>I am a...</label>
               <div className="grid grid-cols-3 gap-2">
                 {ROLES.map(r => (
                   <button type="button" key={r.value}
@@ -93,38 +101,39 @@ export default function RegisterPage() {
             {/* Name */}
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">First Name</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1" style={{ color: text }}>First Name</label>
                 <input required value={form.firstName}
                   onChange={e => setForm(f => ({ ...f, firstName: e.target.value }))}
-                  className="input-field" placeholder="Ramesh" />
+                  className="input-field" style={{ backgroundColor: inputBg, color: text, border: `1px solid ${border}` }} placeholder="Ramesh" />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Last Name</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1" style={{ color: text }}>Last Name</label>
                 <input required value={form.lastName}
                   onChange={e => setForm(f => ({ ...f, lastName: e.target.value }))}
-                  className="input-field" placeholder="Kumar" />
+                  className="input-field" style={{ backgroundColor: inputBg, color: text, border: `1px solid ${border}` }} placeholder="Kumar" />
               </div>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1" style={{ color: text }}>Email</label>
               <input type="email" required value={form.email}
                 onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
-                className="input-field" placeholder="ramesh@example.com" />
+                className="input-field" style={{ backgroundColor: inputBg, color: text, border: `1px solid ${border}` }} placeholder="ramesh@example.com" />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1" style={{ color: text }}>Password</label>
               <input type="password" required minLength={8} value={form.password}
                 onChange={e => setForm(f => ({ ...f, password: e.target.value }))}
-                className="input-field" placeholder="Minimum 8 characters" />
+                className="input-field" style={{ backgroundColor: inputBg, color: text, border: `1px solid ${border}` }} placeholder="Minimum 8 characters" />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Preferred Language</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1" style={{ color: text }}>Preferred Language</label>
               <select value={form.preferredLanguage}
                 onChange={e => setForm(f => ({ ...f, preferredLanguage: e.target.value }))}
-                className="input-field">
+                className="input-field"
+                style={{ backgroundColor: inputBg, color: text, border: `1px solid ${border}` }}>
                 {LANGUAGES.map(l => (
                   <option key={l.value} value={l.value}>{l.label}</option>
                 ))}
@@ -135,14 +144,14 @@ export default function RegisterPage() {
               {loading ? 'Creating account...' : 'Create Free Account'}
             </button>
 
-            <p className="text-xs text-gray-400 text-center">
+            <p className="text-xs text-gray-400 text-center" style={{ color: muted }}>
               By registering, you agree to our{' '}
               <a href="#" className="text-green-600">Terms of Service</a> and{' '}
               <a href="#" className="text-green-600">Privacy Policy</a>
             </p>
           </form>
 
-          <p className="text-center text-sm text-gray-500 mt-4">
+          <p className="text-center text-sm text-gray-500 mt-4" style={{ color: muted }}>
             Already have an account?{' '}
             <Link to="/login" className="text-green-600 font-medium hover:text-green-700">Login</Link>
           </p>

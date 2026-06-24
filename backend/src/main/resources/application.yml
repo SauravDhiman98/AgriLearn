@@ -16,6 +16,9 @@ spring:
   jpa:
     hibernate:
       ddl-auto: validate
+      naming:
+        physical-strategy: org.hibernate.boot.model.naming.CamelCaseToUnderscoresNamingStrategy
+        implicit-strategy: org.hibernate.boot.model.naming.ImplicitNamingStrategyJpaCompliantImpl
     show-sql: false
     properties:
       hibernate:
@@ -76,6 +79,10 @@ minio:
 razorpay:
   key-id: ${RAZORPAY_KEY_ID:}
   key-secret: ${RAZORPAY_KEY_SECRET:}
+
+# Google Gemini AI
+gemini:
+  api-key: ${GEMINI_API_KEY:}
 
 # Springdoc OpenAPI
 springdoc:

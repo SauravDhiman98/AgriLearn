@@ -1,0 +1,485 @@
+import { useState, useEffect } from 'react'
+import { ChevronRight, Plus, Loader2, Trash2, Video, FileText, Brain, RefreshCw } from 'lucide-react'
+import { examApi } from '../../api/services'
+import { useTheme } from '../../context/ThemeContext'
+
+interface Exam { id: number; name: string; icon: string; description: string }
+interface Subject { id: number; name: string; description: string; icon: string; chapterCount: number }
+interface Chapter { id: number; title: string; notesCount: number; videosCount: number; testsCount: number }
+interface Note { id: number; title: string; content: string }
+interface VideoItem { id: number; title: string; youtubeUrl: string }
+
+function Modal({
+  title, onClose, children, cardBg, border, text, muted,
+}: {
+  title: string
+  onClose: () => void
+  children: React.ReactNode
+  cardBg: string
+  border: string
+  text: string
+  muted: string
+}) {
+  return (
+    <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}>
+      <div style={{ backgroundColor: cardBg, borderRadius: '16px', padding: '28px', width: '100%', maxWidth: '520px', maxHeight: '80vh', overflowY: 'auto', border: `1px solid ${border}` }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+          <h3 style={{ fontSize: '17px', fontWeight: '700', color: text }}>{title}</h3>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', fontSize: '20px', cursor: 'pointer', color: muted }}>✕</button>
+        </div>
+        {children}
+      </div>
+    </div>
+  )
+}
+
+function Field({ label, children, muted }: { label: string; children: React.ReactNode; muted: string }) {
+  return (
+    <div style={{ marginBottom: '14px' }}>
+      <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', color: muted, marginBottom: '5px' }}>{label}</label>
+      {children}
+    </div>
+  )
+}
+
+export default function AdminExamContent() {
+  const { isDark } = useTheme()
+  const [exams, setExams] = useState<Exam[]>([])
+  const [selectedExam, setSelectedExam] = useState<Exam | null>(null)
+  const [subjects, setSubjects] = useState<Subject[]>([])
+  const [selectedSubject, setSelectedSubject] = useState<Subject | null>(null)
+  const [chapters, setChapters] = useState<Chapter[]>([])
+  const [selectedChapter, setSelectedChapter] = useState<Chapter | null>(null)
+  const [notes, setNotes] = useState<Note[]>([])
+  const [videos, setVideos] = useState<VideoItem[]>([])
+  const [loading, setLoading] = useState(false)
+  const [showAddSubject, setShowAddSubject] = useState(false)
+  const [showAddChapter, setShowAddChapter] = useState(false)
+  const [showAddNote, setShowAddNote] = useState(false)
+  const [showAddVideo, setShowAddVideo] = useState(false)
+  const [showGenMcq, setShowGenMcq] = useState(false)
+  const [genMcqNote, setGenMcqNote] = useState<Note | null>(null)
+  const [subjectForm, setSubjectForm] = useState({ name: '', description: '', icon: '📝' })
+  const [chapterForm, setChapterForm] = useState({ title: '', description: '' })
+  const [noteForm, setNoteForm] = useState({ title: '', content: '' })
+  const [videoForm, setVideoForm] = useState({ title: '', youtubeUrl: '' })
+  const [mcqCount, setMcqCount] = useState(10)
+  const [saving, setSaving] = useState(false)
+  const [msg, setMsg] = useState<{ type: 'ok' | 'err'; text: string } | null>(null)
+
+  const bg = isDark ? '#111827' : '#f9fafb'
+  const cardBg = isDark ? '#1f2937' : '#ffffff'
+  const border = isDark ? '#374151' : '#e5e7eb'
+  const text = isDark ? '#f9fafb' : '#111827'
+  const muted = isDark ? '#9ca3af' : '#6b7280'
+  const inputBg = isDark ? '#374151' : '#ffffff'
+
+  useEffect(() => {
+    examApi.getAll().then(r => setExams(r.data)).catch(console.error)
+  }, [])
+
+  const loadSubjects = (exam: Exam) => {
+    setSelectedExam(exam); setSelectedSubject(null); setChapters([]); setSelectedChapter(null); setNotes([]); setVideos([])
+    setLoading(true)
+    examApi.getById(exam.id).then(r => setSubjects(r.data.subjects || [])).finally(() => setLoading(false))
+  }
+
+  const loadChapters = (subject: Subject) => {
+    setSelectedSubject(subject); setSelectedChapter(null); setNotes([]); setVideos([])
+    setLoading(true)
+    examApi.getSubject(subject.id).then(r => setChapters(r.data.chapters || [])).finally(() => setLoading(false))
+  }
+
+  const loadChapterContent = (chapter: Chapter) => {
+    setSelectedChapter(chapter)
+    setLoading(true)
+    examApi.getChapter(chapter.id).then(r => {
+      setNotes(r.data.notes || [])
+      setVideos(r.data.videos || [])
+    }).finally(() => setLoading(false))
+  }
+
+  const flash = (type: 'ok' | 'err', text: string) => {
+    setMsg({ type, text })
+    setTimeout(() => setMsg(null), 3000)
+  }
+
+  const handleAddSubject = async () => {
+    if (!selectedExam) return
+    setSaving(true)
+    try {
+      await examApi.createSubject(selectedExam.id, subjectForm)
+      flash('ok', 'Subject added!')
+      setShowAddSubject(false)
+      setSubjectForm({ name: '', description: '', icon: '📝' })
+      loadSubjects(selectedExam)
+    } catch { flash('err', 'Failed to add subject') } finally { setSaving(false) }
+  }
+
+  const handleAddChapter = async () => {
+    if (!selectedSubject) return
+    setSaving(true)
+    try {
+      await examApi.createChapter(selectedSubject.id, chapterForm)
+      flash('ok', 'Chapter added!')
+      setShowAddChapter(false)
+      setChapterForm({ title: '', description: '' })
+      loadChapters(selectedSubject)
+    } catch { flash('err', 'Failed to add chapter') } finally { setSaving(false) }
+  }
+
+  const handleAddNote = async () => {
+    if (!selectedChapter) return
+    setSaving(true)
+    try {
+      await examApi.createNotes(selectedChapter.id, noteForm)
+      flash('ok', 'Notes added!')
+      setShowAddNote(false)
+      setNoteForm({ title: '', content: '' })
+      loadChapterContent(selectedChapter)
+    } catch { flash('err', 'Failed to add notes') } finally { setSaving(false) }
+  }
+
+  const handleAddVideo = async () => {
+    if (!selectedChapter) return
+    setSaving(true)
+    try {
+      await examApi.createVideo(selectedChapter.id, videoForm)
+      flash('ok', 'Video link added!')
+      setShowAddVideo(false)
+      setVideoForm({ title: '', youtubeUrl: '' })
+      loadChapterContent(selectedChapter)
+    } catch { flash('err', 'Failed to add video') } finally { setSaving(false) }
+  }
+
+  const handleGenerateMcq = async () => {
+    if (!genMcqNote || !selectedChapter) return
+    setSaving(true)
+    try {
+      await examApi.generateMcq(genMcqNote.id, mcqCount, selectedChapter.id)
+      flash('ok', `MCQ test generated with ${mcqCount} questions!`)
+      setShowGenMcq(false)
+      loadChapterContent(selectedChapter)
+    } catch { flash('err', 'Failed to generate MCQ — check Gemini API key') } finally { setSaving(false) }
+  }
+
+  const handleDeleteNote = async (noteId: number) => {
+    if (!confirm('Delete this note?')) return
+    await examApi.deleteNotes(noteId)
+    loadChapterContent(selectedChapter!)
+  }
+
+  const handleDeleteVideo = async (videoId: number) => {
+    if (!confirm('Delete this video?')) return
+    await examApi.deleteVideo(videoId)
+    loadChapterContent(selectedChapter!)
+  }
+
+  const inputStyle: React.CSSProperties = {
+    width: '100%',
+    padding: '9px 12px',
+    borderRadius: '8px',
+    border: `1px solid ${border}`,
+    fontSize: '14px',
+    color: text,
+    boxSizing: 'border-box',
+    backgroundColor: inputBg,
+  }
+
+  const btnPrimary: React.CSSProperties = {
+    backgroundColor: '#194552',
+    color: '#fff',
+    border: 'none',
+    padding: '10px 20px',
+    borderRadius: '9px',
+    cursor: 'pointer',
+    fontSize: '14px',
+    fontWeight: '600',
+  }
+
+  const btnSm: React.CSSProperties = {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '4px',
+    padding: '6px 12px',
+    borderRadius: '7px',
+    border: `1px solid ${border}`,
+    backgroundColor: inputBg,
+    cursor: 'pointer',
+    fontSize: '13px',
+    color: text,
+  }
+
+  const colStyle: React.CSSProperties = {
+    flex: 1,
+    minWidth: '200px',
+    backgroundColor: cardBg,
+    borderRadius: '14px',
+    border: `1px solid ${border}`,
+    overflow: 'hidden',
+  }
+
+  const colHeader: React.CSSProperties = {
+    padding: '14px 16px',
+    borderBottom: `1px solid ${border}`,
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: isDark ? '#374151' : '#f9fafb',
+  }
+
+  const itemRow: React.CSSProperties = {
+    padding: '11px 16px',
+    borderBottom: `1px solid ${border}`,
+    cursor: 'pointer',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '10px',
+    fontSize: '14px',
+    color: text,
+  }
+
+  return (
+    <div style={{ backgroundColor: bg, color: text }}>
+      {msg && (
+        <div style={{
+          position: 'fixed', top: '80px', right: '20px', zIndex: 999,
+          padding: '12px 20px', borderRadius: '10px', fontSize: '14px', fontWeight: '600',
+          backgroundColor: msg.type === 'ok' ? '#dcfce7' : '#fee2e2',
+          color: msg.type === 'ok' ? '#166534' : '#991b1b',
+          border: `1px solid ${msg.type === 'ok' ? '#86efac' : '#fca5a5'}`,
+        }}>
+          {msg.type === 'ok' ? '✓ ' : '✗ '}{msg.text}
+        </div>
+      )}
+
+      <p style={{ color: muted, fontSize: '14px', marginBottom: '20px' }}>
+        Select an exam → add subjects → add chapters → add notes/videos/MCQs
+      </p>
+
+      <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap', alignItems: 'flex-start' }}>
+        <div style={colStyle}>
+          <div style={colHeader}>
+            <span style={{ fontWeight: '700', fontSize: '14px', color: text }}>📚 Exams</span>
+          </div>
+          {exams.map(exam => (
+            <div
+              key={exam.id}
+              onClick={() => loadSubjects(exam)}
+              style={{ ...itemRow, backgroundColor: selectedExam?.id === exam.id ? (isDark ? '#374151' : '#e0f2fe') : 'transparent' }}
+            >
+              <span style={{ fontSize: '18px' }}>{exam.icon}</span>
+              <span style={{ flex: 1, fontWeight: selectedExam?.id === exam.id ? '600' : '400' }}>{exam.name}</span>
+              {selectedExam?.id === exam.id && <ChevronRight style={{ width: '14px', height: '14px', color: '#0369a1' }} />}
+            </div>
+          ))}
+        </div>
+
+        {selectedExam && (
+          <div style={colStyle}>
+            <div style={colHeader}>
+              <span style={{ fontWeight: '700', fontSize: '14px', color: text }}>📖 Subjects</span>
+              <button style={btnSm} onClick={() => setShowAddSubject(true)}>
+                <Plus style={{ width: '13px', height: '13px' }} /> Add
+              </button>
+            </div>
+            {loading && !selectedSubject && (
+              <div style={{ padding: '20px', textAlign: 'center' }}><Loader2 style={{ width: '20px', height: '20px', animation: 'spin 1s linear infinite', margin: '0 auto', color: muted }} /></div>
+            )}
+            {subjects.map(sub => (
+              <div
+                key={sub.id}
+                onClick={() => loadChapters(sub)}
+                style={{ ...itemRow, backgroundColor: selectedSubject?.id === sub.id ? (isDark ? '#374151' : '#e0f2fe') : 'transparent' }}
+              >
+                <span>{sub.icon || '📝'}</span>
+                <span style={{ flex: 1, fontWeight: selectedSubject?.id === sub.id ? '600' : '400' }}>{sub.name}</span>
+                {selectedSubject?.id === sub.id && <ChevronRight style={{ width: '14px', height: '14px', color: '#0369a1' }} />}
+              </div>
+            ))}
+            {!loading && subjects.length === 0 && <p style={{ padding: '16px', fontSize: '13px', color: muted }}>No subjects yet. Add one!</p>}
+          </div>
+        )}
+
+        {selectedSubject && (
+          <div style={colStyle}>
+            <div style={colHeader}>
+              <span style={{ fontWeight: '700', fontSize: '14px', color: text }}>📑 Chapters</span>
+              <button style={btnSm} onClick={() => setShowAddChapter(true)}>
+                <Plus style={{ width: '13px', height: '13px' }} /> Add
+              </button>
+            </div>
+            {loading && !selectedChapter && (
+              <div style={{ padding: '20px', textAlign: 'center' }}><Loader2 style={{ width: '20px', height: '20px', animation: 'spin 1s linear infinite', margin: '0 auto', color: muted }} /></div>
+            )}
+            {chapters.map((ch, idx) => (
+              <div
+                key={ch.id}
+                onClick={() => loadChapterContent(ch)}
+                style={{ ...itemRow, backgroundColor: selectedChapter?.id === ch.id ? (isDark ? '#374151' : '#e0f2fe') : 'transparent' }}
+              >
+                <span style={{ fontWeight: '700', fontSize: '12px', color: '#16a34a', minWidth: '22px' }}>{String(idx + 1).padStart(2, '0')}</span>
+                <span style={{ flex: 1, fontWeight: selectedChapter?.id === ch.id ? '600' : '400' }}>{ch.title}</span>
+                {selectedChapter?.id === ch.id && <ChevronRight style={{ width: '14px', height: '14px', color: '#0369a1' }} />}
+              </div>
+            ))}
+            {!loading && chapters.length === 0 && <p style={{ padding: '16px', fontSize: '13px', color: muted }}>No chapters yet. Add one!</p>}
+          </div>
+        )}
+      </div>
+
+      {selectedChapter && (
+        <div style={{ marginTop: '20px', backgroundColor: cardBg, borderRadius: '14px', border: `1px solid ${border}` }}>
+          <div style={{ padding: '16px 20px', borderBottom: `1px solid ${border}`, backgroundColor: isDark ? '#374151' : '#f9fafb', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span style={{ fontWeight: '700', fontSize: '15px', color: text }}>
+              ✏️ {selectedChapter.title}
+            </span>
+            <button style={{ ...btnSm, color: muted }} onClick={() => loadChapterContent(selectedChapter)}>
+              <RefreshCw style={{ width: '13px', height: '13px' }} /> Refresh
+            </button>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0', borderBottom: `1px solid ${border}` }}>
+            <div style={{ padding: '16px 20px', borderRight: `1px solid ${border}` }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                <span style={{ fontWeight: '700', fontSize: '14px', color: text, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <FileText style={{ width: '15px', height: '15px', color: '#0369a1' }} /> Notes ({notes.length})
+                </span>
+                <button style={btnSm} onClick={() => setShowAddNote(true)}>
+                  <Plus style={{ width: '13px', height: '13px' }} /> Add
+                </button>
+              </div>
+              {notes.map(note => (
+                <div key={note.id} style={{ padding: '10px 12px', backgroundColor: isDark ? '#374151' : '#f0f9ff', borderRadius: '8px', marginBottom: '8px', display: 'flex', alignItems: 'flex-start', gap: '10px', border: `1px solid ${border}` }}>
+                  <div style={{ flex: 1 }}>
+                    <p style={{ fontWeight: '600', fontSize: '13px', color: text, marginBottom: '2px' }}>{note.title}</p>
+                    <p style={{ fontSize: '12px', color: muted, lineHeight: '1.4', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                      {note.content?.substring(0, 100)}...
+                    </p>
+                  </div>
+                  <div style={{ display: 'flex', gap: '4px' }}>
+                    <button title="Generate MCQ from this note" onClick={() => { setGenMcqNote(note); setShowGenMcq(true) }}
+                      style={{ padding: '5px', border: `1px solid ${border}`, borderRadius: '6px', backgroundColor: cardBg, cursor: 'pointer', color: '#7c3aed' }}>
+                      <Brain style={{ width: '13px', height: '13px' }} />
+                    </button>
+                    <button onClick={() => handleDeleteNote(note.id)}
+                      style={{ padding: '5px', border: '1px solid #fca5a5', borderRadius: '6px', backgroundColor: cardBg, cursor: 'pointer', color: '#dc2626' }}>
+                      <Trash2 style={{ width: '13px', height: '13px' }} />
+                    </button>
+                  </div>
+                </div>
+              ))}
+              {notes.length === 0 && <p style={{ fontSize: '13px', color: muted }}>No notes yet.</p>}
+            </div>
+
+            <div style={{ padding: '16px 20px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                <span style={{ fontWeight: '700', fontSize: '14px', color: text, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <Video style={{ width: '15px', height: '15px', color: '#dc2626' }} /> Videos ({videos.length})
+                </span>
+                <button style={btnSm} onClick={() => setShowAddVideo(true)}>
+                  <Plus style={{ width: '13px', height: '13px' }} /> Add Link
+                </button>
+              </div>
+              {videos.map(vid => (
+                <div key={vid.id} style={{ padding: '10px 12px', backgroundColor: isDark ? '#374151' : '#fff7f7', borderRadius: '8px', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '10px', border: `1px solid ${border}` }}>
+                  <div style={{ flex: 1 }}>
+                    <p style={{ fontWeight: '600', fontSize: '13px', color: text, marginBottom: '2px' }}>{vid.title}</p>
+                    <a href={vid.youtubeUrl} target="_blank" rel="noreferrer"
+                      style={{ fontSize: '12px', color: '#3b82f6', textDecoration: 'none' }}
+                      onClick={e => e.stopPropagation()}>
+                      {vid.youtubeUrl.substring(0, 45)}...
+                    </a>
+                  </div>
+                  <button onClick={() => handleDeleteVideo(vid.id)}
+                    style={{ padding: '5px', border: '1px solid #fca5a5', borderRadius: '6px', backgroundColor: cardBg, cursor: 'pointer', color: '#dc2626' }}>
+                    <Trash2 style={{ width: '13px', height: '13px' }} />
+                  </button>
+                </div>
+              ))}
+              {videos.length === 0 && <p style={{ fontSize: '13px', color: muted }}>No videos yet.</p>}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showAddSubject && (
+        <Modal title={`Add Subject to ${selectedExam?.name}`} onClose={() => setShowAddSubject(false)} cardBg={cardBg} border={border} text={text} muted={muted}>
+          <Field label="Subject Name *" muted={muted}>
+            <input style={inputStyle} value={subjectForm.name} onChange={e => setSubjectForm(p => ({ ...p, name: e.target.value }))} placeholder="e.g. History, Geography, Polity" />
+          </Field>
+          <Field label="Description" muted={muted}>
+            <textarea style={{ ...inputStyle, minHeight: '70px', resize: 'vertical' }} value={subjectForm.description} onChange={e => setSubjectForm(p => ({ ...p, description: e.target.value }))} placeholder="Brief description..." />
+          </Field>
+          <Field label="Icon (emoji)" muted={muted}>
+            <input style={{ ...inputStyle, width: '80px' }} value={subjectForm.icon} onChange={e => setSubjectForm(p => ({ ...p, icon: e.target.value }))} />
+          </Field>
+          <button style={btnPrimary} onClick={handleAddSubject} disabled={!subjectForm.name || saving}>
+            {saving ? 'Saving...' : '+ Add Subject'}
+          </button>
+        </Modal>
+      )}
+
+      {showAddChapter && (
+        <Modal title={`Add Chapter to ${selectedSubject?.name}`} onClose={() => setShowAddChapter(false)} cardBg={cardBg} border={border} text={text} muted={muted}>
+          <Field label="Chapter Title *" muted={muted}>
+            <input style={inputStyle} value={chapterForm.title} onChange={e => setChapterForm(p => ({ ...p, title: e.target.value }))} placeholder="e.g. The Mughal Empire, Chapter 3..." />
+          </Field>
+          <Field label="Description" muted={muted}>
+            <textarea style={{ ...inputStyle, minHeight: '70px', resize: 'vertical' }} value={chapterForm.description} onChange={e => setChapterForm(p => ({ ...p, description: e.target.value }))} placeholder="Optional description..." />
+          </Field>
+          <button style={btnPrimary} onClick={handleAddChapter} disabled={!chapterForm.title || saving}>
+            {saving ? 'Saving...' : '+ Add Chapter'}
+          </button>
+        </Modal>
+      )}
+
+      {showAddNote && (
+        <Modal title={`Add Notes to "${selectedChapter?.title}"`} onClose={() => setShowAddNote(false)} cardBg={cardBg} border={border} text={text} muted={muted}>
+          <Field label="Notes Title *" muted={muted}>
+            <input style={inputStyle} value={noteForm.title} onChange={e => setNoteForm(p => ({ ...p, title: e.target.value }))} placeholder="e.g. Key Points, Overview..." />
+          </Field>
+          <Field label="Content *" muted={muted}>
+            <textarea style={{ ...inputStyle, minHeight: '180px', resize: 'vertical', fontFamily: 'monospace', fontSize: '13px' }}
+              value={noteForm.content} onChange={e => setNoteForm(p => ({ ...p, content: e.target.value }))}
+              placeholder="Paste or type your notes here. These notes will be used to auto-generate MCQ tests via AI." />
+          </Field>
+          <p style={{ fontSize: '12px', color: muted, marginBottom: '14px' }}>💡 Tip: After adding notes, click the 🧠 button to auto-generate MCQ questions using AI.</p>
+          <button style={btnPrimary} onClick={handleAddNote} disabled={!noteForm.title || !noteForm.content || saving}>
+            {saving ? 'Saving...' : '+ Add Notes'}
+          </button>
+        </Modal>
+      )}
+
+      {showAddVideo && (
+        <Modal title={`Add Video to "${selectedChapter?.title}"`} onClose={() => setShowAddVideo(false)} cardBg={cardBg} border={border} text={text} muted={muted}>
+          <Field label="Video Title *" muted={muted}>
+            <input style={inputStyle} value={videoForm.title} onChange={e => setVideoForm(p => ({ ...p, title: e.target.value }))} placeholder="e.g. Introduction to Mughal Empire" />
+          </Field>
+          <Field label="YouTube URL *" muted={muted}>
+            <input style={inputStyle} value={videoForm.youtubeUrl} onChange={e => setVideoForm(p => ({ ...p, youtubeUrl: e.target.value }))} placeholder="https://www.youtube.com/watch?v=..." />
+          </Field>
+          <p style={{ fontSize: '12px', color: muted, marginBottom: '14px' }}>✅ Supports youtube.com/watch?v=... and youtu.be/... formats.</p>
+          <button style={btnPrimary} onClick={handleAddVideo} disabled={!videoForm.title || !videoForm.youtubeUrl || saving}>
+            {saving ? 'Saving...' : '+ Add Video Link'}
+          </button>
+        </Modal>
+      )}
+
+      {showGenMcq && genMcqNote && (
+        <Modal title="Generate MCQ Test with AI" onClose={() => setShowGenMcq(false)} cardBg={cardBg} border={border} text={text} muted={muted}>
+          <div style={{ backgroundColor: isDark ? '#374151' : '#f0fdf4', borderRadius: '10px', padding: '12px 14px', marginBottom: '16px', fontSize: '13px', color: isDark ? '#bbf7d0' : '#166534', border: `1px solid ${border}` }}>
+            🧠 AI will read the notes "<strong>{genMcqNote.title}</strong>" and auto-generate MCQ questions for this chapter.
+          </div>
+          <Field label="Number of Questions" muted={muted}>
+            <input type="number" style={{ ...inputStyle, width: '120px' }} min={5} max={50} value={mcqCount} onChange={e => setMcqCount(Number(e.target.value))} />
+          </Field>
+          <p style={{ fontSize: '12px', color: muted, marginBottom: '14px' }}>Recommended: 10–20 questions. Requires GEMINI_API_KEY set in backend environment.</p>
+          <button style={{ ...btnPrimary, backgroundColor: '#7c3aed' }} onClick={handleGenerateMcq} disabled={saving}>
+            {saving ? 'Generating...' : '🧠 Generate MCQ Test'}
+          </button>
+        </Modal>
+      )}
+    </div>
+  )
+}

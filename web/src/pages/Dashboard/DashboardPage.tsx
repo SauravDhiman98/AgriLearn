@@ -4,21 +4,28 @@ import { RootState } from '../../store'
 import { courseApi, userApi } from '../../api/services'
 import { Link } from 'react-router-dom'
 import { BookOpen, TrendingUp, Award, Clock } from 'lucide-react'
+import { useTheme } from '../../context/ThemeContext'
 
 export default function DashboardPage() {
   const { user } = useSelector((s: RootState) => s.auth)
+  const { isDark } = useTheme()
+  const bg = isDark ? '#111827' : '#f9fafb'
+  const cardBg = isDark ? '#1f2937' : '#ffffff'
+  const border = isDark ? '#374151' : '#e5e7eb'
+  const text = isDark ? '#f9fafb' : '#111827'
+  const muted = isDark ? '#9ca3af' : '#6b7280'
 
   const { data: myCourses } = useQuery('myCourses', courseApi.getMyCourses, {
     select: res => res.data
   })
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-8">
+    <div className="max-w-7xl mx-auto px-4 py-8" style={{ backgroundColor: bg, minHeight: '100vh', color: text }}>
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-900">
+        <h1 className="text-2xl font-bold text-gray-900" style={{ color: text }}>
           Welcome back, {user?.firstName}! 👋
         </h1>
-        <p className="text-gray-500">Continue your agriculture learning journey</p>
+        <p className="text-gray-500" style={{ color: muted }}>Continue your agriculture learning journey</p>
       </div>
 
       {/* Stats */}
@@ -29,12 +36,12 @@ export default function DashboardPage() {
           { icon: Award, label: 'Completed', value: myCourses?.filter((c: any) => c.completed).length || 0, color: 'yellow' },
           { icon: Clock, label: 'Hours Learned', value: '12h', color: 'purple' },
         ].map(({ icon: Icon, label, value, color }) => (
-          <div key={label} className="card p-5">
+          <div key={label} className="card p-5" style={{ backgroundColor: cardBg, border: `1px solid ${border}` }}>
             <div className={`w-10 h-10 rounded-lg bg-${color}-100 flex items-center justify-center mb-3`}>
               <Icon className={`w-5 h-5 text-${color}-600`} />
             </div>
-            <div className="text-2xl font-bold text-gray-900">{value}</div>
-            <div className="text-sm text-gray-500">{label}</div>
+            <div className="text-2xl font-bold text-gray-900" style={{ color: text }}>{value}</div>
+            <div className="text-sm text-gray-500" style={{ color: muted }}>{label}</div>
           </div>
         ))}
       </div>
@@ -42,13 +49,13 @@ export default function DashboardPage() {
       {/* My courses */}
       <div className="mb-8">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold text-gray-900">My Courses</h2>
+          <h2 className="text-lg font-semibold text-gray-900" style={{ color: text }}>My Courses</h2>
           <Link to="/courses" className="text-sm text-green-600 hover:text-green-700">Browse more →</Link>
         </div>
         {myCourses?.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {myCourses.map((course: any) => (
-              <div key={course.id} className="card p-4">
+              <div key={course.id} className="card p-4" style={{ backgroundColor: cardBg, border: `1px solid ${border}` }}>
                 <div className="flex gap-3">
                   <div className="w-20 h-14 bg-green-100 rounded-lg flex-shrink-0 overflow-hidden">
                     {course.thumbnailUrl ? (
@@ -60,9 +67,9 @@ export default function DashboardPage() {
                     )}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h3 className="font-medium text-gray-900 text-sm line-clamp-2">{course.title}</h3>
+                    <h3 className="font-medium text-gray-900 text-sm line-clamp-2" style={{ color: text }}>{course.title}</h3>
                     <div className="mt-1.5">
-                      <div className="flex items-center justify-between text-xs text-gray-500 mb-1">
+                      <div className="flex items-center justify-between text-xs text-gray-500 mb-1" style={{ color: muted }}>
                         <span>Progress</span>
                         <span>{course.progressPercent || 0}%</span>
                       </div>
@@ -80,9 +87,9 @@ export default function DashboardPage() {
             ))}
           </div>
         ) : (
-          <div className="text-center py-12 bg-white rounded-xl border border-dashed border-gray-300">
+          <div className="text-center py-12 bg-white rounded-xl border border-dashed border-gray-300" style={{ backgroundColor: cardBg, borderColor: border }}>
             <BookOpen className="w-10 h-10 text-gray-300 mx-auto mb-3" />
-            <p className="text-gray-500 mb-3">You haven't enrolled in any courses yet</p>
+            <p className="text-gray-500 mb-3" style={{ color: muted }}>You haven't enrolled in any courses yet</p>
             <Link to="/courses" className="btn-primary text-sm">Explore Courses</Link>
           </div>
         )}

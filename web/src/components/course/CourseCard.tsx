@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import { Star, Clock, Users, BookOpen } from 'lucide-react'
+import { useTheme } from '../../context/ThemeContext'
 
 interface CourseCardProps {
   id: number
@@ -22,8 +23,14 @@ export default function CourseCard({
   rating, totalRatings, enrollmentCount, durationMinutes,
   free, price, language,
 }: CourseCardProps) {
+  const { isDark } = useTheme()
+  const cardBg = isDark ? '#1f2937' : '#ffffff'
+  const border = isDark ? '#374151' : '#e5e7eb'
+  const text = isDark ? '#f9fafb' : '#111827'
+  const muted = isDark ? '#9ca3af' : '#6b7280'
+
   return (
-    <Link to={`/courses/${id}`} className="card hover:shadow-md transition-shadow group">
+    <Link to={`/courses/${id}`} className="card hover:shadow-md transition-shadow group" style={{ backgroundColor: cardBg, border: `1px solid ${border}` }}>
       {/* Thumbnail */}
       <div className="aspect-video bg-green-50 relative overflow-hidden">
         {thumbnailUrl ? (
@@ -42,8 +49,8 @@ export default function CourseCard({
       </div>
 
       <div className="p-4">
-        <h3 className="font-semibold text-gray-900 line-clamp-2 mb-1">{title}</h3>
-        <p className="text-sm text-gray-500 mb-2">
+        <h3 className="font-semibold text-gray-900 line-clamp-2 mb-1" style={{ color: text }}>{title}</h3>
+        <p className="text-sm text-gray-500 mb-2" style={{ color: muted }}>
           {instructor.firstName} {instructor.lastName}
         </p>
 
@@ -55,11 +62,11 @@ export default function CourseCard({
               <Star key={s} className={`w-3.5 h-3.5 ${s <= Math.round(rating) ? 'text-yellow-400 fill-current' : 'text-gray-300'}`} />
             ))}
           </div>
-          <span className="text-xs text-gray-400">({totalRatings.toLocaleString()})</span>
+          <span className="text-xs text-gray-400" style={{ color: muted }}>({totalRatings.toLocaleString()})</span>
         </div>
 
         {/* Meta */}
-        <div className="flex items-center gap-3 text-xs text-gray-500 mb-3">
+        <div className="flex items-center gap-3 text-xs text-gray-500 mb-3" style={{ color: muted }}>
           <span className="flex items-center gap-1"><Users className="w-3 h-3" />{enrollmentCount.toLocaleString()}</span>
           {durationMinutes && (
             <span className="flex items-center gap-1"><Clock className="w-3 h-3" />{Math.floor(durationMinutes / 60)}h {durationMinutes % 60}m</span>
@@ -72,9 +79,9 @@ export default function CourseCard({
           {free ? (
             <span className="text-green-600 font-bold">Free</span>
           ) : (
-            <span className="font-bold text-gray-900">₹{price?.toLocaleString()}</span>
+            <span className="font-bold text-gray-900" style={{ color: text }}>₹{price?.toLocaleString()}</span>
           )}
-          <span className="text-xs text-gray-400 uppercase">{language}</span>
+          <span className="text-xs text-gray-400 uppercase" style={{ color: muted }}>{language}</span>
         </div>
       </div>
     </Link>

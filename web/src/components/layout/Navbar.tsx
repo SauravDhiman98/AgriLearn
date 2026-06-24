@@ -35,7 +35,7 @@ export default function Navbar() {
   }
 
   const navLinks = [
-    { to: '/courses', label: t('nav.courses') },
+    { to: '/exams', label: 'Exams' },
     { to: '/live-classes', label: t('nav.liveClasses') },
     { to: '/forum', label: t('nav.forum') },
     { to: '/marketplace', label: t('nav.marketplace') },

@@ -18,6 +18,11 @@ import ProfilePage from './pages/Profile/ProfilePage'
 import AdminPage from './pages/Admin/AdminPage'
 import LogViewerPage from './pages/Admin/LogViewerPage'
 import LessonVideoUploadPage from './pages/Instructor/LessonVideoUploadPage'
+import ExamsPage from './pages/Exams/ExamsPage'
+import ExamDetailPage from './pages/Exams/ExamDetailPage'
+import SubjectDetailPage from './pages/Exams/SubjectDetailPage'
+import ChapterDetailPage from './pages/Exams/ChapterDetailPage'
+import McqTestPage from './pages/Exams/McqTestPage'
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated } = useSelector((s: RootState) => s.auth)
@@ -35,6 +40,10 @@ export default function App() {
       <Route element={<MainLayout />}>
         {/* Public routes */}
         <Route path="/" element={<HomePage />} />
+        <Route path="/exams" element={<ExamsPage />} />
+        <Route path="/exams/:id" element={<ExamDetailPage />} />
+        <Route path="/subjects/:id" element={<SubjectDetailPage />} />
+        <Route path="/exam-chapters/:id" element={<ChapterDetailPage />} />
         <Route path="/courses" element={<CoursesPage />} />
         <Route path="/courses/:id" element={<CourseDetailPage />} />
         <Route path="/forum" element={<ForumPage />} />
@@ -47,6 +56,7 @@ export default function App() {
 
         {/* Protected routes */}
         <Route path="/dashboard" element={<PrivateRoute><DashboardPage /></PrivateRoute>} />
+        <Route path="/mcq-tests/:id" element={<PrivateRoute><McqTestPage /></PrivateRoute>} />
         <Route path="/courses/:courseId/lessons/:lessonId" element={<PrivateRoute><LessonPage /></PrivateRoute>} />
         <Route path="/courses/:id/learn" element={<PrivateRoute><LessonPage /></PrivateRoute>} />
         <Route path="/profile" element={<PrivateRoute><ProfilePage /></PrivateRoute>} />

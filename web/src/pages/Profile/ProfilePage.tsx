@@ -7,6 +7,7 @@ import {
   CheckCircle, AlertCircle, Edit2, Save, X, Globe,
   Award, Clock, TrendingUp, Calendar
 } from 'lucide-react'
+import { useTheme } from '../../context/ThemeContext'
 
 // ── Types ─────────────────────────────────────────────────────────────────
 interface ProfileData {
@@ -69,6 +70,7 @@ function Alert({ type, msg, onClose }: { type: 'success' | 'error'; msg: string;
 export default function ProfilePage() {
   const { user: authUser } = useSelector((s: RootState) => s.auth)
   const dispatch = useDispatch<AppDispatch>()
+  const { isDark } = useTheme()
 
   const [profile, setProfile]           = useState<ProfileData | null>(null)
   const [enrollments, setEnrollments]   = useState<Enrollment[]>([])
@@ -88,6 +90,13 @@ export default function ProfilePage() {
   const [showPw, setShowPw]             = useState(false)
 
   const avatarInputRef = useRef<HTMLInputElement>(null)
+  const bg = isDark ? '#111827' : '#f9fafb'
+  const cardBg = isDark ? '#1f2937' : '#ffffff'
+  const border = isDark ? '#374151' : '#e5e7eb'
+  const text = isDark ? '#f9fafb' : '#111827'
+  const muted = isDark ? '#9ca3af' : '#6b7280'
+  const inputBg = isDark ? '#374151' : '#ffffff'
+  const inputStyle = { backgroundColor: inputBg, color: text, border: `1px solid ${border}` }
 
   // ── Fetch data ─────────────────────────────────────────────────────────
   useEffect(() => {
@@ -161,7 +170,7 @@ export default function ProfilePage() {
   // ── Loading skeleton ───────────────────────────────────────────────────
   if (loading) {
     return (
-      <div className="max-w-4xl mx-auto px-4 py-8 animate-pulse">
+      <div className="max-w-4xl mx-auto px-4 py-8 animate-pulse" style={{ backgroundColor: bg, minHeight: '100vh' }}>
         <div className="h-32 bg-gray-200 rounded-2xl mb-6" />
         <div className="h-8 bg-gray-200 rounded w-1/3 mb-4" />
         <div className="space-y-3">
@@ -179,7 +188,7 @@ export default function ProfilePage() {
     : 0
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-8">
+    <div className="max-w-4xl mx-auto px-4 py-8" style={{ backgroundColor: bg, minHeight: '100vh', color: text }}>
 
       {/* ── Hero card ─────────────────────────────────────────────────── */}
       <div className="relative bg-gradient-to-r from-green-700 to-green-500 rounded-2xl p-6 mb-6 text-white overflow-hidden">
@@ -235,14 +244,15 @@ export default function ProfilePage() {
       </div>
 
       {/* ── Tabs ─────────────────────────────────────────────────────────── */}
-      <div className="flex border-b border-gray-200 mb-6 gap-1">
+      <div className="flex border-b border-gray-200 mb-6 gap-1" style={{ borderColor: border }}>
         {(['profile', 'password', 'learning'] as const).map(tab => (
           <button key={tab} onClick={() => setActiveTab(tab)}
             className={`px-4 py-2 text-sm font-medium capitalize rounded-t transition ${
               activeTab === tab
                 ? 'border-b-2 border-green-600 text-green-700'
                 : 'text-gray-500 hover:text-gray-700'
-            }`}>
+            }`}
+            style={{ color: activeTab === tab ? undefined : muted }}>
             {tab === 'learning' ? 'My Learning' : tab === 'password' ? 'Security' : 'Profile'}
           </button>
         ))}
@@ -250,9 +260,9 @@ export default function ProfilePage() {
 
       {/* ── TAB: Profile ────────────────────────────────────────────────── */}
       {activeTab === 'profile' && (
-        <div className="bg-white rounded-xl border border-gray-200 shadow-sm">
-          <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
-            <h2 className="font-semibold text-gray-800 flex items-center gap-2">
+        <div className="bg-white rounded-xl border border-gray-200 shadow-sm" style={{ backgroundColor: cardBg, borderColor: border }}>
+          <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100" style={{ borderColor: border }}>
+            <h2 className="font-semibold text-gray-800 flex items-center gap-2" style={{ color: text }}>
               <User className="w-4 h-4 text-green-600" /> Personal Information
             </h2>
             {!editing
@@ -262,7 +272,8 @@ export default function ProfilePage() {
                 </button>
               : <div className="flex gap-2">
                   <button onClick={() => { setEditing(false); setForm(profile ?? {}) }}
-                    className="flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700 px-3 py-1 rounded border border-gray-200">
+                    className="flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700 px-3 py-1 rounded border border-gray-200"
+                    style={{ color: muted, borderColor: border }}>
                     <X className="w-4 h-4" /> Cancel
                   </button>
                   <button onClick={handleSaveProfile} disabled={saving}
@@ -279,87 +290,89 @@ export default function ProfilePage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
               {/* First Name */}
               <div>
-                <label className="block text-xs font-medium text-gray-500 mb-1">First Name</label>
+                <label className="block text-xs font-medium text-gray-500 mb-1" style={{ color: muted }}>First Name</label>
                 {editing
                   ? <input value={form.firstName ?? ''} onChange={e => setForm(f => ({...f, firstName: e.target.value}))}
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-400" />
-                  : <p className="text-sm text-gray-800 py-2">{profile?.firstName}</p>
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-400" style={inputStyle} />
+                : <p className="text-sm text-gray-800 py-2" style={{ color: text }}>{profile?.firstName}</p>
                 }
               </div>
 
               {/* Last Name */}
               <div>
-                <label className="block text-xs font-medium text-gray-500 mb-1">Last Name</label>
+                <label className="block text-xs font-medium text-gray-500 mb-1" style={{ color: muted }}>Last Name</label>
                 {editing
                   ? <input value={form.lastName ?? ''} onChange={e => setForm(f => ({...f, lastName: e.target.value}))}
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-400" />
-                  : <p className="text-sm text-gray-800 py-2">{profile?.lastName}</p>
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-400" style={inputStyle} />
+                : <p className="text-sm text-gray-800 py-2" style={{ color: text }}>{profile?.lastName}</p>
                 }
               </div>
 
               {/* Email (read-only) */}
               <div>
-                <label className="block text-xs font-medium text-gray-500 mb-1 flex items-center gap-1">
+                <label className="block text-xs font-medium text-gray-500 mb-1 flex items-center gap-1" style={{ color: muted }}>
                   <Mail className="w-3 h-3" /> Email
                 </label>
-                <p className="text-sm text-gray-500 py-2">{profile?.email}
+                <p className="text-sm text-gray-500 py-2" style={{ color: muted }}>{profile?.email}
                   <span className="ml-2 text-xs bg-green-100 text-green-700 px-1.5 py-0.5 rounded">verified</span>
                 </p>
               </div>
 
               {/* Phone */}
               <div>
-                <label className="block text-xs font-medium text-gray-500 mb-1 flex items-center gap-1">
+                <label className="block text-xs font-medium text-gray-500 mb-1 flex items-center gap-1" style={{ color: muted }}>
                   <Phone className="w-3 h-3" /> Phone
                 </label>
                 {editing
                   ? <input value={form.phone ?? ''} onChange={e => setForm(f => ({...f, phone: e.target.value}))}
                       placeholder="+91 9800000000"
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-400" />
-                  : <p className="text-sm text-gray-800 py-2">{profile?.phone || <span className="text-gray-400 italic">Not set</span>}</p>
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-400" style={inputStyle} />
+                : <p className="text-sm text-gray-800 py-2" style={{ color: text }}>{profile?.phone || <span className="text-gray-400 italic" style={{ color: muted }}>Not set</span>}</p>
                 }
               </div>
 
               {/* State */}
               <div>
-                <label className="block text-xs font-medium text-gray-500 mb-1 flex items-center gap-1">
+                <label className="block text-xs font-medium text-gray-500 mb-1 flex items-center gap-1" style={{ color: muted }}>
                   <MapPin className="w-3 h-3" /> State
                 </label>
                 {editing
                   ? <select value={form.state ?? ''} onChange={e => setForm(f => ({...f, state: e.target.value}))}
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-400 bg-white">
-                      <option value="">Select state</option>
-                      {INDIA_STATES.map(s => <option key={s} value={s}>{s}</option>)}
-                    </select>
-                  : <p className="text-sm text-gray-800 py-2">{profile?.state || <span className="text-gray-400 italic">Not set</span>}</p>
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-400 bg-white"
+                    style={inputStyle}>
+                    <option value="">Select state</option>
+                    {INDIA_STATES.map(s => <option key={s} value={s}>{s}</option>)}
+                  </select>
+                : <p className="text-sm text-gray-800 py-2" style={{ color: text }}>{profile?.state || <span className="text-gray-400 italic" style={{ color: muted }}>Not set</span>}</p>
                 }
               </div>
 
               {/* Language */}
               <div>
-                <label className="block text-xs font-medium text-gray-500 mb-1 flex items-center gap-1">
+                <label className="block text-xs font-medium text-gray-500 mb-1 flex items-center gap-1" style={{ color: muted }}>
                   <Globe className="w-3 h-3" /> Preferred Language
                 </label>
                 {editing
                   ? <select value={form.preferredLanguage ?? 'en'} onChange={e => setForm(f => ({...f, preferredLanguage: e.target.value}))}
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-400 bg-white">
-                      {LANGUAGES.map(l => <option key={l.code} value={l.code}>{l.label}</option>)}
-                    </select>
-                  : <p className="text-sm text-gray-800 py-2">
-                      {LANGUAGES.find(l => l.code === profile?.preferredLanguage)?.label ?? profile?.preferredLanguage ?? 'English'}
-                    </p>
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-400 bg-white"
+                    style={inputStyle}>
+                    {LANGUAGES.map(l => <option key={l.code} value={l.code}>{l.label}</option>)}
+                  </select>
+                : <p className="text-sm text-gray-800 py-2" style={{ color: text }}>
+                    {LANGUAGES.find(l => l.code === profile?.preferredLanguage)?.label ?? profile?.preferredLanguage ?? 'English'}
+                  </p>
                 }
               </div>
 
               {/* Bio (full width) */}
               <div className="sm:col-span-2">
-                <label className="block text-xs font-medium text-gray-500 mb-1">Bio / About Me</label>
+                <label className="block text-xs font-medium text-gray-500 mb-1" style={{ color: muted }}>Bio / About Me</label>
                 {editing
                   ? <textarea value={form.bio ?? ''} onChange={e => setForm(f => ({...f, bio: e.target.value}))}
                       rows={3} placeholder="Tell us about yourself and your farming background..."
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-400 resize-none" />
-                  : <p className="text-sm text-gray-800 py-2 leading-relaxed">
-                      {profile?.bio || <span className="text-gray-400 italic">No bio added yet.</span>}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-400 resize-none" style={inputStyle} />
+                : <p className="text-sm text-gray-800 py-2 leading-relaxed" style={{ color: text }}>
+                    {profile?.bio || <span className="text-gray-400 italic" style={{ color: muted }}>No bio added yet.</span>}
                     </p>
                 }
               </div>
@@ -370,10 +383,10 @@ export default function ProfilePage() {
 
       {/* ── TAB: Security / Password ─────────────────────────────────────── */}
       {activeTab === 'password' && (
-        <div className="bg-white rounded-xl border border-gray-200 shadow-sm">
-          <div className="flex items-center gap-2 px-6 py-4 border-b border-gray-100">
+        <div className="bg-white rounded-xl border border-gray-200 shadow-sm" style={{ backgroundColor: cardBg, borderColor: border }}>
+          <div className="flex items-center gap-2 px-6 py-4 border-b border-gray-100" style={{ borderColor: border }}>
             <Lock className="w-4 h-4 text-green-600" />
-            <h2 className="font-semibold text-gray-800">Change Password</h2>
+            <h2 className="font-semibold text-gray-800" style={{ color: text }}>Change Password</h2>
           </div>
 
           <div className="p-6 max-w-md">
@@ -381,28 +394,31 @@ export default function ProfilePage() {
 
             <div className="space-y-4">
               <div>
-                <label className="block text-xs font-medium text-gray-500 mb-1">Current Password</label>
+                <label className="block text-xs font-medium text-gray-500 mb-1" style={{ color: muted }}>Current Password</label>
                 <input type={showPw ? 'text' : 'password'} value={pwForm.currentPassword}
                   onChange={e => setPwForm(f => ({...f, currentPassword: e.target.value}))}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-400"
+                  style={inputStyle}
                   placeholder="Enter current password" />
               </div>
               <div>
-                <label className="block text-xs font-medium text-gray-500 mb-1">New Password</label>
+                <label className="block text-xs font-medium text-gray-500 mb-1" style={{ color: muted }}>New Password</label>
                 <input type={showPw ? 'text' : 'password'} value={pwForm.newPassword}
                   onChange={e => setPwForm(f => ({...f, newPassword: e.target.value}))}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-400"
+                  style={inputStyle}
                   placeholder="Minimum 8 characters" />
               </div>
               <div>
-                <label className="block text-xs font-medium text-gray-500 mb-1">Confirm New Password</label>
+                <label className="block text-xs font-medium text-gray-500 mb-1" style={{ color: muted }}>Confirm New Password</label>
                 <input type={showPw ? 'text' : 'password'} value={pwForm.confirmPassword}
                   onChange={e => setPwForm(f => ({...f, confirmPassword: e.target.value}))}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-400"
+                  style={inputStyle}
                   placeholder="Repeat new password" />
               </div>
 
-              <label className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer select-none">
+              <label className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer select-none" style={{ color: muted }}>
                 <input type="checkbox" checked={showPw} onChange={e => setShowPw(e.target.checked)} className="rounded" />
                 Show passwords
               </label>
@@ -424,7 +440,7 @@ export default function ProfilePage() {
                       }`} />
                     })}
                   </div>
-                  <p className="text-xs text-gray-400 mt-1">
+                  <p className="text-xs text-gray-400 mt-1" style={{ color: muted }}>
                     Use uppercase, numbers & special chars for a strong password
                   </p>
                 </div>
@@ -443,17 +459,17 @@ export default function ProfilePage() {
       {activeTab === 'learning' && (
         <div className="space-y-4">
           {enrollments.length === 0 ? (
-            <div className="bg-white rounded-xl border border-gray-200 p-12 text-center">
+            <div className="bg-white rounded-xl border border-gray-200 p-12 text-center" style={{ backgroundColor: cardBg, borderColor: border }}>
               <BookOpen className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-              <p className="text-gray-500 font-medium">No courses enrolled yet</p>
-              <p className="text-gray-400 text-sm mt-1">Browse our courses and start learning today!</p>
+              <p className="text-gray-500 font-medium" style={{ color: muted }}>No courses enrolled yet</p>
+              <p className="text-gray-400 text-sm mt-1" style={{ color: muted }}>Browse our courses and start learning today!</p>
               <a href="/courses" className="inline-block mt-4 px-5 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 transition">
                 Browse Courses
               </a>
             </div>
           ) : (
             enrollments.map(enr => (
-              <div key={enr.id} className="bg-white rounded-xl border border-gray-200 shadow-sm p-5 flex flex-col sm:flex-row items-start sm:items-center gap-4">
+            <div key={enr.id} className="bg-white rounded-xl border border-gray-200 shadow-sm p-5 flex flex-col sm:flex-row items-start sm:items-center gap-4" style={{ backgroundColor: cardBg, borderColor: border }}>
                 {/* Icon */}
                 <div className="w-12 h-12 rounded-lg bg-green-100 flex items-center justify-center shrink-0">
                   <BookOpen className="w-6 h-6 text-green-600" />
@@ -461,8 +477,8 @@ export default function ProfilePage() {
 
                 {/* Course info */}
                 <div className="flex-1 min-w-0">
-                  <h3 className="font-semibold text-gray-800 truncate">{enr.courseTitle}</h3>
-                  <p className="text-xs text-gray-400 mt-0.5 flex items-center gap-1">
+                  <h3 className="font-semibold text-gray-800 truncate" style={{ color: text }}>{enr.courseTitle}</h3>
+                  <p className="text-xs text-gray-400 mt-0.5 flex items-center gap-1" style={{ color: muted }}>
                     <Clock className="w-3 h-3" />
                     Enrolled {new Date(enr.enrolledAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
                   </p>
@@ -477,7 +493,7 @@ export default function ProfilePage() {
                         style={{ width: `${enr.progressPercent}%` }}
                       />
                     </div>
-                    <span className="text-xs text-gray-500 shrink-0 w-9 text-right">{enr.progressPercent}%</span>
+                    <span className="text-xs text-gray-500 shrink-0 w-9 text-right" style={{ color: muted }}>{enr.progressPercent}%</span>
                   </div>
                 </div>
 
@@ -501,4 +517,3 @@ export default function ProfilePage() {
     </div>
   )
 }
-

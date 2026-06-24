@@ -5,15 +5,20 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "start": "nodemon --exec vite --watch vite.config.ts",
     "build": "tsc && vite build",
     "preview": "vite preview",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0"
   },
   "dependencies": {
     "@reduxjs/toolkit": "^2.2.3",
+    "@stomp/stompjs": "^7.0.0",
     "axios": "^1.6.8",
+    "dayjs": "^1.11.11",
     "i18next": "^23.11.2",
     "i18next-browser-languagedetector": "^8.0.0",
+    "lucide-react": "^0.383.0",
+    "nodemon": "^3.1.14",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-i18next": "^14.1.1",
@@ -22,10 +27,7 @@
     "react-redux": "^9.1.1",
     "react-router-dom": "^6.23.1",
     "react-toastify": "^10.0.5",
-    "sockjs-client": "^1.6.1",
-    "@stomp/stompjs": "^7.0.0",
-    "dayjs": "^1.11.11",
-    "lucide-react": "^0.383.0"
+    "sockjs-client": "^1.6.1"
   },
   "devDependencies": {
     "@types/react": "^18.3.3",

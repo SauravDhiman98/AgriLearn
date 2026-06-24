@@ -103,8 +103,30 @@ export const marketplaceApi = {
     apiClient.get(`/marketplace/orders/${orderNumber}`),
 }
 
+export const examApi = {
+  getAll: () => apiClient.get('/exams'),
+  getById: (id: number) => apiClient.get(`/exams/${id}`),
+  getSubject: (id: number) => apiClient.get(`/subjects/${id}`),
+  getChapter: (id: number) => apiClient.get(`/exam-chapters/${id}`),
+  getTest: (id: number) => apiClient.get(`/mcq-tests/${id}`),
+  submitAttempt: (testId: number, answers: Record<number, string>) =>
+    apiClient.post(`/mcq-tests/${testId}/submit`, { testId, answers }),
+  getAttempts: (testId: number) => apiClient.get(`/mcq-tests/${testId}/attempts`),
+
+  // Admin
+  createExam: (data: any) => apiClient.post('/admin/exams', data),
+  createSubject: (examId: number, data: any) => apiClient.post(`/admin/exams/${examId}/subjects`, data),
+  createChapter: (subjectId: number, data: any) => apiClient.post(`/admin/subjects/${subjectId}/chapters`, data),
+  createNotes: (chapterId: number, data: any) => apiClient.post(`/admin/chapters/${chapterId}/notes`, data),
+  updateNotes: (notesId: number, data: any) => apiClient.put(`/admin/notes/${notesId}`, data),
+  createVideo: (chapterId: number, data: any) => apiClient.post(`/admin/chapters/${chapterId}/videos`, data),
+  generateMcq: (notesId: number, chapterId: number, questionCount = 10) =>
+    apiClient.post(`/admin/notes/${notesId}/generate-mcq?chapterId=${chapterId}&questionCount=${questionCount}`),
+  deleteNotes: (id: number) => apiClient.delete(`/admin/notes/${id}`),
+  deleteVideo: (id: number) => apiClient.delete(`/admin/videos/${id}`),
+}
+
 export const subscriptionApi = {
-  getPlans: () => apiClient.get('/subscriptions/plans'),
   getMySubscription: () => apiClient.get('/subscriptions/my-subscription'),
   subscribe: (plan: string) => apiClient.post('/subscriptions/subscribe', { plan }),
   cancel: () => apiClient.post('/subscriptions/cancel'),
