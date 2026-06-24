@@ -7,6 +7,16 @@ import { ChevronLeft, FileText, Video, Brain, ExternalLink, Play } from 'lucide-
 
 type Tab = 'notes' | 'videos' | 'tests'
 
+const API_ORIGIN = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api/v1')
+  .replace(/\/api\/v\d+\/?$/, '')
+
+/** Make relative /api/v1/... URLs absolute for iframes and download links */
+function resolveUrl(url: string | null | undefined): string | null {
+  if (!url) return null
+  if (url.startsWith('http://') || url.startsWith('https://')) return url
+  return API_ORIGIN + url
+}
+
 export default function ChapterDetailPage() {
   const { id } = useParams<{ id: string }>()
   const { isDark } = useTheme()
@@ -104,6 +114,7 @@ export default function ChapterDetailPage() {
                 )}
                 {(selectedNote || chapter?.notes?.[0]) ? (() => {
                   const activeNote = selectedNote || chapter.notes[0]
+                  const resolvedUrl = resolveUrl(activeNote.fileUrl)
                   return (
                     <div style={{ backgroundColor: cardBg, borderRadius: '14px', border: `1px solid ${border}`, overflow: 'hidden' }}>
                       {/* Note header with download */}
@@ -111,8 +122,8 @@ export default function ChapterDetailPage() {
                         <h2 style={{ fontSize: '17px', fontWeight: '700', color: text, margin: 0 }}>
                           {activeNote.title}
                         </h2>
-                        {activeNote.fileUrl && (
-                          <a href={activeNote.fileUrl} download={activeNote.fileName || activeNote.title}
+                        {resolvedUrl && (
+                          <a href={resolvedUrl} download={activeNote.fileName || activeNote.title}
                             target="_blank" rel="noreferrer"
                             style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 14px', backgroundColor: '#194552', color: '#fff', borderRadius: '8px', textDecoration: 'none', fontSize: '13px', fontWeight: '600' }}>
                             ⬇ Download
@@ -121,23 +132,23 @@ export default function ChapterDetailPage() {
                       </div>
 
                       {/* PDF viewer */}
-                      {activeNote.fileUrl && activeNote.fileType === 'pdf' && (
+                      {resolvedUrl && activeNote.fileType === 'pdf' && (
                         <iframe
-                          src={`${activeNote.fileUrl}#toolbar=1&navpanes=0`}
+                          src={`${resolvedUrl}#toolbar=1&navpanes=0`}
                           title={activeNote.title}
                           style={{ width: '100%', height: '80vh', border: 'none', display: 'block' }}
                         />
                       )}
 
                       {/* DOC/other file - show download prompt */}
-                      {activeNote.fileUrl && activeNote.fileType !== 'pdf' && (
+                      {resolvedUrl && activeNote.fileType !== 'pdf' && (
                         <div style={{ padding: '40px', textAlign: 'center' }}>
                           <div style={{ fontSize: '48px', marginBottom: '12px' }}>📄</div>
                           <p style={{ color: text, fontWeight: '600', marginBottom: '6px' }}>{activeNote.fileName || activeNote.title}</p>
                           <p style={{ color: muted, fontSize: '13px', marginBottom: '20px' }}>
                             {activeNote.fileSize ? `${(activeNote.fileSize / 1024 / 1024).toFixed(2)} MB` : ''} · {activeNote.fileType?.toUpperCase()}
                           </p>
-                          <a href={activeNote.fileUrl} download={activeNote.fileName}
+                          <a href={resolvedUrl} download={activeNote.fileName}
                             target="_blank" rel="noreferrer"
                             style={{ padding: '10px 24px', backgroundColor: '#194552', color: '#fff', borderRadius: '9px', textDecoration: 'none', fontSize: '14px', fontWeight: '600' }}>
                             ⬇ Download File
@@ -146,7 +157,7 @@ export default function ChapterDetailPage() {
                       )}
 
                       {/* Plain text notes */}
-                      {!activeNote.fileUrl && (
+                      {!resolvedUrl && (
                         <div style={{ padding: '24px', color: text, lineHeight: '1.8', fontSize: '15px', whiteSpace: 'pre-wrap' }}>
                           {activeNote.content}
                         </div>
