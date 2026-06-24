@@ -349,7 +349,8 @@ export default function AdminExamContent() {
           ))}
         </div>
       )}
-
+
+
       {(!selectedExam || adminTab === 'content') && (
       <>
       <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap', alignItems: 'flex-start' }}>
@@ -363,7 +364,7 @@ export default function AdminExamContent() {
               onClick={() => loadSubjectsAndSections(exam)}
               style={{ ...itemRow, backgroundColor: selectedExam?.id === exam.id ? (isDark ? '#374151' : '#e0f2fe') : 'transparent' }}
             >
-              <span style={{ fontSize: '18px' }}>{exam.icon}</span>
+              <img src={exam.icon} alt={exam.name} style={{ width: '24px', height: '24px', objectFit: 'contain' }} />
               <span style={{ flex: 1, fontWeight: selectedExam?.id === exam.id ? '600' : '400' }}>{exam.name}</span>
               {selectedExam?.id === exam.id && <ChevronRight style={{ width: '14px', height: '14px', color: '#0369a1' }} />}
             </div>
