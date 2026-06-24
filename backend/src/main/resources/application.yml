@@ -12,6 +12,7 @@ spring:
       maximum-pool-size: 10
       minimum-idle: 2
       connection-timeout: 30000
+      connection-init-sql: SET TIME ZONE 'UTC'
 
   jpa:
     hibernate:
@@ -29,6 +30,8 @@ spring:
   flyway:
     enabled: true
     baseline-on-migrate: true
+    validate-on-migrate: ${FLYWAY_VALIDATE:false}
+    out-of-order: false
     locations: classpath:db/migration
 
   mail:
