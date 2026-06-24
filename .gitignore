@@ -52,3 +52,6 @@ ios/
 *.seed
 *.pid.lock
 coverage/
+
+# Local file uploads (dev mode)
+backend/uploads/
