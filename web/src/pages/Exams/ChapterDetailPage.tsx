@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useQuery } from 'react-query'
 import { Link, useParams } from 'react-router-dom'
 import { examApi } from '../../api/services'
@@ -23,12 +23,22 @@ export default function ChapterDetailPage() {
   const [activeTab, setActiveTab] = useState<Tab>('notes')
   const [selectedNote, setSelectedNote] = useState<any>(null)
 
-  const { data: chapter, isLoading } = useQuery(['chapter', id], () => examApi.getChapter(Number(id)), {
-    select: res => res.data,
-    onSuccess: (data: any) => {
-      if (data?.notes?.length > 0 && !selectedNote) setSelectedNote(data.notes[0])
-    },
-  })
+  const { data: chapter, isLoading } = useQuery(
+    ['chapter', id],
+    () => examApi.getChapter(Number(id)),
+    { select: res => res.data }
+  )
+
+  // Auto-select first note when chapter loads or id changes
+  useEffect(() => {
+    setSelectedNote(null)
+  }, [id])
+
+  useEffect(() => {
+    if (chapter?.notes?.length > 0) {
+      setSelectedNote((prev: any) => prev ?? chapter.notes[0])
+    }
+  }, [chapter])
 
   const bg = isDark ? '#111827' : '#f9fafb'
   const cardBg = isDark ? '#1f2937' : '#ffffff'
@@ -140,16 +150,40 @@ export default function ChapterDetailPage() {
                         />
                       )}
 
-                      {/* DOC/other file - show download prompt */}
-                      {resolvedUrl && activeNote.fileType !== 'pdf' && (
+                      {/* DOC/DOCX - Google Docs viewer for public URLs, download for localhost */}
+                      {resolvedUrl && (activeNote.fileType === 'doc' || activeNote.fileType === 'docx') && (
+                        resolvedUrl.startsWith('http://localhost') || resolvedUrl.startsWith('http://127')
+                          ? (
+                            <div style={{ padding: '40px', textAlign: 'center' }}>
+                              <div style={{ fontSize: '56px', marginBottom: '16px' }}>📄</div>
+                              <p style={{ color: text, fontWeight: '700', fontSize: '16px', marginBottom: '6px' }}>{activeNote.fileName || activeNote.title}</p>
+                              <p style={{ color: muted, fontSize: '13px', marginBottom: '6px' }}>
+                                {activeNote.fileSize ? `${(activeNote.fileSize / 1024).toFixed(0)} KB` : ''} · {activeNote.fileType?.toUpperCase()} document
+                              </p>
+                              <p style={{ color: muted, fontSize: '12px', marginBottom: '24px' }}>
+                                📌 Inline preview not available for local files. Download to view.
+                              </p>
+                              <a href={resolvedUrl} download={activeNote.fileName}
+                                style={{ padding: '12px 28px', backgroundColor: '#194552', color: '#fff', borderRadius: '9px', textDecoration: 'none', fontSize: '15px', fontWeight: '600' }}>
+                                ⬇ Download & Open
+                              </a>
+                            </div>
+                          )
+                          : (
+                            <iframe
+                              src={`https://docs.google.com/gview?url=${encodeURIComponent(resolvedUrl)}&embedded=true`}
+                              title={activeNote.title}
+                              style={{ width: '100%', height: '80vh', border: 'none', display: 'block' }}
+                            />
+                          )
+                      )}
+
+                      {/* Other file types */}
+                      {resolvedUrl && activeNote.fileType !== 'pdf' && activeNote.fileType !== 'doc' && activeNote.fileType !== 'docx' && (
                         <div style={{ padding: '40px', textAlign: 'center' }}>
-                          <div style={{ fontSize: '48px', marginBottom: '12px' }}>📄</div>
+                          <div style={{ fontSize: '48px', marginBottom: '12px' }}>📎</div>
                           <p style={{ color: text, fontWeight: '600', marginBottom: '6px' }}>{activeNote.fileName || activeNote.title}</p>
-                          <p style={{ color: muted, fontSize: '13px', marginBottom: '20px' }}>
-                            {activeNote.fileSize ? `${(activeNote.fileSize / 1024 / 1024).toFixed(2)} MB` : ''} · {activeNote.fileType?.toUpperCase()}
-                          </p>
-                          <a href={resolvedUrl} download={activeNote.fileName}
-                            target="_blank" rel="noreferrer"
+                          <a href={resolvedUrl} download={activeNote.fileName} target="_blank" rel="noreferrer"
                             style={{ padding: '10px 24px', backgroundColor: '#194552', color: '#fff', borderRadius: '9px', textDecoration: 'none', fontSize: '14px', fontWeight: '600' }}>
                             ⬇ Download File
                           </a>
