@@ -10,11 +10,63 @@ type Tab = 'notes' | 'videos' | 'tests'
 const API_ORIGIN = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api/v1')
   .replace(/\/api\/v\d+\/?$/, '')
 
-/** Make relative /api/v1/... URLs absolute for iframes and download links */
+/** Make relative /api/v1/... URLs absolute */
 function resolveUrl(url: string | null | undefined): string | null {
   if (!url) return null
   if (url.startsWith('http://') || url.startsWith('https://')) return url
   return API_ORIGIN + url
+}
+
+/**
+ * Fetches a PDF via the backend proxy and renders it using a blob:// URL.
+ * Blob URLs are always same-origin so X-Frame-Options never blocks them.
+ */
+function PdfViewer({ url, title }: { url: string; title: string }) {
+  const [blobUrl, setBlobUrl] = useState<string | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const { isDark } = useTheme()
+  const muted = isDark ? '#9ca3af' : '#6b7280'
+
+  useEffect(() => {
+    let objectUrl: string | null = null
+    setLoading(true); setError(null); setBlobUrl(null)
+
+    fetch(url, { credentials: 'include' })
+      .then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.blob() })
+      .then(blob => {
+        objectUrl = URL.createObjectURL(blob)
+        setBlobUrl(objectUrl)
+      })
+      .catch(err => setError(err.message))
+      .finally(() => setLoading(false))
+
+    return () => { if (objectUrl) URL.revokeObjectURL(objectUrl) }
+  }, [url])
+
+  if (loading) return (
+    <div style={{ padding: '60px', textAlign: 'center', color: muted }}>
+      <div style={{ fontSize: '32px', marginBottom: '12px' }}>⏳</div>
+      Loading PDF...
+    </div>
+  )
+  if (error) return (
+    <div style={{ padding: '40px', textAlign: 'center' }}>
+      <div style={{ fontSize: '40px', marginBottom: '12px' }}>⚠️</div>
+      <p style={{ color: muted, marginBottom: '16px' }}>Could not load PDF: {error}</p>
+      <a href={url} target="_blank" rel="noreferrer"
+        style={{ padding: '10px 24px', backgroundColor: '#194552', color: '#fff', borderRadius: '9px', textDecoration: 'none', fontWeight: '600' }}>
+        Open in new tab
+      </a>
+    </div>
+  )
+  return (
+    <iframe
+      src={blobUrl!}
+      title={title}
+      style={{ width: '100%', height: '80vh', border: 'none', display: 'block' }}
+    />
+  )
 }
 
 export default function ChapterDetailPage() {
@@ -141,13 +193,9 @@ export default function ChapterDetailPage() {
                         )}
                       </div>
 
-                      {/* PDF viewer */}
+                      {/* PDF viewer via blob URL — bypasses X-Frame-Options */}
                       {resolvedUrl && (
-                        <iframe
-                          src={`${resolvedUrl}#toolbar=1&navpanes=0`}
-                          title={activeNote.title}
-                          style={{ width: '100%', height: '80vh', border: 'none', display: 'block' }}
-                        />
+                        <PdfViewer url={resolvedUrl} title={activeNote.title} />
                       )}
 
                       {/* Plain text notes (no file) */}
