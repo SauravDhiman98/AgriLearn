@@ -39,6 +39,7 @@ export default function Navbar() {
     { to: '/live-classes', label: t('nav.liveClasses') },
     { to: '/forum', label: t('nav.forum') },
     { to: '/marketplace', label: t('nav.marketplace') },
+    { to: '/exam-info', label: 'Exam Info' },
   ]
 
   return (

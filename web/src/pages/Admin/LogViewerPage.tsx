@@ -165,7 +165,7 @@ export default function LogViewerPage() {
     const url = logApi.getDownloadUrl(selectedLevel, keyword)
     const a = document.createElement('a')
     a.href = url
-    a.download = `agrilearn-logs-${Date.now()}.log`
+    a.download = `tassypoint-logs-${Date.now()}.log`
     a.click()
   }
 
@@ -194,7 +194,7 @@ export default function LogViewerPage() {
             <ChevronLeft className="w-5 h-5" />
           </button>
           <Activity className="w-5 h-5 text-green-400" />
-          <span className="text-sm font-bold text-white tracking-wide" style={{ color: text }}>AgriLearn Log Viewer</span>
+          <span className="text-sm font-bold text-white tracking-wide" style={{ color: text }}>Tassy Point Log Viewer</span>
           {loading && <RefreshCw className="w-4 h-4 text-blue-400 animate-spin" />}
         </div>
 
@@ -360,7 +360,7 @@ export default function LogViewerPage() {
 
       {/* ── Footer ─────────────────────────────────────────────────────── */}
       <div className="flex items-center justify-between px-4 py-1 bg-gray-900 border-t border-gray-700 text-gray-600 text-xs shrink-0" style={{ backgroundColor: cardBg, borderColor: border, color: muted }}>
-        <span style={{ color: muted }}>AgriLearn Backend Log Viewer · Admin Only</span>
+        <span style={{ color: muted }}>Tassy Point Backend Log Viewer · Admin Only</span>
         <span className={isLive ? 'text-green-500' : 'text-gray-500'} style={!isLive ? { color: muted } : undefined}>
           {isLive ? '● LIVE (polling every 2s)' : '○ Paused'}
         </span>

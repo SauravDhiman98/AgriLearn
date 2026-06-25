@@ -41,6 +41,7 @@ export default function App() {
         {/* Public routes */}
         <Route path="/" element={<HomePage />} />
         <Route path="/exams" element={<ExamsPage />} />
+        <Route path="/exam-info" element={<ExamsPage />} />
         <Route path="/exams/:id" element={<ExamDetailPage />} />
         <Route path="/subjects/:id" element={<SubjectDetailPage />} />
         <Route path="/exam-chapters/:id" element={<ChapterDetailPage />} />

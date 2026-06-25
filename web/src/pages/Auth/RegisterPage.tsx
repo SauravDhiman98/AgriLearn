@@ -63,9 +63,9 @@ export default function RegisterPage() {
       <div className="w-full max-w-lg">
         <div className="card p-8" style={{ backgroundColor: cardBg, border: `1px solid ${border}` }}>
           <div className="flex justify-center mb-4">
-            <div className="flex items-center gap-2 text-green-700 font-bold text-2xl">
-              <Leaf className="w-7 h-7" />
-              AgriLearn
+            <div className="flex items-center gap-2 font-bold text-2xl" style={{ color: '#194552' }}>
+              <img src="/logo.png" alt="Tassy Point" style={{ width: '36px', height: '36px', objectFit: 'contain', background: '#194552', borderRadius: '8px' }} />
+              TASSY POINT
             </div>
           </div>
           <h1 className="text-2xl font-bold text-gray-900 text-center mb-1" style={{ color: text }}>Create your account</h1>

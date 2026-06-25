@@ -113,36 +113,10 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Featured Courses */}
-      <section className="py-14 bg-white" style={{ backgroundColor: bg }}>
-        <div className="max-w-7xl mx-auto px-4">
-          <div className="flex items-center justify-between mb-8">
-            <h2 className="text-2xl font-bold text-gray-900" style={{ color: text }}>⭐ Top Courses</h2>
-            <Link to="/courses" className="text-green-600 hover:text-green-700 font-medium text-sm">
-              View all →
-            </Link>
-          </div>
-          {featuredData?.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              {featuredData.map((course: any) => (
-                <CourseCard key={course.id} {...course} />
-              ))}
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              {[...Array(4)].map((_, i) => (
-                <div key={i} className="card animate-pulse" style={{ backgroundColor: cardBg, border: `1px solid ${border}` }}>
-                  <div className="aspect-video bg-gray-200" />
-                  <div className="p-4 space-y-2">
-                    <div className="h-4 bg-gray-200 rounded w-3/4" />
-                    <div className="h-3 bg-gray-200 rounded w-1/2" />
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      </section>
+      {/* Featured Courses — hidden per product decision */}
+      {/* <section className="py-14 bg-white" style={{ backgroundColor: bg }}>
+        ...courses section removed...
+      </section> */}
 
       {/* Features */}
       <section className="py-14 bg-green-50" style={{ backgroundColor: bg }}>
@@ -190,15 +164,15 @@ export default function HomePage() {
             <h2 className="text-3xl font-bold text-white mb-4">
               Welcome back, {user?.firstName}! 👋
             </h2>
-            <p className="text-green-100 mb-8">Pick up where you left off or explore new courses</p>
+            <p className="text-green-100 mb-8">Pick up where you left off or explore new exams</p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link to="/dashboard"
                 className="bg-yellow-400 text-gray-900 px-8 py-3 rounded-lg font-bold hover:bg-yellow-300 transition-colors">
                 My Dashboard
               </Link>
-              <Link to="/courses"
+              <Link to="/exams"
                 className="border-2 border-white text-white px-8 py-3 rounded-lg font-semibold hover:bg-white hover:text-green-700 transition-colors">
-                Browse More Courses
+                Browse Exams
               </Link>
             </div>
           </div>
