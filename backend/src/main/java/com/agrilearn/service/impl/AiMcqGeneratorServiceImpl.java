@@ -27,7 +27,7 @@ public class AiMcqGeneratorServiceImpl implements AiMcqGeneratorService {
     private final ObjectMapper objectMapper;
     private final RestTemplate restTemplate;
 
-    private static final String GEMINI_URL = "https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent";
+    private static final String GEMINI_URL = "https://generativelanguage.googleapis.com/v1/models/gemini-3.1-flash-lite:generateContent";
 
     @Override
     public List<ExamDto.McqQuestionWithAnswerResponse> generateQuestions(String notesContent, int count) {
