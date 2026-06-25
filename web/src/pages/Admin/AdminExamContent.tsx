@@ -156,7 +156,7 @@ export default function AdminExamContent() {
     if (!genMcqNote || !selectedChapter) return
     setSaving(true)
     try {
-      await examApi.generateMcq(genMcqNote.id, mcqCount, selectedChapter.id)
+      await examApi.generateMcq(genMcqNote.id, selectedChapter.id, mcqCount)
       flash('ok', `MCQ test generated with ${mcqCount} questions!`)
       setShowGenMcq(false)
       loadChapterContent(selectedChapter)
