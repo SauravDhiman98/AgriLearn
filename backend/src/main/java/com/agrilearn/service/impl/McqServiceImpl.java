@@ -7,6 +7,12 @@ import com.agrilearn.exception.ResourceNotFoundException;
 import com.agrilearn.repository.*;
 import com.agrilearn.service.AiMcqGeneratorService;
 import com.agrilearn.service.McqService;
+import com.agrilearn.service.MinioService;
+import org.springframework.beans.factory.annotation.Value;
+import java.io.InputStream;
+import org.apache.pdfbox.pdmodel.PDDocument;
+import org.apache.pdfbox.text.PDFTextStripper;
+import org.apache.pdfbox.Loader;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
@@ -34,6 +40,10 @@ public class McqServiceImpl implements McqService {
     private final UserRepository userRepo;
     private final AiMcqGeneratorService aiService;
     private final ObjectMapper objectMapper;
+    private final MinioService minioService;
+
+    @Value("${minio.bucket.documents:agrilearn-documents}")
+    private String documentsBucket;
 
     @Override
     @Transactional(readOnly = true)
@@ -121,8 +131,24 @@ public class McqServiceImpl implements McqService {
         if (!notes.getChapter().getId().equals(chapterId)) {
             throw new BadRequestException("Notes do not belong to the provided chapter");
         }
+        log.info("=== MCQ Generation Start ===");
+        log.info("Notes ID: {}, Chapter ID: {}, Question Count: {}", notesId, chapterId, questionCount);
+        log.info("Notes title: {}", notes.getTitle());
+        log.info("Notes fileUrl: {}", notes.getFileUrl());
+        log.info("Notes content (raw): [{}]", notes.getContent());
 
-        List<ExamDto.McqQuestionWithAnswerResponse> aiQuestions = aiService.generateQuestions(notes.getContent(), questionCount);
+        String notesContent = notes.getContent();
+        if (notesContent == null || notesContent.isBlank()) {
+            log.info("Content is empty — attempting PDF text extraction from: {}", notes.getFileUrl());
+            notesContent = extractTextFromPdf(notes.getFileUrl());
+            log.info("Extracted content length: {} chars", notesContent == null ? 0 : notesContent.length());
+            log.info("Extracted content preview: [{}]", notesContent != null && notesContent.length() > 200 ? notesContent.substring(0, 200) + "..." : notesContent);
+        } else {
+            log.info("Using stored text content, length: {} chars", notesContent.length());
+        }
+        log.info("Final content being sent to AI (first 300 chars): [{}]",
+                notesContent != null && notesContent.length() > 300 ? notesContent.substring(0, 300) + "..." : notesContent);
+        List<ExamDto.McqQuestionWithAnswerResponse> aiQuestions = aiService.generateQuestions(notesContent, questionCount);
         if (aiQuestions.isEmpty()) {
             throw new BadRequestException("AI could not generate MCQ questions for these notes");
         }
@@ -164,6 +190,24 @@ public class McqServiceImpl implements McqService {
         r.setTimeLimitMinutes(test.getTimeLimitMinutes());
         r.setNotesId(notesId);
         return r;
+    }
+
+    private String extractTextFromPdf(String fileUrl) {
+        if (fileUrl == null || fileUrl.isBlank()) {
+            log.warn("No fileUrl available for PDF text extraction");
+            return "";
+        }
+        try (InputStream is = minioService.streamFile(documentsBucket, fileUrl)) {
+            byte[] pdfBytes = is.readAllBytes();
+            try (PDDocument doc = Loader.loadPDF(pdfBytes)) {
+                String text = new PDFTextStripper().getText(doc);
+                log.info("Extracted {} characters from PDF: {}", text.length(), fileUrl);
+                return text;
+            }
+        } catch (Exception e) {
+            log.error("Failed to extract text from PDF {}: {}", fileUrl, e.getMessage());
+            return "";
+        }
     }
 
     private Map<Long, String> parseAnswers(String answersJson) {

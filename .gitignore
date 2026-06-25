@@ -55,3 +55,6 @@ coverage/
 
 # Local file uploads (dev mode)
 backend/uploads/
+
+# Content/study material PDFs (managed separately, not in git)
+Content/

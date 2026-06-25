@@ -20,7 +20,7 @@ export default function McqTestPage() {
 
   const { data: test, isLoading } = useQuery(['mcq-test', id], () => examApi.getTest(Number(id)), {
     select: res => res.data,
-    onSuccess: (data: any) => setTimeLeft(data.durationMinutes * 60),
+    onSuccess: (data: any) => setTimeLeft(data.timeLimitMinutes * 60),
   })
 
   // Countdown timer
@@ -75,7 +75,7 @@ export default function McqTestPage() {
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px', marginBottom: '32px' }}>
             {[
               { label: 'Questions', value: test?.questionCount || questions.length },
-              { label: 'Duration', value: `${test?.durationMinutes} min` },
+              { label: 'Duration', value: `${test?.timeLimitMinutes} min` },
               { label: 'Difficulty', value: test?.difficulty },
             ].map(item => (
               <div key={item.label} style={{ backgroundColor: isDark ? '#374151' : '#f3f4f6', borderRadius: '12px', padding: '14px 10px' }}>
@@ -190,11 +190,11 @@ export default function McqTestPage() {
       {/* Question */}
       <div style={{ maxWidth: '700px', margin: '0 auto', backgroundColor: cardBg, borderRadius: '16px', padding: '28px', border: `1px solid ${border}` }}>
         <p style={{ fontSize: '17px', fontWeight: '600', color: text, marginBottom: '24px', lineHeight: '1.6' }}>
-          {q?.questionText}
+          {q?.question}
         </p>
 
         <div style={{ display: 'grid', gap: '10px' }}>
-          {q?.options?.map((opt: string, i: number) => {
+          {[q?.optionA, q?.optionB, q?.optionC, q?.optionD].map((opt: string, i: number) => {
             const optKey = String.fromCharCode(65 + i) // A, B, C, D
             const selected = answers[q.id] === optKey
             return (

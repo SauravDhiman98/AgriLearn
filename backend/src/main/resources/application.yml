@@ -86,9 +86,14 @@ razorpay:
   key-id: ${RAZORPAY_KEY_ID:}
   key-secret: ${RAZORPAY_KEY_SECRET:}
 
-# Google Gemini AI
+# Google Gemini / GitHub Models AI
 gemini:
   api-key: ${GEMINI_API_KEY:}
+
+# GitHub Models (fallback AI provider)
+github:
+  models:
+    token: ${GITHUB_TOKEN:}
 
 # Springdoc OpenAPI
 springdoc:
