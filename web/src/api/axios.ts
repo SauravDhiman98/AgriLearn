@@ -35,16 +35,17 @@ apiClient.interceptors.response.use(
   async (error) => {
     const original = error.config
 
-    // Only attempt refresh on 401, only once per request, and not on auth endpoints
-    if (
-      error.response?.status === 401 &&
+    // Attempt refresh on 401 (expired token) or 403 when a token exists (expired token reaching admin endpoints)
+    const hasToken = !!localStorage.getItem('accessToken')
+    const shouldRetry =
+      (error.response?.status === 401 || (error.response?.status === 403 && hasToken)) &&
       !original._retry &&
       !original.url?.includes('/auth/')
-    ) {
+
+    if (shouldRetry) {
       const refreshToken = localStorage.getItem('refreshToken')
 
       if (!refreshToken) {
-        // No refresh token — clear session and go to login
         localStorage.removeItem('accessToken')
         localStorage.removeItem('refreshToken')
         localStorage.removeItem('user')
@@ -53,7 +54,6 @@ apiClient.interceptors.response.use(
       }
 
       if (isRefreshing) {
-        // Queue requests while a refresh is in flight
         return new Promise((resolve, reject) => {
           failedQueue.push({ resolve, reject })
         }).then((newToken) => {
