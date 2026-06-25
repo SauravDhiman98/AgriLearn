@@ -1,15 +1,16 @@
-import { useParams } from 'react-router-dom'
+import { useParams, useNavigate } from 'react-router-dom'
 import { useQuery } from 'react-query'
 import { useDispatch, useSelector } from 'react-redux'
 import { courseApi } from '../../api/services'
 import { RootState, AppDispatch } from '../../store'
-import { Star, Clock, Users, BookOpen, Play, Lock, ChevronDown, ChevronUp } from 'lucide-react'
+import { Star, Clock, Users, BookOpen, Play, Lock, ChevronDown, ChevronUp, ChevronLeft } from 'lucide-react'
 import { useState } from 'react'
 import { toast } from 'react-toastify'
 import { useTheme } from '../../context/ThemeContext'
 
 export default function CourseDetailPage() {
   const { id } = useParams<{ id: string }>()
+  const navigate = useNavigate()
   const dispatch = useDispatch<AppDispatch>()
   const { isAuthenticated } = useSelector((s: RootState) => s.auth)
   const { isDark } = useTheme()
@@ -49,6 +50,15 @@ export default function CourseDetailPage() {
 
   return (
     <div className="bg-gray-50 min-h-screen" style={{ backgroundColor: bg, minHeight: '100vh', color: text }}>
+      {/* Back button */}
+      <div style={{ maxWidth: '1152px', margin: '0 auto', padding: '12px 16px 0' }}>
+        <button onClick={() => navigate(-1)} style={{
+          display: 'flex', alignItems: 'center', gap: '6px', background: 'none', border: 'none',
+          color: muted, cursor: 'pointer', fontSize: '14px', padding: '0',
+        }}>
+          <ChevronLeft style={{ width: '16px', height: '16px' }} /> All Courses
+        </button>
+      </div>
       {/* Course header */}
       <div className="bg-gray-900 text-white">
         <div className="max-w-6xl mx-auto px-4 py-10 grid grid-cols-1 lg:grid-cols-3 gap-8">

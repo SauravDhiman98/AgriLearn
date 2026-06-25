@@ -1,9 +1,10 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { logApi } from '../../api/services'
 import {
   Activity, Download, Trash2, RefreshCw, ChevronDown,
   Search, ToggleLeft, ToggleRight, Settings, AlertCircle,
-  Info, Bug, AlertTriangle
+  Info, Bug, AlertTriangle, ChevronLeft
 } from 'lucide-react'
 import { useTheme } from '../../context/ThemeContext'
 
@@ -58,6 +59,7 @@ const LEVELS = ['ALL', 'ERROR', 'WARN', 'INFO', 'DEBUG', 'TRACE']
 // ── Log Viewer Page ────────────────────────────────────────────────────────
 export default function LogViewerPage() {
   const { isDark } = useTheme()
+  const navigate = useNavigate()
   const [entries, setEntries] = useState<LogEntry[]>([])
   const [stats, setStats]   = useState<LogStats | null>(null)
   const [levels, setLevels] = useState<Record<string, string>>({})
@@ -186,6 +188,11 @@ export default function LogViewerPage() {
       {/* ── Header ─────────────────────────────────────────────────────── */}
       <div className="flex items-center justify-between px-4 py-2 bg-gray-900 border-b border-gray-700 shrink-0" style={{ backgroundColor: cardBg, borderColor: border }}>
         <div className="flex items-center gap-3">
+          <button onClick={() => navigate('/admin')} title="Back to Admin"
+            className="p-1.5 rounded hover:bg-gray-700 transition"
+            style={{ background: 'none', border: 'none', color: muted, cursor: 'pointer' }}>
+            <ChevronLeft className="w-5 h-5" />
+          </button>
           <Activity className="w-5 h-5 text-green-400" />
           <span className="text-sm font-bold text-white tracking-wide" style={{ color: text }}>AgriLearn Log Viewer</span>
           {loading && <RefreshCw className="w-4 h-4 text-blue-400 animate-spin" />}

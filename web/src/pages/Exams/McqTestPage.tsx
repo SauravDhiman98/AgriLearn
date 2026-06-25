@@ -3,7 +3,7 @@ import { useQuery, useMutation } from 'react-query'
 import { useParams, useNavigate } from 'react-router-dom'
 import { examApi } from '../../api/services'
 import { useTheme } from '../../context/ThemeContext'
-import { Clock, AlertCircle, CheckCircle, XCircle } from 'lucide-react'
+import { Clock, AlertCircle, CheckCircle, XCircle, ChevronLeft } from 'lucide-react'
 
 type Phase = 'info' | 'quiz' | 'result'
 
@@ -63,6 +63,12 @@ export default function McqTestPage() {
     return (
       <div style={{ backgroundColor: bg, minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px' }}>
         <div style={{ backgroundColor: cardBg, borderRadius: '20px', padding: '40px', maxWidth: '500px', width: '100%', border: `1px solid ${border}`, textAlign: 'center' }}>
+          <button onClick={() => navigate(-1)} style={{
+            display: 'flex', alignItems: 'center', gap: '6px', background: 'none', border: 'none',
+            color: muted, cursor: 'pointer', fontSize: '14px', marginBottom: '20px', padding: '0',
+          }}>
+            <ChevronLeft style={{ width: '16px', height: '16px' }} /> Back
+          </button>
           <div style={{ fontSize: '56px', marginBottom: '16px' }}>🧠</div>
           <h1 style={{ fontSize: '22px', fontWeight: '700', color: text, marginBottom: '8px' }}>{test?.title}</h1>
           <p style={{ color: muted, marginBottom: '28px', fontSize: '14px' }}>{test?.description}</p>
@@ -105,7 +111,12 @@ export default function McqTestPage() {
     return (
       <div style={{ backgroundColor: bg, minHeight: '100vh', padding: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <div style={{ backgroundColor: cardBg, borderRadius: '20px', padding: '40px', maxWidth: '600px', width: '100%', border: `1px solid ${border}`, textAlign: 'center' }}>
-          <div style={{ fontSize: '64px', marginBottom: '16px' }}>{passed ? '🎉' : '😔'}</div>
+          <button onClick={() => navigate(-1)} style={{
+            display: 'flex', alignItems: 'center', gap: '6px', background: 'none', border: 'none',
+            color: muted, cursor: 'pointer', fontSize: '14px', marginBottom: '20px', padding: '0',
+          }}>
+            <ChevronLeft style={{ width: '16px', height: '16px' }} /> Back to Chapter
+          </button>
           <h1 style={{ fontSize: '26px', fontWeight: '700', color: text, marginBottom: '6px' }}>
             {passed ? 'Test Passed!' : 'Better Luck Next Time'}
           </h1>

@@ -1,11 +1,12 @@
 import { useState, useEffect, useRef } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
+import { useNavigate } from 'react-router-dom'
 import { RootState, AppDispatch } from '../../store'
 import { userApi, courseApi } from '../../api/services'
 import {
   User, Mail, Phone, MapPin, BookOpen, Lock, Camera,
   CheckCircle, AlertCircle, Edit2, Save, X, Globe,
-  Award, Clock, TrendingUp, Calendar
+  Award, Clock, TrendingUp, Calendar, ChevronLeft
 } from 'lucide-react'
 import { useTheme } from '../../context/ThemeContext'
 
@@ -70,6 +71,7 @@ function Alert({ type, msg, onClose }: { type: 'success' | 'error'; msg: string;
 export default function ProfilePage() {
   const { user: authUser } = useSelector((s: RootState) => s.auth)
   const dispatch = useDispatch<AppDispatch>()
+  const navigate = useNavigate()
   const { isDark } = useTheme()
 
   const [profile, setProfile]           = useState<ProfileData | null>(null)
@@ -189,6 +191,14 @@ export default function ProfilePage() {
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-8" style={{ backgroundColor: bg, minHeight: '100vh', color: text }}>
+
+      {/* Back button */}
+      <button onClick={() => navigate(-1)} style={{
+        display: 'flex', alignItems: 'center', gap: '6px', background: 'none', border: 'none',
+        color: muted, cursor: 'pointer', fontSize: '14px', marginBottom: '16px', padding: '0',
+      }}>
+        <ChevronLeft style={{ width: '16px', height: '16px' }} /> Back
+      </button>
 
       {/* ── Hero card ─────────────────────────────────────────────────── */}
       <div className="relative bg-gradient-to-r from-green-700 to-green-500 rounded-2xl p-6 mb-6 text-white overflow-hidden">
