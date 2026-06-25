@@ -632,7 +632,7 @@ export default function AdminExamContent() {
                 cursor: 'pointer', fontWeight: '600', fontSize: '13px',
                 backgroundColor: noteUploadType === t ? '#194552' : inputBg,
                 color: noteUploadType === t ? '#fff' : text,
-              }}>{t === 'file' ? '📎 Upload PDF/DOC' : '📝 Plain Text'}</button>
+              }}>{t === 'file' ? '📎 Upload PDF' : '📝 Plain Text'}</button>
             ))}
           </div>
           {noteUploadType === 'file' ? (
@@ -640,8 +640,8 @@ export default function AdminExamContent() {
               <Field label="Title *" muted={muted}>
                 <input style={inputStyle} value={noteFileTitle} onChange={e => setNoteFileTitle(e.target.value)} placeholder="e.g. Chapter 1 Notes PDF" />
               </Field>
-              <Field label="File (PDF or DOC) *" muted={muted}>
-                <input type="file" accept=".pdf,.doc,.docx" style={{ ...inputStyle, padding: '7px' }}
+              <Field label="File (PDF) *" muted={muted}>
+                <input type="file" accept=".pdf,application/pdf" style={{ ...inputStyle, padding: '7px' }}
                   onChange={e => setNoteFile(e.target.files?.[0] || null)} />
               </Field>
               {noteFile && <p style={{ fontSize: '12px', color: muted, marginBottom: '10px' }}>Selected: {noteFile.name} ({(noteFile.size / 1024).toFixed(0)} KB)</p>}

@@ -23,11 +23,7 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class NotesFileController {
 
-    private static final List<String> ALLOWED_CONTENT_TYPES = List.of(
-            "application/pdf",
-            "application/msword",
-            "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-    );
+    private static final List<String> ALLOWED_CONTENT_TYPES = List.of("application/pdf");
 
     private final ChapterNotesRepository notesRepository;
     private final SubjectChapterRepository chapterRepository;
@@ -48,10 +44,10 @@ public class NotesFileController {
         }
 
         String extension = getExtension(file.getOriginalFilename(), file.getContentType());
-        boolean validContentType = file.getContentType() != null && ALLOWED_CONTENT_TYPES.contains(file.getContentType());
-        boolean validExtension = List.of("pdf", "doc", "docx").contains(extension);
-        if (!validContentType && !validExtension) {
-            throw new BadRequestException("Invalid file format. Allowed: PDF, DOC, DOCX");
+        boolean valid = "pdf".equals(extension)
+                || "application/pdf".equals(file.getContentType());
+        if (!valid) {
+            throw new BadRequestException("Invalid file format. Only PDF is allowed");
         }
 
         SubjectChapter chapter = chapterRepository.findById(chapterId)
@@ -88,15 +84,7 @@ public class NotesFileController {
         if (filename != null && filename.contains(".")) {
             return filename.substring(filename.lastIndexOf('.') + 1).toLowerCase();
         }
-        if ("application/pdf".equals(contentType)) {
-            return "pdf";
-        }
-        if ("application/msword".equals(contentType)) {
-            return "doc";
-        }
-        if ("application/vnd.openxmlformats-officedocument.wordprocessingml.document".equals(contentType)) {
-            return "docx";
-        }
+        if ("application/pdf".equals(contentType)) return "pdf";
         return "bin";
     }
 }
