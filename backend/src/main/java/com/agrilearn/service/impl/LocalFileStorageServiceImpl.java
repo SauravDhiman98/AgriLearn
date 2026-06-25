@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -48,6 +49,17 @@ public class LocalFileStorageServiceImpl implements MinioService {
     public String getPresignedUrl(String bucket, String objectName, int expirySeconds) {
         // Return a URL that the LocalFileController can serve
         return contextPath + "/files/" + bucket + "/" + objectName;
+    }
+
+    @Override
+    public InputStream streamFile(String bucket, String objectName) {
+        try {
+            Path target = Paths.get(uploadDir, bucket, objectName);
+            return Files.newInputStream(target);
+        } catch (IOException e) {
+            log.error("Failed to stream local file '{}/{}': {}", bucket, objectName, e.getMessage());
+            throw new RuntimeException("File stream failed: " + e.getMessage(), e);
+        }
     }
 
     @Override

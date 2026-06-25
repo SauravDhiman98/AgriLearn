@@ -9,6 +9,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.InputStream;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
@@ -50,6 +51,19 @@ public class MinioServiceImpl implements MinioService {
         } catch (Exception e) {
             log.error("Failed to generate pre-signed URL for '{}': {}", objectName, e.getMessage());
             throw new RuntimeException("Failed to generate video URL: " + e.getMessage(), e);
+        }
+    }
+
+    @Override
+    public InputStream streamFile(String bucket, String objectName) {
+        try {
+            return minioClient.getObject(GetObjectArgs.builder()
+                    .bucket(bucket)
+                    .object(objectName)
+                    .build());
+        } catch (Exception e) {
+            log.error("Failed to stream object '{}' from bucket '{}': {}", objectName, bucket, e.getMessage());
+            throw new RuntimeException("File stream failed: " + e.getMessage(), e);
         }
     }
 

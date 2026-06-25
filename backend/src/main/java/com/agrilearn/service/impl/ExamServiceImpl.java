@@ -33,6 +33,9 @@ public class ExamServiceImpl implements ExamService {
     @Value("${minio.bucket.documents}")
     private String documentsBucket;
 
+    @Value("${server.servlet.context-path:/api/v1}")
+    private String contextPath;
+
     @Override
     @Transactional(readOnly = true)
     public List<ExamDto.ExamResponse> getAllExams() {
@@ -343,6 +346,7 @@ public class ExamServiceImpl implements ExamService {
         if (storedObjectName == null || storedObjectName.isBlank()) {
             return null;
         }
-        return minioService.getPresignedUrl(documentsBucket, storedObjectName, 3600);
+        // Always proxy through backend to avoid CORS issues with B2/MinIO
+        return contextPath + "/files/proxy/" + documentsBucket + "/" + storedObjectName;
     }
 }

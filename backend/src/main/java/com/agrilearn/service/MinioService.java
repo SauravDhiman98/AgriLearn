@@ -7,6 +7,7 @@ import java.io.InputStream;
 public interface MinioService {
     String uploadFile(MultipartFile file, String bucket, String objectName);
     String getPresignedUrl(String bucket, String objectName, int expirySeconds);
+    InputStream streamFile(String bucket, String objectName);
     void deleteFile(String bucket, String objectName);
     boolean bucketExists(String bucket);
     void ensureBucketExists(String bucket);

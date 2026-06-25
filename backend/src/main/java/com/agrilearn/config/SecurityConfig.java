@@ -31,6 +31,7 @@ public class SecurityConfig {
     private static final String[] PUBLIC_ENDPOINTS = {
         "/auth/**",
         "/files/**",                 // local dev file serving
+        "/files/proxy/**",           // proxied B2/MinIO file downloads
         "/courses/public/**",
         "/forum/posts/public/**",
         "/marketplace/products/public/**",
