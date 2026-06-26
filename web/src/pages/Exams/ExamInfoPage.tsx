@@ -71,7 +71,7 @@ export default function ExamInfoPage() {
                     border: `2px solid ${selectedExamId === exam.id ? '#194552' : border}`,
                   }}
                 >
-                  {exam.icon && <span style={{ marginRight: '6px' }}>{exam.icon}</span>}
+                  {exam.icon && <img src={exam.icon} alt="" style={{ width: '20px', height: '20px', objectFit: 'contain', marginRight: '6px', display: 'inline-block', verticalAlign: 'middle' }} onError={(e: any) => { e.target.style.display = 'none' }} />}
                   {exam.name}
                 </button>
               ))}
@@ -120,14 +120,26 @@ export default function ExamInfoPage() {
                           border: 'none', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center',
                         }}
                       >
-                        <span style={{ fontWeight: '700', fontSize: '15px', color: text }}>{section.sectionTitle}</span>
+                        <span style={{ fontWeight: '700', fontSize: '15px', color: text }}>{section.title || section.sectionTitle}</span>
                         {isOpen
                           ? <ChevronUp style={{ width: '18px', height: '18px', color: muted }} />
                           : <ChevronDown style={{ width: '18px', height: '18px', color: muted }} />}
                       </button>
 
                       {/* Section content */}
-                      {isOpen && headers && rows && (
+                      {isOpen && section.sectionType === 'DOC' && section.description && (
+                        <div
+                          className={`prose prose-slate max-w-none ${isDark ? 'prose-invert' : ''} exam-doc-content`}
+                          style={{ padding: '24px', overflowX: 'auto' }}
+                          dangerouslySetInnerHTML={{ __html: section.description }}
+                        />
+                      )}
+                      {isOpen && section.sectionType !== 'DOC' && section.description && (
+                        <div style={{ padding: '12px 20px 0', fontSize: '14px', color: text, lineHeight: '1.6' }}>
+                          {section.description}
+                        </div>
+                      )}
+                      {isOpen && section.sectionType !== 'DOC' && headers && rows && (
                         <div style={{ padding: '16px 20px', overflowX: 'auto' }}>
                           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
                             <thead>

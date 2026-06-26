@@ -96,3 +96,166 @@
 
 /* Dividers */
 .dark hr               { border-color: #374151; }
+
+/* ==============================
+   EXAM DOC CONTENT — AI-generated HTML
+   ============================== */
+.exam-doc-content {
+  font-size: 14.5px;
+  line-height: 1.8;
+  color: inherit;
+}
+
+/* Headings */
+.exam-doc-content h2 {
+  font-size: 17px;
+  font-weight: 800;
+  margin: 28px 0 12px;
+  padding: 10px 16px;
+  background: linear-gradient(90deg, #194552 0%, #0d6e84 100%);
+  color: #fff;
+  border-radius: 8px;
+  letter-spacing: 0.3px;
+}
+.exam-doc-content h2:first-child { margin-top: 0; }
+
+.exam-doc-content h3 {
+  font-size: 15px;
+  font-weight: 700;
+  margin: 22px 0 10px;
+  padding: 8px 14px;
+  border-left: 4px solid #16a34a;
+  background-color: #f0fdf4;
+  color: #14532d;
+  border-radius: 0 6px 6px 0;
+}
+
+.exam-doc-content h4 {
+  font-size: 14px;
+  font-weight: 700;
+  margin: 10px 0 5px;
+  color: #0369a1;
+}
+
+/* Paragraphs & lists */
+.exam-doc-content p { margin-bottom: 12px; }
+.exam-doc-content ul {
+  padding-left: 0;
+  margin-bottom: 14px;
+  list-style: none;
+}
+.exam-doc-content ul li {
+  padding: 5px 5px 5px 28px;
+  position: relative;
+  margin-bottom: 4px;
+}
+.exam-doc-content ul li::before {
+  content: '✦';
+  position: absolute;
+  left: 6px;
+  color: #16a34a;
+  font-size: 10px;
+  top: 8px;
+}
+.exam-doc-content ol {
+  padding-left: 0;
+  margin-bottom: 14px;
+  list-style: none;
+  counter-reset: step-counter;
+}
+.exam-doc-content ol li {
+  margin-bottom: 12px;
+  padding: 12px 16px 12px 52px;
+  position: relative;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  counter-increment: step-counter;
+}
+.exam-doc-content ol li::before {
+  content: counter(step-counter);
+  position: absolute;
+  left: 14px;
+  top: 12px;
+  background: #194552;
+  color: #fff;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+/* Highlighted box for important notices */
+.exam-doc-content .highlight-box {
+  background: #fffbeb;
+  border: 1px solid #fcd34d;
+  border-left: 4px solid #f59e0b;
+  border-radius: 6px;
+  padding: 12px 16px;
+  margin-bottom: 14px;
+}
+
+/* Tables */
+.exam-doc-content table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 20px;
+  font-size: 13.5px;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+}
+.exam-doc-content thead tr {
+  background: linear-gradient(90deg, #194552 0%, #0d6e84 100%);
+}
+.exam-doc-content th {
+  color: #fff;
+  padding: 11px 16px;
+  text-align: left;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+  border: none;
+}
+.exam-doc-content td {
+  padding: 10px 16px;
+  border-bottom: 1px solid #e5e7eb;
+  border-right: 1px solid #f3f4f6;
+  vertical-align: top;
+}
+.exam-doc-content td:last-child { border-right: none; }
+.exam-doc-content tr:last-child td { border-bottom: none; }
+.exam-doc-content tbody tr:nth-child(even) { background-color: #f8fafc; }
+.exam-doc-content tbody tr:hover { background-color: #f0f9ff; transition: background 0.15s; }
+
+/* Strong/bold emphasis */
+.exam-doc-content strong { color: #0f766e; font-weight: 700; }
+
+.dark .exam-doc-content h2 {
+  background: linear-gradient(90deg, #0f2a33 0%, #0d3d4a 100%);
+  color: #7dd3fc;
+}
+.dark .exam-doc-content h3 {
+  background-color: #052e16;
+  color: #86efac;
+  border-color: #4ade80;
+}
+.dark .exam-doc-content h4 { color: #38bdf8; }
+.dark .exam-doc-content ul li::before { color: #4ade80; }
+.dark .exam-doc-content ol li {
+  background: #1e2d3a;
+  border-color: #374151;
+}
+.dark .exam-doc-content ol li::before { background: #0f2a33; }
+.dark .exam-doc-content thead tr {
+  background: linear-gradient(90deg, #0f2a33 0%, #0d3d4a 100%);
+}
+.dark .exam-doc-content th { color: #e0f2fe; }
+.dark .exam-doc-content td { border-color: #374151; }
+.dark .exam-doc-content tbody tr:nth-child(even) { background-color: #1e2f38; }
+.dark .exam-doc-content tbody tr:hover { background-color: #1a3a47; }
+.dark .exam-doc-content strong { color: #34d399; }
+.dark .exam-doc-content .highlight-box { background: #1a1a00; border-color: #78350f; }

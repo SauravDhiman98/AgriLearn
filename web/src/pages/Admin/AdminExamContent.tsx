@@ -61,7 +61,8 @@ export default function AdminExamContent() {
   const [showGenMcq, setShowGenMcq] = useState(false)
   const [genMcqNote, setGenMcqNote] = useState<Note | null>(null)
   const [showCsvMcq, setShowCsvMcq] = useState(false)
-  const [showCsvExamInfo, setShowCsvExamInfo] = useState(false)
+  const [showDocUpload, setShowDocUpload] = useState(false)
+  const [docFile, setDocFile] = useState<File | null>(null)
   const [csvFile, setCsvFile] = useState<File | null>(null)
   const [csvTestTitle, setCsvTestTitle] = useState('')
   const [subjectForm, setSubjectForm] = useState({ name: '', description: '', icon: '📝' })
@@ -184,18 +185,18 @@ export default function AdminExamContent() {
     } catch (e: any) { flash('err', e?.response?.data?.message || 'CSV upload failed') } finally { setSaving(false) }
   }
 
-  const handleCsvExamInfoUpload = async () => {
-    if (!csvFile || !selectedExam) return
+  const handleDocExamInfoUpload = async () => {
+    if (!docFile || !selectedExam) return
     setSaving(true)
     try {
       const form = new FormData()
-      form.append('file', csvFile)
-      await apiClient.post(`/admin/exams/${selectedExam.id}/sections/upload-csv`, form, {
+      form.append('file', docFile)
+      await apiClient.post(`/admin/exams/${selectedExam.id}/sections/upload-doc`, form, {
         headers: { 'Content-Type': 'multipart/form-data' }
       })
-      flash('ok', 'Exam info sections imported from CSV!')
-      setShowCsvExamInfo(false); setCsvFile(null)
-    } catch (e: any) { flash('err', e?.response?.data?.message || 'CSV upload failed') } finally { setSaving(false) }
+      flash('ok', 'Document uploaded! Exam info updated.')
+      setShowDocUpload(false); setDocFile(null)
+    } catch (e: any) { flash('err', e?.response?.data?.message || 'Upload failed') } finally { setSaving(false) }
   }
 
   const handleDeleteNote = async (noteId: number) => {
@@ -537,7 +538,7 @@ export default function AdminExamContent() {
             <span style={{ fontSize: '13px', color: muted }}>📄 Bulk import MCQ questions from CSV</span>
             <div style={{ display: 'flex', gap: '8px' }}>
               <button style={{ ...btnSm, backgroundColor: '#0369a1', color: '#fff', border: 'none' }}
-                onClick={() => window.open(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api/v1'}/admin/mcq/template`)}>
+                onClick={() => { const a = document.createElement('a'); a.href = `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api/v1'}/admin/mcq/template`; a.download = 'mcq_template.csv'; a.click() }}>
                 ⬇ Download Template
               </button>
               <button style={{ ...btnSm, backgroundColor: '#7c3aed', color: '#fff', border: 'none' }}
@@ -556,13 +557,9 @@ export default function AdminExamContent() {
           <div style={{ ...colHeader, padding: '16px 20px' }}>
             <span style={{ fontWeight: '700', fontSize: '15px', color: text }}>📋 Exam Info Sections — {selectedExam.name}</span>
             <div style={{ display: 'flex', gap: '8px' }}>
-              <button style={{ ...btnSm, backgroundColor: '#0369a1', color: '#fff', border: 'none' }}
-                onClick={() => window.open(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api/v1'}/admin/exam-info/template`)}>
-                ⬇ CSV Template
-              </button>
               <button style={{ ...btnSm, backgroundColor: '#7c3aed', color: '#fff', border: 'none' }}
-                onClick={() => { setCsvFile(null); setShowCsvExamInfo(true) }}>
-                <Upload style={{ width: '13px', height: '13px' }} /> Upload CSV
+                onClick={() => { setDocFile(null); setShowDocUpload(true) }}>
+                <Upload style={{ width: '13px', height: '13px' }} /> Upload Doc
               </button>
               <button style={btnSm} onClick={() => { setEditSection(null); setSectionForm({ title: '', description: '', sectionType: 'OVERVIEW', tableHeaders: '', tableRows: '' }); setTableHeaders(['Particulars', 'Details']); setTableRows([['', '']]); setShowAddSection(true) }}>
                 <Plus style={{ width: '13px', height: '13px' }} /> Add Section
@@ -778,18 +775,19 @@ export default function AdminExamContent() {
       )}
 
       {/* CSV Exam Info Upload Modal */}
-      {showCsvExamInfo && selectedExam && (
-        <Modal title="Upload Exam Info from CSV" onClose={() => { setShowCsvExamInfo(false); setCsvFile(null) }} cardBg={cardBg} border={border} text={text} muted={muted}>
-          <div style={{ backgroundColor: isDark ? '#374151' : '#eff6ff', borderRadius: '10px', padding: '12px 14px', marginBottom: '16px', fontSize: '13px', color: isDark ? '#bfdbfe' : '#1e40af', border: `1px solid ${border}` }}>
-            📄 Use type-tagged rows: <strong>SECTION</strong> (section title), <strong>HEADERS</strong> (column names), <strong>ROW</strong> (data row).
-            Download the template to see the format.
+      {showDocUpload && selectedExam && (
+        <Modal title={`Upload Exam Info Doc — ${selectedExam.name}`} onClose={() => { setShowDocUpload(false); setDocFile(null) }} cardBg={cardBg} border={border} text={text} muted={muted}>
+          <div style={{ backgroundColor: isDark ? '#374151' : '#f0fdf4', borderRadius: '10px', padding: '12px 14px', marginBottom: '16px', fontSize: '13px', color: isDark ? '#bbf7d0' : '#166534', border: `1px solid ${isDark ? '#4b5563' : '#bbf7d0'}` }}>
+            📄 Upload a <strong>PDF, DOCX or TXT</strong> file. The content will be extracted and displayed exactly as-is on the Exam Info page.
           </div>
-          <Field label="CSV File" muted={muted}>
-            <input type="file" accept=".csv" onChange={e => setCsvFile(e.target.files?.[0] || null)}
+          <Field label="Document File" muted={muted}>
+            <input type="file" accept=".pdf,.docx,.txt"
+              onChange={e => setDocFile(e.target.files?.[0] || null)}
               style={{ ...inputStyle, padding: '8px' }} />
           </Field>
-          <button style={{ ...btnPrimary, backgroundColor: '#7c3aed' }} onClick={handleCsvExamInfoUpload} disabled={!csvFile || saving}>
-            {saving ? 'Uploading...' : '📤 Import Exam Info Sections'}
+          {docFile && <p style={{ fontSize: '12px', color: muted, marginBottom: '12px' }}>Selected: {docFile.name} ({(docFile.size / 1024).toFixed(1)} KB)</p>}
+          <button style={{ ...btnPrimary, backgroundColor: '#7c3aed' }} onClick={handleDocExamInfoUpload} disabled={!docFile || saving}>
+            {saving ? <><Loader2 style={{ width: '14px', height: '14px', display: 'inline', marginRight: '6px' }} />Uploading...</> : '📤 Upload Document'}
           </button>
         </Modal>
       )}

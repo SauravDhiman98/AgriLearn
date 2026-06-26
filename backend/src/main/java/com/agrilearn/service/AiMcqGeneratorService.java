@@ -6,4 +6,5 @@ import java.util.List;
 
 public interface AiMcqGeneratorService {
     List<ExamDto.McqQuestionWithAnswerResponse> generateQuestions(String notesContent, int count);
+    String convertToHtml(String rawText);
 }

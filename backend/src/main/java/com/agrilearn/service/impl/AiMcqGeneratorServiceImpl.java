@@ -71,6 +71,88 @@ public class AiMcqGeneratorServiceImpl implements AiMcqGeneratorService {
         return new ArrayList<>();
     }
 
+    private static final String EXAM_HTML_STYLES = """
+            <style>
+            .eic{font-family:Inter,system-ui,sans-serif;font-size:14.5px;line-height:1.8;color:#1f2937}
+            .eic h2{font-size:17px;font-weight:800;margin:24px 0 12px;padding:10px 18px;background:linear-gradient(90deg,#194552,#0d6e84);color:#fff;border-radius:8px}
+            .eic h2:first-child{margin-top:0}
+            .eic h3{font-size:15px;font-weight:700;margin:18px 0 8px;padding:7px 14px;border-left:4px solid #16a34a;background:#f0fdf4;color:#14532d;border-radius:0 6px 6px 0}
+            .eic h4{font-size:14px;font-weight:700;color:#0369a1;margin:10px 0 5px}
+            .eic p{margin-bottom:10px}
+            .eic ul{list-style:none;padding:0;margin-bottom:12px}
+            .eic ul li{padding:4px 4px 4px 24px;position:relative;margin-bottom:3px}
+            .eic ul li::before{content:'✦';position:absolute;left:4px;color:#16a34a;font-size:10px;top:7px}
+            .eic ol{list-style:none;padding:0;margin-bottom:14px;counter-reset:s}
+            .eic ol>li{counter-increment:s;padding:10px 14px 10px 46px;position:relative;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;margin-bottom:8px}
+            .eic ol>li::before{content:counter(s);position:absolute;left:12px;top:12px;background:#194552;color:#fff;width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700}
+            .eic table{width:100%;border-collapse:collapse;margin-bottom:18px;font-size:13.5px;border-radius:10px;overflow:hidden;box-shadow:0 1px 6px rgba(0,0,0,.1)}
+            .eic thead tr{background:linear-gradient(90deg,#194552,#0d6e84)}
+            .eic th{color:#fff;padding:10px 14px;text-align:left;font-weight:700;border:none}
+            .eic td{padding:9px 14px;border-bottom:1px solid #e5e7eb;vertical-align:top}
+            .eic tbody tr:nth-child(even){background:#f8fafc}
+            .eic tbody tr:hover{background:#f0f9ff}
+            .eic strong{color:#0f766e;font-weight:700}
+            .eic .highlight-box{background:#fffbeb;border:1px solid #fcd34d;border-left:4px solid #f59e0b;border-radius:6px;padding:12px 16px;margin-bottom:14px}
+            </style>
+            <div class="eic">
+            """;
+
+    @Override
+    public String convertToHtml(String rawText) {
+        String prompt = buildHtmlPrompt(rawText);
+        if (githubToken != null && !githubToken.isBlank()) {
+            try {
+                String aiHtml = callAiForText(prompt);
+                return EXAM_HTML_STYLES + aiHtml + "\n</div>";
+            } catch (Exception e) {
+                log.warn("HTML conversion via GitHub Models failed: {}", e.getMessage());
+            }
+        }
+        // Fallback: wrap raw text in styled pre tag
+        return EXAM_HTML_STYLES + "<pre style=\"white-space:pre-wrap\">" +
+                rawText.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;") +
+                "</pre>\n</div>";
+    }
+
+    /** Generic text call — returns the AI's plain text response */
+    private String callAiForText(String prompt) throws Exception {
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.setBearerAuth(githubToken);
+        Map<String, Object> body = Map.of(
+                "model", GITHUB_MODEL,
+                "messages", List.of(Map.of("role", "user", "content", prompt)),
+                "temperature", 0.3
+        );
+        ResponseEntity<String> response = restTemplate.postForEntity(
+                GITHUB_MODELS_URL, new HttpEntity<>(body, headers), String.class);
+        JsonNode root = objectMapper.readTree(response.getBody());
+        String text = root.path("choices").get(0).path("message").path("content").asText();
+        // Strip any markdown code fences
+        return text.replaceAll("(?s)```html\\s*", "").replaceAll("```\\s*", "").trim();
+    }
+
+    private String buildHtmlPrompt(String rawText) {
+        String truncated = rawText != null && rawText.length() > 8000 ? rawText.substring(0, 8000) : rawText;
+        return """
+            Convert the following raw exam information text into clean, visually rich, well-structured HTML.
+
+            Strict rules:
+            - Use <h2> for major sections (Eligibility, Exam Pattern, Syllabus, Important Dates, Vacancy, etc.)
+            - Use <h3> for sub-sections
+            - Use <table> with <thead><tr><th>...</th></tr></thead><tbody> for ALL tabular data
+            - Use <ul><li> for bullet lists, <ol><li> for numbered/step lists
+            - Use <p> for plain paragraphs
+            - For important notices or highlights, wrap in: <div class="highlight-box">...</div>
+            - Use <strong> to highlight key values (numbers, dates, limits)
+            - Keep ALL factual data exactly as given — do NOT invent, summarize or omit anything
+            - Return ONLY the HTML body content — no <html>, <head>, <body>, no markdown, no explanation
+
+            Raw exam information:
+            """ + truncated;
+    }
+
+
     private List<ExamDto.McqQuestionWithAnswerResponse> callGitHubModels(String prompt) throws Exception {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);

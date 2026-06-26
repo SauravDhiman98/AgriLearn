@@ -45,6 +45,7 @@ public class CsvUploadController {
     private final ExamRepository examRepo;
     private final ExamSectionRepository sectionRepo;
     private final ObjectMapper objectMapper;
+    private final com.agrilearn.service.AiMcqGeneratorService aiService;
 
     // ── MCQ CSV Upload ──────────────────────────────────────────────────────
 
@@ -110,7 +111,6 @@ public class CsvUploadController {
     }
 
     @GetMapping("/admin/mcq/template")
-    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<String> getMcqTemplate() {
         String csv = "question,optionA,optionB,optionC,optionD,correctOption,explanation\n" +
                 "\"What is photosynthesis?\",\"Making food from sunlight\",\"Breaking down food\",\"Absorbing water\",\"Releasing CO2\",\"A\",\"Plants convert sunlight to glucose\"\n" +
@@ -193,7 +193,6 @@ public class CsvUploadController {
     }
 
     @GetMapping("/admin/exam-info/template")
-    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<String> getExamInfoTemplate() {
         String csv = "type,col1,col2,col3,col4,col5\n" +
                 "SECTION,Eligibility Criteria,,,,\n" +
@@ -216,7 +215,82 @@ public class CsvUploadController {
                 .body(csv);
     }
 
-    // ── Helpers ─────────────────────────────────────────────────────────────
+    // ── Exam Info Doc Upload (PDF / DOCX) ────────────────────────────────────
+
+    @PostMapping("/admin/exams/{examId}/sections/upload-doc")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Map<String, Object>> uploadExamInfoDoc(
+            @PathVariable Long examId,
+            @RequestParam("file") MultipartFile file) throws Exception {
+
+        Exam exam = examRepo.findById(examId)
+                .orElseThrow(() -> new ResourceNotFoundException("Exam not found with id: " + examId));
+
+        String filename = file.getOriginalFilename() == null ? "" : file.getOriginalFilename().toLowerCase();
+        String rawText;
+
+        if (filename.endsWith(".pdf")) {
+            rawText = extractPdfText(file.getBytes());
+        } else if (filename.endsWith(".docx")) {
+            rawText = extractDocxText(file.getBytes());
+        } else if (filename.endsWith(".doc")) {
+            throw new BadRequestException("Old .doc format is not supported. Please save as .docx and re-upload.");
+        } else if (filename.endsWith(".txt")) {
+            rawText = new String(file.getBytes(), StandardCharsets.UTF_8);
+        } else {
+            throw new BadRequestException("Unsupported file type. Upload PDF, DOCX or TXT.");
+        }
+
+        if (rawText == null || rawText.isBlank()) {
+            throw new BadRequestException("Could not extract any text from the uploaded file.");
+        }
+
+        // Convert raw text to beautiful HTML via AI
+        log.info("Converting raw text to HTML for exam {} ({} chars)...", examId, rawText.length());
+        String htmlContent = aiService.convertToHtml(rawText);
+
+        // Delete existing DOC-type sections for this exam so re-upload replaces them
+        sectionRepo.findByExamIdOrderByOrderIndex(examId).stream()
+                .filter(s -> "DOC".equals(s.getSectionType()))
+                .forEach(s -> sectionRepo.delete(s));
+
+        // Store HTML content in description
+        String docTitle = filename.replaceAll("\\.[a-zA-Z]+$", "").replace("_", " ").replace("-", " ");
+        ExamSection section = ExamSection.builder()
+                .exam(exam)
+                .title(docTitle.isBlank() ? "Exam Information" : capitalize(docTitle))
+                .description(htmlContent)
+                .sectionType("DOC")
+                .orderIndex(0)
+                .build();
+        sectionRepo.save(section);
+
+        log.info("Uploaded exam info doc for exam {} — {} chars extracted", examId, rawText.length());
+        return ResponseEntity.ok(Map.of("chars", rawText.length(), "message", "Document uploaded successfully"));
+    }
+
+    private String extractPdfText(byte[] bytes) throws Exception {
+        try (org.apache.pdfbox.pdmodel.PDDocument doc =
+                     org.apache.pdfbox.Loader.loadPDF(bytes)) {
+            return new org.apache.pdfbox.text.PDFTextStripper().getText(doc);
+        }
+    }
+
+    private String extractDocxText(byte[] bytes) throws Exception {
+        try (java.io.InputStream is = new java.io.ByteArrayInputStream(bytes);
+             org.apache.poi.xwpf.usermodel.XWPFDocument doc = new org.apache.poi.xwpf.usermodel.XWPFDocument(is)) {
+            StringBuilder sb = new StringBuilder();
+            for (org.apache.poi.xwpf.usermodel.XWPFParagraph p : doc.getParagraphs()) {
+                sb.append(p.getText()).append("\n");
+            }
+            return sb.toString();
+        }
+    }
+
+    private String capitalize(String s) {
+        if (s == null || s.isEmpty()) return s;
+        return Character.toUpperCase(s.charAt(0)) + s.substring(1);
+    }
 
     private List<String[]> parseCsv(MultipartFile file) throws Exception {
         List<String[]> result = new ArrayList<>();
