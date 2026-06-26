@@ -101,6 +101,8 @@ public class McqServiceImpl implements McqService {
         r.setId(attempt.getId());
         r.setScore(score);
         r.setTotalQuestions(questions.size());
+        r.setCorrectAnswers(score);
+        r.setWrongAnswers(questions.size() - score);
         r.setPercentage(questions.isEmpty() ? 0 : (double) score / questions.size() * 100);
         r.setUserAnswers(answers);
         r.setQuestions(questions.stream().map(this::toQuestionWithAnswerResponse).collect(Collectors.toList()));

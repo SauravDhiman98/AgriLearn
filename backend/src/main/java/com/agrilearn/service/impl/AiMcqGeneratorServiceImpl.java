@@ -45,7 +45,13 @@ public class AiMcqGeneratorServiceImpl implements AiMcqGeneratorService {
         if (githubToken != null && !githubToken.isBlank()) {
             log.info("Using GitHub Models (gpt-4o-mini) for MCQ generation");
             try {
-                return callGitHubModels(prompt);
+                List<ExamDto.McqQuestionWithAnswerResponse> result = callGitHubModels(prompt);
+                // Retry once if count doesn't match
+                if (result.size() < count) {
+                    log.warn("Got {} questions, expected {}. Retrying...", result.size(), count);
+                    result = callGitHubModels(buildPrompt(notesContent, count));
+                }
+                return result;
             } catch (Exception e) {
                 log.warn("GitHub Models failed: {}, trying Gemini...", e.getMessage());
             }
@@ -99,7 +105,8 @@ public class AiMcqGeneratorServiceImpl implements AiMcqGeneratorService {
     private String buildPrompt(String content, int count) {
         String truncated = content != null && content.length() > 3000 ? content.substring(0, 3000) : content;
         return String.format("""
-            Generate exactly %d multiple choice questions based on the following study notes.
+            You MUST generate EXACTLY %d multiple choice questions based on the following study notes.
+            IMPORTANT: The JSON array must contain EXACTLY %d objects — no more, no less.
             Return ONLY a valid JSON array, no other text, no markdown code blocks.
             Each question must have: question, optionA, optionB, optionC, optionD, correctOption (A/B/C/D), explanation.
             Format example:
@@ -107,7 +114,7 @@ public class AiMcqGeneratorServiceImpl implements AiMcqGeneratorService {
 
             Study Notes:
             %s
-            """, count, truncated);
+            """, count, count, truncated);
     }
 
     private List<ExamDto.McqQuestionWithAnswerResponse> parseOpenAiResponse(String responseBody) throws Exception {

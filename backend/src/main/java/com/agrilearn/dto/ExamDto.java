@@ -175,6 +175,8 @@ public class ExamDto {
         private Long id;
         private int score;
         private int totalQuestions;
+        private int correctAnswers;
+        private int wrongAnswers;
         private double percentage;
         private List<McqQuestionWithAnswerResponse> questions;
         private Map<Long, String> userAnswers;
