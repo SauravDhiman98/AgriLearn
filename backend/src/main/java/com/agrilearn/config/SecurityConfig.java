@@ -41,7 +41,10 @@ public class SecurityConfig {
         "/actuator/info",
         "/swagger-ui/**",
         "/api-docs/**",
-        "/v3/api-docs/**"
+        "/v3/api-docs/**",
+        // React SPA static assets
+        "/", "/index.html", "/assets/**", "/*.js", "/*.css",
+        "/*.ico", "/*.png", "/*.svg", "/*.webmanifest"
     };
 
     @Bean
@@ -53,6 +56,10 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers(PUBLIC_ENDPOINTS).permitAll()
+                        // SPA routes — serve index.html, auth handled client-side
+                        .requestMatchers(HttpMethod.GET, "/login", "/register", "/dashboard",
+                                "/profile", "/forum/**", "/marketplace/**",
+                                "/live-classes", "/mcq-tests/**", "/instructor/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/courses/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/exams/*/sections").permitAll()
                         .requestMatchers("/exams/**", "/subjects/**", "/exam-chapters/**").permitAll()
