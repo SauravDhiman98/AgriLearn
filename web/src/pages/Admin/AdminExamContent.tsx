@@ -537,7 +537,7 @@ export default function AdminExamContent() {
             <span style={{ fontSize: '13px', color: muted }}>📄 Bulk import MCQ questions from CSV</span>
             <div style={{ display: 'flex', gap: '8px' }}>
               <button style={{ ...btnSm, backgroundColor: '#0369a1', color: '#fff', border: 'none' }}
-                onClick={() => window.open(`${import.meta.env.VITE_API_URL || 'http://localhost:8080/api/v1'}/admin/mcq/template`)}>
+                onClick={() => window.open(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api/v1'}/admin/mcq/template`)}>
                 ⬇ Download Template
               </button>
               <button style={{ ...btnSm, backgroundColor: '#7c3aed', color: '#fff', border: 'none' }}
@@ -557,7 +557,7 @@ export default function AdminExamContent() {
             <span style={{ fontWeight: '700', fontSize: '15px', color: text }}>📋 Exam Info Sections — {selectedExam.name}</span>
             <div style={{ display: 'flex', gap: '8px' }}>
               <button style={{ ...btnSm, backgroundColor: '#0369a1', color: '#fff', border: 'none' }}
-                onClick={() => window.open(`${import.meta.env.VITE_API_URL || 'http://localhost:8080/api/v1'}/admin/exam-info/template`)}>
+                onClick={() => window.open(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api/v1'}/admin/exam-info/template`)}>
                 ⬇ CSV Template
               </button>
               <button style={{ ...btnSm, backgroundColor: '#7c3aed', color: '#fff', border: 'none' }}
