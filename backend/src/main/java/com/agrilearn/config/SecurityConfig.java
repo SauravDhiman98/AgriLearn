@@ -56,6 +56,8 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers(PUBLIC_ENDPOINTS).permitAll()
+                        // CSV template downloads — no sensitive data, no auth needed
+                        .requestMatchers(HttpMethod.GET, "/admin/mcq/template", "/admin/exam-info/template").permitAll()
                         // SPA routes — serve index.html, auth handled client-side
                         .requestMatchers(HttpMethod.GET, "/login", "/register", "/dashboard",
                                 "/profile", "/forum/**", "/marketplace/**",
