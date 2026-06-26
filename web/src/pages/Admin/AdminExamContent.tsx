@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
-import { ChevronRight, Plus, Loader2, Trash2, Video, FileText, Brain, RefreshCw } from 'lucide-react'
+import { ChevronRight, Plus, Loader2, Trash2, Video, FileText, Brain, RefreshCw, Upload } from 'lucide-react'
 import { examApi } from '../../api/services'
+import apiClient from '../../api/axios'
 import { useTheme } from '../../context/ThemeContext'
 
 interface Exam { id: number; name: string; icon: string; description: string }
@@ -59,6 +60,10 @@ export default function AdminExamContent() {
   const [showAddVideo, setShowAddVideo] = useState(false)
   const [showGenMcq, setShowGenMcq] = useState(false)
   const [genMcqNote, setGenMcqNote] = useState<Note | null>(null)
+  const [showCsvMcq, setShowCsvMcq] = useState(false)
+  const [showCsvExamInfo, setShowCsvExamInfo] = useState(false)
+  const [csvFile, setCsvFile] = useState<File | null>(null)
+  const [csvTestTitle, setCsvTestTitle] = useState('')
   const [subjectForm, setSubjectForm] = useState({ name: '', description: '', icon: '📝' })
   const [chapterForm, setChapterForm] = useState({ title: '', description: '' })
   const [noteForm, setNoteForm] = useState({ title: '', content: '' })
@@ -160,7 +165,37 @@ export default function AdminExamContent() {
       flash('ok', `MCQ test generated with ${mcqCount} questions!`)
       setShowGenMcq(false)
       loadChapterContent(selectedChapter)
-    } catch { flash('err', 'Failed to generate MCQ — check Gemini API key') } finally { setSaving(false) }
+    } catch { flash('err', 'Failed to generate MCQ — check AI API key') } finally { setSaving(false) }
+  }
+
+  const handleCsvMcqUpload = async () => {
+    if (!csvFile || !selectedChapter) return
+    setSaving(true)
+    try {
+      const form = new FormData()
+      form.append('file', csvFile)
+      if (csvTestTitle) form.append('testTitle', csvTestTitle)
+      await apiClient.post(`/admin/chapters/${selectedChapter.id}/mcq/upload-csv`, form, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      })
+      flash('ok', 'MCQ questions imported from CSV!')
+      setShowCsvMcq(false); setCsvFile(null); setCsvTestTitle('')
+      loadChapterContent(selectedChapter)
+    } catch (e: any) { flash('err', e?.response?.data?.message || 'CSV upload failed') } finally { setSaving(false) }
+  }
+
+  const handleCsvExamInfoUpload = async () => {
+    if (!csvFile || !selectedExam) return
+    setSaving(true)
+    try {
+      const form = new FormData()
+      form.append('file', csvFile)
+      await apiClient.post(`/admin/exams/${selectedExam.id}/sections/upload-csv`, form, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      })
+      flash('ok', 'Exam info sections imported from CSV!')
+      setShowCsvExamInfo(false); setCsvFile(null)
+    } catch (e: any) { flash('err', e?.response?.data?.message || 'CSV upload failed') } finally { setSaving(false) }
   }
 
   const handleDeleteNote = async (noteId: number) => {
@@ -477,6 +512,7 @@ export default function AdminExamContent() {
                   <Plus style={{ width: '13px', height: '13px' }} /> Add Link
                 </button>
               </div>
+
               {videos.map(vid => (
                 <div key={vid.id} style={{ padding: '10px 12px', backgroundColor: isDark ? '#374151' : '#fff7f7', borderRadius: '8px', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '10px', border: `1px solid ${border}` }}>
                   <div style={{ flex: 1 }}>
@@ -496,6 +532,20 @@ export default function AdminExamContent() {
               {videos.length === 0 && <p style={{ fontSize: '13px', color: muted }}>No videos yet.</p>}
             </div>
           </div>
+          {/* CSV MCQ Upload bar */}
+          <div style={{ padding: '12px 20px', borderTop: `1px solid ${border}`, backgroundColor: isDark ? '#1a2e3a' : '#f0f9ff', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <span style={{ fontSize: '13px', color: muted }}>📄 Bulk import MCQ questions from CSV</span>
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <button style={{ ...btnSm, backgroundColor: '#0369a1', color: '#fff', border: 'none' }}
+                onClick={() => window.open(`${import.meta.env.VITE_API_URL || 'http://localhost:8080/api/v1'}/admin/mcq/template`)}>
+                ⬇ Download Template
+              </button>
+              <button style={{ ...btnSm, backgroundColor: '#7c3aed', color: '#fff', border: 'none' }}
+                onClick={() => { setCsvFile(null); setCsvTestTitle(''); setShowCsvMcq(true) }}>
+                <Upload style={{ width: '13px', height: '13px' }} /> Upload MCQ CSV
+              </button>
+            </div>
+          </div>
         </div>
       )}
       </> )} {/* end adminTab content */}
@@ -505,9 +555,19 @@ export default function AdminExamContent() {
         <div style={{ backgroundColor: cardBg, borderRadius: '12px', border: `1px solid ${border}`, overflow: 'hidden' }}>
           <div style={{ ...colHeader, padding: '16px 20px' }}>
             <span style={{ fontWeight: '700', fontSize: '15px', color: text }}>📋 Exam Info Sections — {selectedExam.name}</span>
-            <button style={btnSm} onClick={() => { setEditSection(null); setSectionForm({ title: '', description: '', sectionType: 'OVERVIEW', tableHeaders: '', tableRows: '' }); setTableHeaders(['Particulars', 'Details']); setTableRows([['', '']]); setShowAddSection(true) }}>
-              <Plus style={{ width: '13px', height: '13px' }} /> Add Section
-            </button>
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <button style={{ ...btnSm, backgroundColor: '#0369a1', color: '#fff', border: 'none' }}
+                onClick={() => window.open(`${import.meta.env.VITE_API_URL || 'http://localhost:8080/api/v1'}/admin/exam-info/template`)}>
+                ⬇ CSV Template
+              </button>
+              <button style={{ ...btnSm, backgroundColor: '#7c3aed', color: '#fff', border: 'none' }}
+                onClick={() => { setCsvFile(null); setShowCsvExamInfo(true) }}>
+                <Upload style={{ width: '13px', height: '13px' }} /> Upload CSV
+              </button>
+              <button style={btnSm} onClick={() => { setEditSection(null); setSectionForm({ title: '', description: '', sectionType: 'OVERVIEW', tableHeaders: '', tableRows: '' }); setTableHeaders(['Particulars', 'Details']); setTableRows([['', '']]); setShowAddSection(true) }}>
+                <Plus style={{ width: '13px', height: '13px' }} /> Add Section
+              </button>
+            </div>
           </div>
           <p style={{ padding: '0 20px 12px', fontSize: '13px', color: muted }}>
             Sections appear on the exam detail page — Overview, Important Dates, Eligibility, Syllabus, etc.
@@ -694,6 +754,42 @@ export default function AdminExamContent() {
           <p style={{ fontSize: '12px', color: muted, marginBottom: '14px' }}>Recommended: 10–20 questions. Requires GEMINI_API_KEY set in backend environment.</p>
           <button style={{ ...btnPrimary, backgroundColor: '#7c3aed' }} onClick={handleGenerateMcq} disabled={saving}>
             {saving ? 'Generating...' : '🧠 Generate MCQ Test'}
+          </button>
+        </Modal>
+      )}
+
+      {/* CSV MCQ Upload Modal */}
+      {showCsvMcq && selectedChapter && (
+        <Modal title="Upload MCQ from CSV" onClose={() => { setShowCsvMcq(false); setCsvFile(null) }} cardBg={cardBg} border={border} text={text} muted={muted}>
+          <div style={{ backgroundColor: isDark ? '#374151' : '#eff6ff', borderRadius: '10px', padding: '12px 14px', marginBottom: '16px', fontSize: '13px', color: isDark ? '#bfdbfe' : '#1e40af', border: `1px solid ${border}` }}>
+            📄 Upload a CSV with columns: <strong>question, optionA, optionB, optionC, optionD, correctOption, explanation</strong>
+          </div>
+          <Field label="Test Title (optional)" muted={muted}>
+            <input style={inputStyle} value={csvTestTitle} onChange={e => setCsvTestTitle(e.target.value)} placeholder={`MCQ: ${selectedChapter.title}`} />
+          </Field>
+          <Field label="CSV File" muted={muted}>
+            <input type="file" accept=".csv" onChange={e => setCsvFile(e.target.files?.[0] || null)}
+              style={{ ...inputStyle, padding: '8px' }} />
+          </Field>
+          <button style={{ ...btnPrimary, backgroundColor: '#7c3aed' }} onClick={handleCsvMcqUpload} disabled={!csvFile || saving}>
+            {saving ? 'Uploading...' : '📤 Import MCQ Questions'}
+          </button>
+        </Modal>
+      )}
+
+      {/* CSV Exam Info Upload Modal */}
+      {showCsvExamInfo && selectedExam && (
+        <Modal title="Upload Exam Info from CSV" onClose={() => { setShowCsvExamInfo(false); setCsvFile(null) }} cardBg={cardBg} border={border} text={text} muted={muted}>
+          <div style={{ backgroundColor: isDark ? '#374151' : '#eff6ff', borderRadius: '10px', padding: '12px 14px', marginBottom: '16px', fontSize: '13px', color: isDark ? '#bfdbfe' : '#1e40af', border: `1px solid ${border}` }}>
+            📄 Use type-tagged rows: <strong>SECTION</strong> (section title), <strong>HEADERS</strong> (column names), <strong>ROW</strong> (data row).
+            Download the template to see the format.
+          </div>
+          <Field label="CSV File" muted={muted}>
+            <input type="file" accept=".csv" onChange={e => setCsvFile(e.target.files?.[0] || null)}
+              style={{ ...inputStyle, padding: '8px' }} />
+          </Field>
+          <button style={{ ...btnPrimary, backgroundColor: '#7c3aed' }} onClick={handleCsvExamInfoUpload} disabled={!csvFile || saving}>
+            {saving ? 'Uploading...' : '📤 Import Exam Info Sections'}
           </button>
         </Modal>
       )}

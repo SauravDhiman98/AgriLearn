@@ -20,6 +20,7 @@ import LogViewerPage from './pages/Admin/LogViewerPage'
 import LessonVideoUploadPage from './pages/Instructor/LessonVideoUploadPage'
 import ExamsPage from './pages/Exams/ExamsPage'
 import ExamDetailPage from './pages/Exams/ExamDetailPage'
+import ExamInfoPage from './pages/Exams/ExamInfoPage'
 import SubjectDetailPage from './pages/Exams/SubjectDetailPage'
 import ChapterDetailPage from './pages/Exams/ChapterDetailPage'
 import McqTestPage from './pages/Exams/McqTestPage'
@@ -41,7 +42,7 @@ export default function App() {
         {/* Public routes */}
         <Route path="/" element={<HomePage />} />
         <Route path="/exams" element={<ExamsPage />} />
-        <Route path="/exam-info" element={<ExamsPage />} />
+        <Route path="/exam-info" element={<ExamInfoPage />} />
         <Route path="/exams/:id" element={<ExamDetailPage />} />
         <Route path="/subjects/:id" element={<SubjectDetailPage />} />
         <Route path="/exam-chapters/:id" element={<ChapterDetailPage />} />

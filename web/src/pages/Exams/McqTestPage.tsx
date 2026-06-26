@@ -23,6 +23,13 @@ export default function McqTestPage() {
     onSuccess: (data: any) => setTimeLeft(data.timeLimitMinutes * 60),
   })
 
+  // Reset timer whenever phase switches to quiz
+  useEffect(() => {
+    if (phase === 'quiz' && test?.timeLimitMinutes) {
+      setTimeLeft(test.timeLimitMinutes * 60)
+    }
+  }, [phase])
+
   // Countdown timer
   useEffect(() => {
     if (phase !== 'quiz' || timeLeft <= 0) return
@@ -104,53 +111,113 @@ export default function McqTestPage() {
   // Result Phase
   if (phase === 'result') {
     const score = result?.score || 0
-    const total = result?.totalMarks || questions.length
-    const pct = Math.round((score / total) * 100)
-    const passed = pct >= (test?.passingScore || 40)
+    const total = result?.totalQuestions || questions.length
+    const correct = result?.correctAnswers ?? score
+    const wrong = result?.wrongAnswers ?? (total - score)
+    const pct = total > 0 ? Math.round((score / total) * 100) : 0
+    const passed = pct >= 40
+
+    // Build review from questions + userAnswers
+    const optionMap: Record<string, string> = { A: 'optionA', B: 'optionB', C: 'optionC', D: 'optionD' }
+    const reviewItems = (result?.questions || []).map((q: any) => {
+      const userKey = result?.userAnswers?.[q.id]
+      const isCorrect = userKey === q.correctOption
+      return {
+        question: q.question,
+        userOption: userKey,
+        userText: userKey ? q[optionMap[userKey]] : null,
+        correctOption: q.correctOption,
+        correctText: q[optionMap[q.correctOption]],
+        isCorrect,
+        explanation: q.explanation,
+      }
+    })
 
     return (
-      <div style={{ backgroundColor: bg, minHeight: '100vh', padding: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <div style={{ backgroundColor: cardBg, borderRadius: '20px', padding: '40px', maxWidth: '600px', width: '100%', border: `1px solid ${border}`, textAlign: 'center' }}>
+      <div style={{ backgroundColor: bg, minHeight: '100vh', padding: '24px' }}>
+        <div style={{ maxWidth: '720px', margin: '0 auto', backgroundColor: cardBg, borderRadius: '20px', padding: '40px', border: `1px solid ${border}` }}>
           <button onClick={() => navigate(-1)} style={{
             display: 'flex', alignItems: 'center', gap: '6px', background: 'none', border: 'none',
             color: muted, cursor: 'pointer', fontSize: '14px', marginBottom: '20px', padding: '0',
           }}>
             <ChevronLeft style={{ width: '16px', height: '16px' }} /> Back to Chapter
           </button>
-          <h1 style={{ fontSize: '26px', fontWeight: '700', color: text, marginBottom: '6px' }}>
-            {passed ? 'Test Passed!' : 'Better Luck Next Time'}
-          </h1>
-          <p style={{ color: muted, marginBottom: '28px' }}>{test?.title}</p>
 
-          <div style={{ width: '120px', height: '120px', borderRadius: '50%', margin: '0 auto 28px', border: `8px solid ${passed ? '#16a34a' : '#dc2626'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column' }}>
-            <span style={{ fontSize: '28px', fontWeight: '800', color: passed ? '#16a34a' : '#dc2626' }}>{pct}%</span>
-            <span style={{ fontSize: '11px', color: muted }}>Score</span>
+          <div style={{ textAlign: 'center', marginBottom: '32px' }}>
+            <h1 style={{ fontSize: '26px', fontWeight: '700', color: text, marginBottom: '6px' }}>
+              {passed ? '🎉 Test Passed!' : '😓 Better Luck Next Time'}
+            </h1>
+            <p style={{ color: muted }}>{test?.title}</p>
+
+            <div style={{ width: '120px', height: '120px', borderRadius: '50%', margin: '20px auto', border: `8px solid ${passed ? '#16a34a' : '#dc2626'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column' }}>
+              <span style={{ fontSize: '28px', fontWeight: '800', color: passed ? '#16a34a' : '#dc2626' }}>{pct}%</span>
+              <span style={{ fontSize: '11px', color: muted }}>Score</span>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px', marginBottom: '8px' }}>
+              {[
+                { label: 'Score', value: `${score}/${total}`, color: text, icon: <CheckCircle style={{ width: '18px', height: '18px', color: '#3b82f6' }} /> },
+                { label: 'Correct', value: correct, color: '#16a34a', icon: <CheckCircle style={{ width: '18px', height: '18px', color: '#16a34a' }} /> },
+                { label: 'Wrong', value: wrong, color: '#dc2626', icon: <XCircle style={{ width: '18px', height: '18px', color: '#dc2626' }} /> },
+              ].map(item => (
+                <div key={item.label} style={{ backgroundColor: isDark ? '#374151' : '#f3f4f6', borderRadius: '12px', padding: '14px 10px', textAlign: 'center' }}>
+                  <div style={{ marginBottom: '4px', display: 'flex', justifyContent: 'center' }}>{item.icon}</div>
+                  <div style={{ fontSize: '22px', fontWeight: 'bold', color: item.color }}>{item.value}</div>
+                  <div style={{ fontSize: '12px', color: muted }}>{item.label}</div>
+                </div>
+              ))}
+            </div>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px', marginBottom: '28px' }}>
-            {[
-              { label: 'Score', value: `${score}/${total}`, icon: <CheckCircle style={{ width: '18px', height: '18px', color: '#16a34a' }} /> },
-              { label: 'Correct', value: result?.correctAnswers, icon: <CheckCircle style={{ width: '18px', height: '18px', color: '#16a34a' }} /> },
-              { label: 'Wrong', value: result?.wrongAnswers, icon: <XCircle style={{ width: '18px', height: '18px', color: '#dc2626' }} /> },
-            ].map(item => (
-              <div key={item.label} style={{ backgroundColor: isDark ? '#374151' : '#f3f4f6', borderRadius: '12px', padding: '14px 10px' }}>
-                <div style={{ marginBottom: '4px' }}>{item.icon}</div>
-                <div style={{ fontSize: '20px', fontWeight: 'bold', color: text }}>{item.value}</div>
-                <div style={{ fontSize: '12px', color: muted }}>{item.label}</div>
-              </div>
-            ))}
-          </div>
-
-          {/* Question review */}
-          {result?.reviewData && (
-            <div style={{ textAlign: 'left', marginBottom: '28px' }}>
-              <h3 style={{ fontSize: '15px', fontWeight: '700', color: text, marginBottom: '12px' }}>Review</h3>
-              {result.reviewData.map((q: any, i: number) => (
-                <div key={i} style={{ backgroundColor: isDark ? '#374151' : '#f9fafb', borderRadius: '10px', padding: '12px', marginBottom: '8px', borderLeft: `4px solid ${q.correct ? '#16a34a' : '#dc2626'}` }}>
-                  <p style={{ fontSize: '13px', color: text, fontWeight: '600', marginBottom: '4px' }}>Q{i + 1}. {q.question}</p>
-                  <p style={{ fontSize: '12px', color: q.correct ? '#16a34a' : '#dc2626' }}>Your answer: {q.selectedAnswer || '(Not answered)'}</p>
-                  {!q.correct && <p style={{ fontSize: '12px', color: '#16a34a' }}>Correct: {q.correctAnswer}</p>}
-                  {q.explanation && <p style={{ fontSize: '12px', color: muted, marginTop: '4px', fontStyle: 'italic' }}>💡 {q.explanation}</p>}
+          {/* Question-by-question review */}
+          {reviewItems.length > 0 && (
+            <div style={{ textAlign: 'left' }}>
+              <h3 style={{ fontSize: '16px', fontWeight: '700', color: text, marginBottom: '16px', borderBottom: `1px solid ${border}`, paddingBottom: '8px' }}>
+                📝 Answer Review
+              </h3>
+              {reviewItems.map((q: any, i: number) => (
+                <div key={i} style={{
+                  backgroundColor: isDark ? '#374151' : q.isCorrect ? '#f0fdf4' : '#fef2f2',
+                  borderRadius: '12px', padding: '16px', marginBottom: '12px',
+                  borderLeft: `4px solid ${q.isCorrect ? '#16a34a' : '#dc2626'}`
+                }}>
+                  <p style={{ fontSize: '14px', color: text, fontWeight: '600', marginBottom: '10px' }}>
+                    Q{i + 1}. {q.question}
+                  </p>
+                  <div style={{ display: 'grid', gap: '6px', marginBottom: '8px' }}>
+                    {['A', 'B', 'C', 'D'].map(opt => {
+                      const optText = q[`${opt === 'A' ? 'userText' : ''}`] // handled below
+                      const key = `option${opt}`
+                      const val = (result?.questions?.[i] as any)?.[`option${opt}`] ?? ''
+                      const isUser = q.userOption === opt
+                      const isCorrect = q.correctOption === opt
+                      return (
+                        <div key={opt} style={{
+                          padding: '8px 12px', borderRadius: '8px', fontSize: '13px',
+                          backgroundColor: isCorrect ? (isDark ? '#14532d' : '#dcfce7') : isUser && !isCorrect ? (isDark ? '#7f1d1d' : '#fee2e2') : (isDark ? '#4b5563' : '#f9fafb'),
+                          color: isCorrect ? '#16a34a' : isUser && !isCorrect ? '#dc2626' : text,
+                          fontWeight: isCorrect || isUser ? '600' : '400',
+                          border: `1px solid ${isCorrect ? '#16a34a' : isUser && !isCorrect ? '#dc2626' : border}`,
+                          display: 'flex', alignItems: 'center', gap: '8px'
+                        }}>
+                          <span>{opt}.</span>
+                          <span style={{ flex: 1 }}>{val}</span>
+                          {isCorrect && <CheckCircle style={{ width: '14px', height: '14px', color: '#16a34a', flexShrink: 0 }} />}
+                          {isUser && !isCorrect && <XCircle style={{ width: '14px', height: '14px', color: '#dc2626', flexShrink: 0 }} />}
+                        </div>
+                      )
+                    })}
+                  </div>
+                  {!q.isCorrect && (
+                    <p style={{ fontSize: '12px', color: '#16a34a', fontWeight: '600', marginBottom: '4px' }}>
+                      ✓ Correct Answer: {q.correctOption}. {q.correctText}
+                    </p>
+                  )}
+                  {q.explanation && (
+                    <p style={{ fontSize: '12px', color: muted, fontStyle: 'italic', marginTop: '4px' }}>
+                      💡 {q.explanation}
+                    </p>
+                  )}
                 </div>
               ))}
             </div>
@@ -158,7 +225,7 @@ export default function McqTestPage() {
 
           <button onClick={() => navigate(-1)} style={{
             width: '100%', padding: '14px', backgroundColor: '#194552', color: '#fff',
-            border: 'none', borderRadius: '12px', fontSize: '15px', fontWeight: '700', cursor: 'pointer',
+            border: 'none', borderRadius: '12px', fontSize: '15px', fontWeight: '700', cursor: 'pointer', marginTop: '24px'
           }}>
             ← Back to Chapter
           </button>
