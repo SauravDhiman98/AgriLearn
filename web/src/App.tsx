@@ -24,6 +24,9 @@ import ExamInfoPage from './pages/Exams/ExamInfoPage'
 import SubjectDetailPage from './pages/Exams/SubjectDetailPage'
 import ChapterDetailPage from './pages/Exams/ChapterDetailPage'
 import McqTestPage from './pages/Exams/McqTestPage'
+import PrivacyPolicyPage from './pages/PrivacyPolicyPage'
+import TermsPage from './pages/TermsPage'
+import AboutPage from './pages/AboutPage'
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated } = useSelector((s: RootState) => s.auth)
@@ -55,6 +58,9 @@ export default function App() {
         <Route path="/live-classes" element={<LiveClassesPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
+        <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
+        <Route path="/terms" element={<TermsPage />} />
+        <Route path="/about" element={<AboutPage />} />
 
         {/* Protected routes */}
         <Route path="/dashboard" element={<PrivateRoute><DashboardPage /></PrivateRoute>} />

@@ -68,6 +68,17 @@ export default function Footer() {
             </ul>
           </div>
 
+          {/* Company */}
+          <div>
+            <h4 className="text-white font-semibold mb-3" style={{ color: heading }}>Company</h4>
+            <ul className="space-y-2 text-sm">
+              <li><Link to="/about" className="hover:text-white" style={{ color: text }}>About Us</Link></li>
+              <li><Link to="/exams" className="hover:text-white" style={{ color: text }}>Exams</Link></li>
+              <li><Link to="/exam-info" className="hover:text-white" style={{ color: text }}>Exam Info</Link></li>
+              <li><Link to="/forum" className="hover:text-white" style={{ color: text }}>Community</Link></li>
+            </ul>
+          </div>
+
           {/* Contact */}
           <div>
             <h4 className="text-white font-semibold mb-3" style={{ color: heading }}>Contact</h4>
@@ -89,9 +100,9 @@ export default function Footer() {
         <div className="border-t border-gray-800 mt-8 pt-6 flex flex-col md:flex-row justify-between text-xs text-gray-500" style={{ borderColor: border, color: muted }}>
           <p style={{ color: muted }}>© 2024 Tassy Point. All rights reserved.</p>
           <div className="flex gap-4 mt-2 md:mt-0">
-            <a href="#" className="hover:text-white" style={{ color: muted }}>Privacy Policy</a>
-            <a href="#" className="hover:text-white" style={{ color: muted }}>Terms of Service</a>
-            <a href="#" className="hover:text-white" style={{ color: muted }}>Refund Policy</a>
+            <Link to="/about" className="hover:text-white" style={{ color: muted }}>About Us</Link>
+            <Link to="/privacy-policy" className="hover:text-white" style={{ color: muted }}>Privacy Policy</Link>
+            <Link to="/terms" className="hover:text-white" style={{ color: muted }}>Terms of Service</Link>
           </div>
         </div>
       </div>
