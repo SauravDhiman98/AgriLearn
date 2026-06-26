@@ -63,6 +63,8 @@ export default function AdminExamContent() {
   const [showCsvMcq, setShowCsvMcq] = useState(false)
   const [showDocUpload, setShowDocUpload] = useState(false)
   const [docFile, setDocFile] = useState<File | null>(null)
+  const [showAddExam, setShowAddExam] = useState(false)
+  const [examForm, setExamForm] = useState({ name: '', description: '', icon: '', slug: '' })
   const [csvFile, setCsvFile] = useState<File | null>(null)
   const [csvTestTitle, setCsvTestTitle] = useState('')
   const [subjectForm, setSubjectForm] = useState({ name: '', description: '', icon: '📝' })
@@ -183,6 +185,19 @@ export default function AdminExamContent() {
       setShowCsvMcq(false); setCsvFile(null); setCsvTestTitle('')
       loadChapterContent(selectedChapter)
     } catch (e: any) { flash('err', e?.response?.data?.message || 'CSV upload failed') } finally { setSaving(false) }
+  }
+
+  const handleAddExam = async () => {
+    if (!examForm.name.trim()) return
+    setSaving(true)
+    try {
+      const slug = examForm.slug.trim() || examForm.name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')
+      await apiClient.post('/admin/exams', { ...examForm, slug })
+      flash('ok', 'Exam created!')
+      setShowAddExam(false)
+      setExamForm({ name: '', description: '', icon: '', slug: '' })
+      examApi.getAll().then(r => setExams(r.data)).catch(console.error)
+    } catch (e: any) { flash('err', e?.response?.data?.message || 'Failed to create exam') } finally { setSaving(false) }
   }
 
   const handleDocExamInfoUpload = async () => {
@@ -393,6 +408,9 @@ export default function AdminExamContent() {
         <div style={colStyle}>
           <div style={colHeader}>
             <span style={{ fontWeight: '700', fontSize: '14px', color: text }}>📚 Exams</span>
+            <button style={btnSm} onClick={() => { setExamForm({ name: '', description: '', icon: '', slug: '' }); setShowAddExam(true) }}>
+              <Plus style={{ width: '13px', height: '13px' }} /> Add
+            </button>
           </div>
           {exams.map(exam => (
             <div
@@ -788,6 +806,27 @@ export default function AdminExamContent() {
           {docFile && <p style={{ fontSize: '12px', color: muted, marginBottom: '12px' }}>Selected: {docFile.name} ({(docFile.size / 1024).toFixed(1)} KB)</p>}
           <button style={{ ...btnPrimary, backgroundColor: '#7c3aed' }} onClick={handleDocExamInfoUpload} disabled={!docFile || saving}>
             {saving ? <><Loader2 style={{ width: '14px', height: '14px', display: 'inline', marginRight: '6px' }} />Uploading...</> : '📤 Upload Document'}
+          </button>
+        </Modal>
+      )}
+
+      {/* === Add Exam Modal === */}
+      {showAddExam && (
+        <Modal title="Add New Exam" onClose={() => setShowAddExam(false)} cardBg={cardBg} border={border} text={text} muted={muted}>
+          <Field label="Exam Name *" muted={muted}>
+            <input style={inputStyle} value={examForm.name} onChange={e => setExamForm(p => ({ ...p, name: e.target.value }))} placeholder="e.g. IBPS AFO 2026" />
+          </Field>
+          <Field label="Description" muted={muted}>
+            <textarea style={{ ...inputStyle, minHeight: '70px', resize: 'vertical' }} value={examForm.description} onChange={e => setExamForm(p => ({ ...p, description: e.target.value }))} placeholder="Brief description of the exam..." />
+          </Field>
+          <Field label="Icon URL (optional)" muted={muted}>
+            <input style={inputStyle} value={examForm.icon} onChange={e => setExamForm(p => ({ ...p, icon: e.target.value }))} placeholder="https://... or leave blank" />
+          </Field>
+          <Field label="Slug (optional — auto-generated if blank)" muted={muted}>
+            <input style={inputStyle} value={examForm.slug} onChange={e => setExamForm(p => ({ ...p, slug: e.target.value }))} placeholder="e.g. ibps-afo-2026" />
+          </Field>
+          <button style={btnPrimary} onClick={handleAddExam} disabled={!examForm.name.trim() || saving}>
+            {saving ? 'Creating...' : '✅ Create Exam'}
           </button>
         </Modal>
       )}
