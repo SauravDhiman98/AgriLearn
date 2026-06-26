@@ -12,6 +12,7 @@ public interface ExamService {
     ExamDto.ChapterDetailResponse getChapterById(Long id);
 
     ExamDto.ExamResponse createExam(ExamDto.CreateExamRequest req);
+    ExamDto.ExamResponse updateExam(Long examId, ExamDto.CreateExamRequest req);
     ExamDto.SectionResponse createSection(Long examId, ExamDto.CreateSectionRequest req);
     ExamDto.SectionResponse updateSection(Long sectionId, ExamDto.CreateSectionRequest req);
     ExamDto.SubjectResponse createSubject(Long examId, ExamDto.CreateSubjectRequest req);

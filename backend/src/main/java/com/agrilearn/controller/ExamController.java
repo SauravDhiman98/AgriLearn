@@ -74,6 +74,14 @@ public class ExamController {
         return ResponseEntity.ok(examService.createExam(req));
     }
 
+    @PutMapping("/admin/exams/{examId}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ExamDto.ExamResponse> updateExam(
+            @PathVariable Long examId,
+            @RequestBody ExamDto.CreateExamRequest req) {
+        return ResponseEntity.ok(examService.updateExam(examId, req));
+    }
+
     @PostMapping("/admin/exams/{examId}/sections")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ExamDto.SectionResponse> createSection(

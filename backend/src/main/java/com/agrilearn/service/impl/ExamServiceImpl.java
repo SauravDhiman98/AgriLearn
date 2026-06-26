@@ -126,6 +126,16 @@ public class ExamServiceImpl implements ExamService {
     }
 
     @Override
+    public ExamDto.ExamResponse updateExam(Long examId, ExamDto.CreateExamRequest req) {
+        Exam exam = examRepo.findById(examId).orElseThrow(() -> new ResourceNotFoundException("Exam", examId));
+        if (req.getName() != null && !req.getName().isBlank()) exam.setName(req.getName());
+        if (req.getDescription() != null) exam.setDescription(req.getDescription());
+        if (req.getIcon() != null) exam.setIcon(req.getIcon());
+        if (req.getSlug() != null && !req.getSlug().isBlank()) exam.setSlug(req.getSlug());
+        return toExamResponse(examRepo.save(exam));
+    }
+
+    @Override
     public ExamDto.SectionResponse createSection(Long examId, ExamDto.CreateSectionRequest req) {
         Exam exam = examRepo.findById(examId).orElseThrow(() -> new ResourceNotFoundException("Exam", examId));
         ExamSection section = ExamSection.builder()
