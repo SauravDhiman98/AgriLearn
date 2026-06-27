@@ -27,6 +27,7 @@ import McqTestPage from './pages/Exams/McqTestPage'
 import PrivacyPolicyPage from './pages/PrivacyPolicyPage'
 import TermsPage from './pages/TermsPage'
 import AboutPage from './pages/AboutPage'
+import ScrollToTop from './components/ScrollToTop'
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated } = useSelector((s: RootState) => s.auth)
@@ -41,6 +42,7 @@ function AdminRoute({ children }: { children: React.ReactNode }) {
 export default function App() {
   return (
     <Routes>
+      <ScrollToTop />
       <Route element={<MainLayout />}>
         {/* Public routes */}
         <Route path="/" element={<HomePage />} />
