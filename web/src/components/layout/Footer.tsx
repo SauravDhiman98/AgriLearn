@@ -49,22 +49,10 @@ export default function Footer() {
           <div>
             <h4 className="text-white font-semibold mb-3" style={{ color: heading }}>Learn</h4>
             <ul className="space-y-2 text-sm">
+              <li><Link to="/exams" className="hover:text-white" style={{ color: text }}>Exams</Link></li>
+              <li><Link to="/exam-info" className="hover:text-white" style={{ color: text }}>Exam Info</Link></li>
               <li><Link to="/courses" className="hover:text-white" style={{ color: text }}>Courses</Link></li>
               <li><Link to="/live-classes" className="hover:text-white" style={{ color: text }}>Video Lectures</Link></li>
-              <li><Link to="/courses?category=UPSC" className="hover:text-white" style={{ color: text }}>UPSC</Link></li>
-              <li><Link to="/courses?category=SSC" className="hover:text-white" style={{ color: text }}>SSC</Link></li>
-              <li><Link to="/courses?category=IBPS" className="hover:text-white" style={{ color: text }}>IBPS / Bank</Link></li>
-            </ul>
-          </div>
-
-          {/* Community */}
-          <div>
-            <h4 className="text-white font-semibold mb-3" style={{ color: heading }}>Community</h4>
-            <ul className="space-y-2 text-sm">
-              <li><Link to="/forum" className="hover:text-white" style={{ color: text }}>Forum</Link></li>
-              <li><Link to="/marketplace" className="hover:text-white" style={{ color: text }}>Marketplace</Link></li>
-              <li><Link to="/register" className="hover:text-white" style={{ color: text }}>Become an Instructor</Link></li>
-              <li><a href="#" className="hover:text-white" style={{ color: text }}>Success Stories</a></li>
             </ul>
           </div>
 
@@ -73,9 +61,10 @@ export default function Footer() {
             <h4 className="text-white font-semibold mb-3" style={{ color: heading }}>Company</h4>
             <ul className="space-y-2 text-sm">
               <li><Link to="/about" className="hover:text-white" style={{ color: text }}>About Us</Link></li>
-              <li><Link to="/exams" className="hover:text-white" style={{ color: text }}>Exams</Link></li>
-              <li><Link to="/exam-info" className="hover:text-white" style={{ color: text }}>Exam Info</Link></li>
-              <li><Link to="/forum" className="hover:text-white" style={{ color: text }}>Community</Link></li>
+              <li><Link to="/privacy-policy" className="hover:text-white" style={{ color: text }}>Privacy Policy</Link></li>
+              <li><Link to="/terms" className="hover:text-white" style={{ color: text }}>Terms of Service</Link></li>
+              <li><Link to="/forum" className="hover:text-white" style={{ color: text }}>Community Forum</Link></li>
+              <li><Link to="/marketplace" className="hover:text-white" style={{ color: text }}>Marketplace</Link></li>
             </ul>
           </div>
 
@@ -90,10 +79,6 @@ export default function Footer() {
                 <Phone className="w-4 h-4" /> +91 98765 43210
               </li>
             </ul>
-            {/* <div className="mt-4">
-              <p className="text-xs text-gray-500" style={{ color: muted }}>Available in</p>
-              <p className="text-sm" style={{ color: text }}>English · हिंदी · मराठी · ਪੰਜਾਬੀ · ગુજરાતી</p>
-            </div> */}
           </div>
         </div>
 
