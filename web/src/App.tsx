@@ -16,6 +16,7 @@ import ProductDetailPage from './pages/Marketplace/ProductDetailPage'
 import LiveClassesPage from './pages/LiveClasses/LiveClassesPage'
 import ProfilePage from './pages/Profile/ProfilePage'
 import AdminPage from './pages/Admin/AdminPage'
+import AdminAnalyticsPage from './pages/Admin/AdminAnalyticsPage'
 import LogViewerPage from './pages/Admin/LogViewerPage'
 import LessonVideoUploadPage from './pages/Instructor/LessonVideoUploadPage'
 import ExamsPage from './pages/Exams/ExamsPage'
@@ -26,9 +27,12 @@ import ChapterDetailPage from './pages/Exams/ChapterDetailPage'
 import McqTestPage from './pages/Exams/McqTestPage'
 import MockTestPage from './pages/Exams/MockTestPage'
 import MockTestResultPage from './pages/Exams/MockTestResultPage'
+import PracticeModePage from './pages/Exams/PracticeModePage'
 import PrivacyPolicyPage from './pages/PrivacyPolicyPage'
 import TermsPage from './pages/TermsPage'
 import AboutPage from './pages/AboutPage'
+import SearchPage from './pages/SearchPage'
+import PricingPage from './pages/PricingPage'
 import ScrollToTop from './components/ScrollToTop'
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
@@ -61,6 +65,8 @@ export default function App() {
         <Route path="/marketplace" element={<MarketplacePage />} />
         <Route path="/marketplace/:id" element={<ProductDetailPage />} />
         <Route path="/live-classes" element={<LiveClassesPage />} />
+        <Route path="/search" element={<SearchPage />} />
+        <Route path="/pricing" element={<PricingPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
@@ -72,6 +78,7 @@ export default function App() {
         <Route path="/mcq-tests/:id" element={<PrivateRoute><McqTestPage /></PrivateRoute>} />
         <Route path="/mock-tests/:testId" element={<PrivateRoute><MockTestPage /></PrivateRoute>} />
         <Route path="/mock-tests/:testId/result/:attemptId" element={<PrivateRoute><MockTestResultPage /></PrivateRoute>} />
+        <Route path="/practice/:chapterId" element={<PrivateRoute><PracticeModePage /></PrivateRoute>} />
         <Route path="/courses/:courseId/lessons/:lessonId" element={<PrivateRoute><LessonPage /></PrivateRoute>} />
         <Route path="/courses/:id/learn" element={<PrivateRoute><LessonPage /></PrivateRoute>} />
         <Route path="/profile" element={<PrivateRoute><ProfilePage /></PrivateRoute>} />
@@ -80,8 +87,9 @@ export default function App() {
         <Route path="/instructor/courses/:courseId/lessons/:lessonId/upload-video" element={<PrivateRoute><LessonVideoUploadPage /></PrivateRoute>} />
 
         {/* Admin */}
-        <Route path="/admin/*" element={<AdminRoute><AdminPage /></AdminRoute>} />
+        <Route path="/admin/analytics" element={<AdminRoute><AdminAnalyticsPage /></AdminRoute>} />
         <Route path="/admin/logs" element={<AdminRoute><LogViewerPage /></AdminRoute>} />
+        <Route path="/admin/*" element={<AdminRoute><AdminPage /></AdminRoute>} />
 
         <Route path="*" element={<Navigate to="/" replace />} />
       </Route>

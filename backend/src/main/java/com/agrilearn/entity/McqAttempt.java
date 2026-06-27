@@ -43,6 +43,10 @@ public class McqAttempt {
     @Builder.Default
     private int timeTakenSeconds = 0;
 
+    @Column(nullable = false)
+    @Builder.Default
+    private double netScore = 0;
+
     @CreatedDate
     @Column(nullable = false, updatable = false)
     private LocalDateTime completedAt;

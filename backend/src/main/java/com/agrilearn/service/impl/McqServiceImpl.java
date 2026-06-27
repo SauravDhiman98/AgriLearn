@@ -8,7 +8,6 @@ import com.agrilearn.repository.*;
 import com.agrilearn.service.AiMcqGeneratorService;
 import com.agrilearn.service.McqService;
 import com.agrilearn.service.MinioService;
-import com.agrilearn.service.MinioService;
 import org.springframework.beans.factory.annotation.Value;
 import java.io.InputStream;
 import org.apache.pdfbox.pdmodel.PDDocument;
@@ -21,6 +20,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -39,6 +40,7 @@ public class McqServiceImpl implements McqService {
     private final ChapterNotesRepository notesRepo;
     private final SubjectChapterRepository chapterRepo;
     private final UserRepository userRepo;
+    private final UserBadgeRepository badgeRepo;
     private final ExamRepository examRepo;
     private final AiMcqGeneratorService aiService;
     private final ObjectMapper objectMapper;
@@ -110,11 +112,22 @@ public class McqServiceImpl implements McqService {
                 .totalQuestions(questions.size())
                 .answers(answersJson)
                 .timeTakenSeconds(req.getTimeTakenSeconds())
+                .netScore(netScore)
                 .build();
         attempt = attemptRepo.save(attempt);
 
+        updateGamification(user, correct, questions.size());
+        if (attemptRepo.countByUserId(user.getId()) == 1) {
+            awardBadge(user, "FIRST_ATTEMPT");
+        }
+        if (correct == questions.size() && !questions.isEmpty()) {
+            awardBadge(user, "PERFECT_SCORE");
+        }
+
         ExamDto.McqAttemptResponse r = new ExamDto.McqAttemptResponse();
         r.setId(attempt.getId());
+        r.setTestId(test.getId());
+        r.setTestTitle(test.getTitle());
         r.setScore(correct);
         r.setTotalQuestions(questions.size());
         r.setCorrectAnswers(correct);
@@ -124,6 +137,7 @@ public class McqServiceImpl implements McqService {
         r.setNetScore(netScore);
         r.setNegativeMarking(negMark);
         r.setTimeTakenSeconds(req.getTimeTakenSeconds());
+        r.setCompletedAt(attempt.getCompletedAt());
         r.setUserAnswers(answers);
         r.setQuestions(questions.stream().map(this::toQuestionWithAnswerResponse).collect(Collectors.toList()));
         return r;
@@ -135,11 +149,23 @@ public class McqServiceImpl implements McqService {
         return attemptRepo.findByUserIdAndTestIdOrderByCompletedAtDesc(userId, testId).stream()
                 .map(a -> {
                     ExamDto.McqAttemptResponse r = new ExamDto.McqAttemptResponse();
+                    Map<Long, String> answers = parseAnswers(a.getAnswers());
+                    int answered = answers.size();
+                    int wrong = Math.max(answered - a.getScore(), 0);
                     r.setId(a.getId());
+                    r.setTestId(a.getTest().getId());
+                    r.setTestTitle(a.getTest().getTitle());
                     r.setScore(a.getScore());
                     r.setTotalQuestions(a.getTotalQuestions());
+                    r.setCorrectAnswers(a.getScore());
+                    r.setWrongAnswers(wrong);
+                    r.setUnattempted(Math.max(a.getTotalQuestions() - answered, 0));
                     r.setPercentage(a.getTotalQuestions() == 0 ? 0 : (double) a.getScore() / a.getTotalQuestions() * 100);
-                    r.setUserAnswers(parseAnswers(a.getAnswers()));
+                    r.setNetScore(a.getNetScore());
+                    r.setNegativeMarking(a.getTest().getNegativeMarking());
+                    r.setTimeTakenSeconds(a.getTimeTakenSeconds());
+                    r.setCompletedAt(a.getCompletedAt());
+                    r.setUserAnswers(answers);
                     return r;
                 })
                 .collect(Collectors.toList());
@@ -242,6 +268,49 @@ public class McqServiceImpl implements McqService {
             log.warn("Failed to parse MCQ attempt answers", e);
             return new HashMap<>();
         }
+    }
+
+    private void updateGamification(User user, int correctAnswers, int totalQuestions) {
+        LocalDate today = LocalDate.now();
+        LocalDate lastActiveDate = user.getLastActiveDate();
+
+        if (lastActiveDate == null) {
+            user.setStreakCount(1);
+        } else if (lastActiveDate.equals(today)) {
+            user.setStreakCount(Math.max(user.getStreakCount(), 1));
+        } else if (lastActiveDate.equals(today.minusDays(1))) {
+            user.setStreakCount(user.getStreakCount() + 1);
+        } else {
+            user.setStreakCount(1);
+        }
+
+        user.setLastActiveDate(today);
+        user.setTotalPoints(user.getTotalPoints() + Math.max(correctAnswers, 0) * 10);
+        userRepo.save(user);
+
+        if (user.getStreakCount() >= 7) {
+            awardBadge(user, "STREAK_7");
+        }
+        if (user.getTotalPoints() >= 100) {
+            awardBadge(user, "POINTS_100");
+        }
+        if (user.getTotalPoints() >= 500) {
+            awardBadge(user, "POINTS_500");
+        }
+        if (totalQuestions > 0 && correctAnswers == totalQuestions) {
+            awardBadge(user, "ALL_CORRECT");
+        }
+    }
+
+    private void awardBadge(User user, String badgeType) {
+        if (badgeRepo.existsByUserIdAndBadgeType(user.getId(), badgeType)) {
+            return;
+        }
+        badgeRepo.save(UserBadge.builder()
+                .user(user)
+                .badgeType(badgeType)
+                .earnedAt(LocalDateTime.now())
+                .build());
     }
 
     @Override

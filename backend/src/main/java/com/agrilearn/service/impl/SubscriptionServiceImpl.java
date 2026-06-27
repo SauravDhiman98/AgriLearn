@@ -30,8 +30,8 @@ public class SubscriptionServiceImpl implements SubscriptionService {
     private static final Map<String, BigDecimal> PLAN_PRICES = Map.of(
             "FREE",    BigDecimal.ZERO,
             "BASIC",   new BigDecimal("199"),
-            "PREMIUM", new BigDecimal("499"),
-            "ANNUAL",  new BigDecimal("3999")
+            "PREMIUM", new BigDecimal("299"),
+            "ANNUAL",  new BigDecimal("2499")
     );
 
     @Override
@@ -41,10 +41,10 @@ public class SubscriptionServiceImpl implements SubscriptionService {
                         "features", List.of("5 free courses", "Community forum access", "Basic marketplace")),
                 Map.of("plan", "BASIC",   "price", 199,  "duration", "Monthly",
                         "features", List.of("50+ courses", "Live class recordings", "Certificate of completion", "All free features")),
-                Map.of("plan", "PREMIUM", "price", 499,  "duration", "Monthly",
+                Map.of("plan", "PREMIUM", "price", 299,  "duration", "Monthly",
                         "features", List.of("500+ courses", "Live classes", "Certificate", "Priority support", "Marketplace seller")),
-                Map.of("plan", "ANNUAL",  "price", 3999, "duration", "Annual",
-                        "features", List.of("Everything in Premium", "Save 33%", "Offline downloads", "Exclusive webinars", "1-on-1 mentoring"))
+                Map.of("plan", "ANNUAL",  "price", 2499, "duration", "Annual",
+                        "features", List.of("Everything in Premium", "Save 30%", "Offline downloads", "Exclusive webinars", "1-on-1 mentoring"))
         );
     }
 

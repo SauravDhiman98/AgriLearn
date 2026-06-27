@@ -1,6 +1,11 @@
 package com.agrilearn.controller;
 
 import com.agrilearn.dto.ExamDto;
+import com.agrilearn.entity.McqAttempt;
+import com.agrilearn.entity.User;
+import com.agrilearn.exception.ResourceNotFoundException;
+import com.agrilearn.repository.McqAttemptRepository;
+import com.agrilearn.repository.UserRepository;
 import com.agrilearn.security.UserPrincipal;
 import com.agrilearn.service.ExamService;
 import com.agrilearn.service.McqService;
@@ -8,9 +13,11 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping
@@ -19,6 +26,8 @@ public class ExamController {
 
     private final ExamService examService;
     private final McqService mcqService;
+    private final McqAttemptRepository mcqAttemptRepository;
+    private final UserRepository userRepository;
 
     @GetMapping("/exams")
     public ResponseEntity<List<ExamDto.ExamResponse>> getAllExams() {
@@ -68,9 +77,51 @@ public class ExamController {
         return ResponseEntity.ok(mcqService.getUserAttempts(principal.getId(), id));
     }
 
+    @GetMapping("/me/attempts/recent")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<List<Map<String, Object>>> getRecentAttempts() {
+        User user = getCurrentUser();
+        List<Map<String, Object>> attempts = mcqAttemptRepository.findByUserIdOrderByCompletedAtDesc(user.getId()).stream()
+                .limit(5)
+                .map(attempt -> Map.<String, Object>of(
+                        "id", attempt.getId(),
+                        "testId", attempt.getTest().getId(),
+                        "testTitle", attempt.getTest().getTitle(),
+                        "score", attempt.getScore(),
+                        "netScore", attempt.getNetScore(),
+                        "totalQuestions", attempt.getTotalQuestions(),
+                        "timeTakenSeconds", attempt.getTimeTakenSeconds(),
+                        "completedAt", attempt.getCompletedAt()
+                ))
+                .toList();
+        return ResponseEntity.ok(attempts);
+    }
+
     @GetMapping("/exams/{examId}/mock-tests")
     public ResponseEntity<List<ExamDto.McqTestResponse>> getExamMockTests(@PathVariable Long examId) {
         return ResponseEntity.ok(mcqService.listExamMockTests(examId));
+    }
+
+    @GetMapping("/mock-tests/{testId}/leaderboard")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<List<Map<String, Object>>> getLeaderboard(@PathVariable Long testId) {
+        List<McqAttempt> attempts = mcqAttemptRepository.findTop20ByTestIdOrderByNetScoreDescTimeTakenSecondsAsc(testId);
+        List<Map<String, Object>> rows = new java.util.ArrayList<>();
+        for (int i = 0; i < attempts.size(); i++) {
+            McqAttempt attempt = attempts.get(i);
+            String name = ((attempt.getUser().getFirstName() == null ? "" : attempt.getUser().getFirstName()) + " " +
+                    (attempt.getUser().getLastName() == null ? "" : attempt.getUser().getLastName())).trim();
+            if (name.isBlank()) {
+                name = attempt.getUser().getEmail();
+            }
+            rows.add(Map.of(
+                    "rank", i + 1,
+                    "studentName", name,
+                    "score", attempt.getNetScore(),
+                    "timeTakenSeconds", attempt.getTimeTakenSeconds()
+            ));
+        }
+        return ResponseEntity.ok(rows);
     }
 
     @PostMapping("/admin/exams/{examId}/mock-tests")
@@ -181,5 +232,11 @@ public class ExamController {
     public ResponseEntity<Void> deleteVideo(@PathVariable Long id) {
         examService.deleteVideo(id);
         return ResponseEntity.noContent().build();
+    }
+
+    private User getCurrentUser() {
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        return userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
     }
 }

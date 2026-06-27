@@ -83,8 +83,9 @@ minio:
 
 # Razorpay Payment Gateway
 razorpay:
-  key-id: ${RAZORPAY_KEY_ID:}
-  key-secret: ${RAZORPAY_KEY_SECRET:}
+  key-id: ${RAZORPAY_KEY_ID:rzp_test_placeholder}
+  key-secret: ${RAZORPAY_KEY_SECRET:placeholder_secret}
+  webhook-secret: ${RAZORPAY_WEBHOOK_SECRET:placeholder_webhook_secret}
 
 # Google Gemini / GitHub Models AI
 gemini:

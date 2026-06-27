@@ -7,4 +7,5 @@ import java.util.List;
 
 public interface SubjectChapterRepository extends JpaRepository<SubjectChapter, Long> {
     List<SubjectChapter> findBySubjectIdOrderByOrderIndexAsc(Long subjectId);
+    List<SubjectChapter> findTop10ByTitleContainingIgnoreCaseOrderByTitleAsc(String q);
 }

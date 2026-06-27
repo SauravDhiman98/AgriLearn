@@ -109,10 +109,12 @@ export const examApi = {
   getSections: (examId: number) => apiClient.get(`/exams/${examId}/sections`),
   getSubject: (id: number) => apiClient.get(`/subjects/${id}`),
   getChapter: (id: number) => apiClient.get(`/exam-chapters/${id}`),
-  getTest: (id: number) => apiClient.get(`/mcq-tests/${id}`),
+  getTest: (id: number, withAnswers = false) => apiClient.get(`/mcq-tests/${id}`, { params: { withAnswers } }),
   submitAttempt: (testId: number, answers: Record<number, string>, timeTakenSeconds = 0) =>
     apiClient.post(`/mcq-tests/${testId}/submit`, { testId, answers, timeTakenSeconds }),
   getAttempts: (testId: number) => apiClient.get(`/mcq-tests/${testId}/attempts`),
+  getRecentAttempts: () => apiClient.get('/me/attempts/recent'),
+  getLeaderboard: (testId: number) => apiClient.get(`/mock-tests/${testId}/leaderboard`),
 
   // Mock Tests
   getMockTests: (examId: number) => apiClient.get(`/exams/${examId}/mock-tests`),
@@ -146,9 +148,35 @@ export const examApi = {
 }
 
 export const subscriptionApi = {
+  getPlans: () => apiClient.get('/subscriptions/plans'),
   getMySubscription: () => apiClient.get('/subscriptions/my-subscription'),
   subscribe: (plan: string) => apiClient.post('/subscriptions/subscribe', { plan }),
   cancel: () => apiClient.post('/subscriptions/cancel'),
+}
+
+export const paymentApi = {
+  createOrder: (plan: string) => apiClient.post('/payments/create-order', { plan }),
+  verifyPayment: (data: {
+    razorpayOrderId: string
+    razorpayPaymentId: string
+    razorpaySignature: string
+    plan: string
+  }) => apiClient.post('/payments/verify', data),
+}
+
+
+export const adminApi = {
+  getAnalytics: () => apiClient.get('/admin/analytics'),
+}
+
+export const searchApi = {
+  search: (q: string) => apiClient.get('/search', { params: { q } }),
+}
+
+export const gamificationApi = {
+  getMyStats: () => apiClient.get('/me/stats'),
+  getBookmarkedQuestions: () => apiClient.get('/bookmarks/questions'),
+  toggleQuestionBookmark: (questionId: number) => apiClient.post(`/bookmarks/questions/${questionId}`),
 }
 
 export const liveClassApi = {

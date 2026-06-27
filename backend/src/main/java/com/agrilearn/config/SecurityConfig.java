@@ -58,6 +58,10 @@ public class SecurityConfig {
                         .requestMatchers(PUBLIC_ENDPOINTS).permitAll()
                         // CSV template downloads — no sensitive data, no auth needed
                         .requestMatchers(HttpMethod.GET, "/admin/mcq/template", "/admin/exam-info/template").permitAll()
+                        // Razorpay webhook — no auth, signature verified in service
+                        .requestMatchers(HttpMethod.POST, "/subscriptions/webhook/razorpay").permitAll()
+                        // Subscription plans — public listing
+                        .requestMatchers(HttpMethod.GET, "/subscriptions/plans").permitAll()
                         // SPA routes — serve index.html, auth handled client-side
                         .requestMatchers(HttpMethod.GET, "/login", "/register", "/dashboard",
                                 "/profile", "/forum/**", "/marketplace/**",

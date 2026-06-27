@@ -2,6 +2,7 @@ package com.agrilearn.dto;
 
 import lombok.*;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 
@@ -188,6 +189,8 @@ public class ExamDto {
     @Data
     public static class McqAttemptResponse {
         private Long id;
+        private Long testId;
+        private String testTitle;
         private int score;
         private int totalQuestions;
         private int correctAnswers;
@@ -197,6 +200,7 @@ public class ExamDto {
         private double netScore;
         private double negativeMarking;
         private int timeTakenSeconds;
+        private LocalDateTime completedAt;
         private List<McqQuestionWithAnswerResponse> questions;
         private Map<Long, String> userAnswers;
     }

@@ -7,12 +7,14 @@ import com.agrilearn.service.CourseService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -26,6 +28,9 @@ public class AdminController {
     private final CourseRepository courseRepository;
     private final UserRepository userRepository;
     private final EnrollmentRepository enrollmentRepository;
+    private final McqAttemptRepository mcqAttemptRepository;
+    private final McqTestRepository mcqTestRepository;
+    private final ExamRepository examRepository;
 
     // ── Stats overview ────────────────────────────────────────────────
     @GetMapping("/stats")
@@ -41,6 +46,32 @@ public class AdminController {
             "totalCourses",     totalCourses,
             "publishedCourses", publishedCourses,
             "totalEnrollments", totalEnrolls
+        ));
+    }
+
+    @GetMapping("/analytics")
+    @Operation(summary = "Get exam and mock test analytics")
+    public ResponseEntity<Map<String, Object>> getAnalytics() {
+        LocalDateTime since = LocalDateTime.now().minusDays(7);
+        Double avgScore = mcqAttemptRepository.findAverageScorePercentage();
+        List<Map<String, Object>> topTests = mcqAttemptRepository.findTopTestsByAttemptCount(PageRequest.of(0, 5))
+                .stream()
+                .map(item -> Map.<String, Object>of(
+                        "id", item.getId(),
+                        "title", item.getTitle(),
+                        "attempts", item.getAttempts()
+                ))
+                .toList();
+
+        return ResponseEntity.ok(Map.of(
+                "totalUsers", userRepository.count(),
+                "newUsersThisWeek", userRepository.countByCreatedAtAfter(since),
+                "totalAttempts", mcqAttemptRepository.count(),
+                "attemptsThisWeek", mcqAttemptRepository.countByCompletedAtAfter(since),
+                "totalExams", examRepository.count(),
+                "totalMockTests", mcqTestRepository.count(),
+                "avgScore", Math.round(((avgScore == null ? 0D : avgScore) * 10.0)) / 10.0,
+                "topTests", topTests
         ));
     }
 

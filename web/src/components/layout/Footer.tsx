@@ -61,6 +61,7 @@ export default function Footer() {
             <h4 className="text-white font-semibold mb-3" style={{ color: heading }}>Company</h4>
             <ul className="space-y-2 text-sm">
               <li><Link to="/about" className="hover:text-white" style={{ color: text }}>About Us</Link></li>
+              <li><Link to="/pricing" className="hover:text-white" style={{ color: text }}>Pricing</Link></li>
               <li><Link to="/privacy-policy" className="hover:text-white" style={{ color: text }}>Privacy Policy</Link></li>
               <li><Link to="/terms" className="hover:text-white" style={{ color: text }}>Terms of Service</Link></li>
               <li><Link to="/forum" className="hover:text-white" style={{ color: text }}>Community Forum</Link></li>

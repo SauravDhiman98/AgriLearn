@@ -140,6 +140,13 @@ export default function AdminPage() {
         </div>
         <div className="flex gap-2">
           <button
+            onClick={() => navigate('/admin/analytics')}
+            className="flex items-center gap-2 px-4 py-2 rounded-xl border border-gray-200 text-sm hover:bg-gray-50"
+            style={{ backgroundColor: cardBg, borderColor: border, color: text }}
+          >
+            <BarChart2 className="w-4 h-4" /> Analytics
+          </button>
+          <button
             onClick={() => navigate('/admin/logs')}
             className="flex items-center gap-2 px-4 py-2 rounded-xl border border-gray-200 text-sm hover:bg-gray-50"
             style={{ backgroundColor: cardBg, borderColor: border, color: text }}

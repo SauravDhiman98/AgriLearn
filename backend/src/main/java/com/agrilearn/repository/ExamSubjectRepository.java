@@ -7,4 +7,5 @@ import java.util.List;
 
 public interface ExamSubjectRepository extends JpaRepository<ExamSubject, Long> {
     List<ExamSubject> findByExamIdOrderByOrderIndexAsc(Long examId);
+    List<ExamSubject> findTop10ByNameContainingIgnoreCaseOrderByNameAsc(String q);
 }
