@@ -41,8 +41,9 @@ function AdminRoute({ children }: { children: React.ReactNode }) {
 
 export default function App() {
   return (
-    <Routes>
+    <>
       <ScrollToTop />
+      <Routes>
       <Route element={<MainLayout />}>
         {/* Public routes */}
         <Route path="/" element={<HomePage />} />
@@ -81,5 +82,6 @@ export default function App() {
         <Route path="*" element={<Navigate to="/" replace />} />
       </Route>
     </Routes>
+    </>
   )
 }
