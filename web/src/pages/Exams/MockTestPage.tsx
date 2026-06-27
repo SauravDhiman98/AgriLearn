@@ -145,13 +145,29 @@ export default function MockTestPage() {
 
   if (!test) return null
 
+  if (test.questions.length === 0) return (
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', backgroundColor: '#f9fafb', fontFamily: 'system-ui, -apple-system, sans-serif' }}>
+      <div style={{ textAlign: 'center', backgroundColor: '#ffffff', borderRadius: '16px', padding: '40px 48px', boxShadow: '0 4px 24px rgba(0,0,0,0.08)', border: '1px solid #e5e7eb', maxWidth: '420px' }}>
+        <div style={{ fontSize: '56px', marginBottom: '16px' }}>📋</div>
+        <h2 style={{ fontSize: '20px', fontWeight: '800', color: '#111827', marginBottom: '8px' }}>No Questions Yet</h2>
+        <p style={{ color: '#6b7280', fontSize: '14px', lineHeight: '1.6', marginBottom: '24px' }}>
+          This mock test (<strong>{test.title}</strong>) doesn't have any questions yet. Please ask the admin to upload a question CSV.
+        </p>
+        <button
+          onClick={() => navigate(-1)}
+          style={{ padding: '10px 28px', borderRadius: '10px', backgroundColor: '#1a1a2e', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: '700', fontSize: '14px' }}
+        >← Go Back</button>
+      </div>
+    </div>
+  )
+
   const q = test.questions[currentIdx]
   const answered = Object.values(status).filter(s => s === 'answered' || s === 'answered-marked').length
   const markedCount = Object.values(status).filter(s => s === 'marked' || s === 'answered-marked').length
   const timerColor = timeLeft < 300 ? '#dc2626' : timeLeft < 600 ? '#d97706' : '#16a34a'
   const timerBg = timeLeft < 300 ? '#fef2f2' : timeLeft < 600 ? '#fffbeb' : '#f0fdf4'
   const positiveMark = test.negativeMarking > 0 ? 1 : 1
-  const pctDone = Math.round(((currentIdx + 1) / test.questions.length) * 100)
+  const pctDone = test.questions.length > 0 ? Math.round(((currentIdx + 1) / test.questions.length) * 100) : 0
 
   const OPTIONS = [
     { key: 'A', value: q.optionA },
