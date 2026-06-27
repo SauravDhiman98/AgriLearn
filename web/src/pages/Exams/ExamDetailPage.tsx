@@ -47,8 +47,7 @@ export default function ExamDetailPage() {
   }
 
   const TABS: { key: ExamTab; label: string }[] = [
-    { key: 'subjects', label: '📖 Subjects' },
-    { key: 'info', label: '📋 Exam Info' },
+    { key: 'subjects', label: '📖 Subjects' }
   ]
 
   return (
@@ -130,92 +129,6 @@ export default function ExamDetailPage() {
                 </Link>
               ))}
             </div>
-          </div>
-        )}
-
-        {/* ── Exam Info Tab ── */}
-        {activeTab === 'info' && (
-          <div>
-            {sections.length === 0 ? (
-              <div style={{ textAlign: 'center', padding: '60px', color: muted }}>
-                <div style={{ fontSize: '48px', marginBottom: '12px' }}>📋</div>
-                <p>No exam info added yet.</p>
-              </div>
-            ) : (
-              <>
-                {/* Table of Contents */}
-                <div style={{ backgroundColor: cardBg, borderRadius: '12px', border: `1px solid ${border}`, marginBottom: '28px', overflow: 'hidden' }}>
-                  <button onClick={() => setTocOpen(p => !p)} style={{
-                    width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                    padding: '14px 20px', background: 'none', border: 'none', cursor: 'pointer',
-                    backgroundColor: tableHeaderBg,
-                  }}>
-                    <span style={{ fontWeight: '700', fontSize: '15px', color: text }}>Table of Contents</span>
-                    {tocOpen ? <ChevronUp style={{ width: '18px', height: '18px', color: muted }} /> : <ChevronDown style={{ width: '18px', height: '18px', color: muted }} />}
-                  </button>
-                  {tocOpen && (
-                    <div style={{ padding: '8px 0' }}>
-                      {sections.map((section: any) => (
-                        <a key={section.id} href={`#section-${section.id}`}
-                          style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 20px', color: '#0369a1', textDecoration: 'none', fontSize: '14px' }}>
-                          <ChevronRight style={{ width: '14px', height: '14px' }} />
-                          {section.title}
-                        </a>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-                {/* Sections */}
-                {sections.map((section: any) => {
-                  const headers = parseJson(section.tableHeaders)
-                  const rows = parseJson(section.tableRows)
-                  return (
-                    <div key={section.id} id={`section-${section.id}`} style={{ marginBottom: '28px' }}>
-                      <div style={{ backgroundColor: sectionHeaderBg, borderLeft: '4px solid #194552', padding: '12px 18px', marginBottom: '14px', borderRadius: '0 8px 8px 0' }}>
-                        <h2 style={{ fontSize: '17px', fontWeight: '700', color: text, margin: 0 }}>{section.title}</h2>
-                      </div>
-                      {section.description && (
-                        <p style={{ color: text, lineHeight: '1.8', fontSize: '15px', marginBottom: '16px' }}>
-                          {section.description}
-                        </p>
-                      )}
-                      {headers && rows && (
-                        <div style={{ overflowX: 'auto', borderRadius: '10px', border: `1px solid ${tableBorder}` }}>
-                          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                            <thead>
-                              <tr style={{ backgroundColor: tableHeaderBg }}>
-                                {headers.map((h: string, i: number) => (
-                                  <th key={i} style={{ padding: '12px 16px', textAlign: 'center', fontSize: '14px', fontWeight: '700', color: text, borderBottom: `2px solid ${tableBorder}`, borderRight: i < headers.length - 1 ? `1px solid ${tableBorder}` : 'none' }}>
-                                    {h}
-                                  </th>
-                                ))}
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {rows.map((row: string[], ri: number) => (
-                                <tr key={ri} style={{ borderBottom: ri < rows.length - 1 ? `1px solid ${tableBorder}` : 'none' }}>
-                                  {row.map((cell: string, ci: number) => (
-                                    <td key={ci} style={{
-                                      padding: '11px 16px', textAlign: 'center', fontSize: '14px',
-                                      color: ci === 0 ? '#0369a1' : text,
-                                      borderRight: ci < row.length - 1 ? `1px solid ${tableBorder}` : 'none',
-                                      backgroundColor: ri % 2 === 0 ? 'transparent' : (isDark ? '#1a2533' : '#fafafa'),
-                                    }}>
-                                      {cell}
-                                    </td>
-                                  ))}
-                                </tr>
-                              ))}
-                            </tbody>
-                          </table>
-                        </div>
-                      )}
-                    </div>
-                  )
-                })}
-              </>
-            )}
           </div>
         )}
       </div>
