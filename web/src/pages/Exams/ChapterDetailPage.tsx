@@ -3,7 +3,7 @@ import { useQuery } from 'react-query'
 import { Link, useParams } from 'react-router-dom'
 import { examApi } from '../../api/services'
 import { useTheme } from '../../context/ThemeContext'
-import { ChevronLeft, FileText, Video, Brain, ExternalLink, Play } from 'lucide-react'
+import { ChevronLeft, FileText, Video, Brain, Play } from 'lucide-react'
 
 type Tab = 'notes' | 'videos' | 'tests'
 
@@ -17,8 +17,16 @@ function resolveUrl(url: string | null | undefined): string | null {
   return API_ORIGIN + url
 }
 
+/** Extracts YouTube video ID from any YouTube URL format */
+function extractYoutubeId(url: string | null | undefined): string | null {
+  if (!url) return null
+  const match = url.match(
+    /(?:youtu\.be\/|youtube\.com\/(?:watch\?(?:.*&)?v=|embed\/|shorts\/))([A-Za-z0-9_-]{11})/
+  )
+  return match ? match[1] : null
+}
+
 /**
- * Fetches a PDF via the backend proxy and renders it using a blob:// URL.
  * Blob URLs are always same-origin so X-Frame-Options never blocks them.
  */
 function PdfViewer({ url, title }: { url: string; title: string }) {
@@ -218,40 +226,36 @@ export default function ChapterDetailPage() {
                 {chapter?.videos?.length === 0 && (
                   <div style={{ textAlign: 'center', padding: '40px', color: muted }}>No video lectures yet.</div>
                 )}
-                {chapter?.videos?.map((video: any) => (
-                  <div key={video.id} style={{ backgroundColor: cardBg, borderRadius: '14px', border: `1px solid ${border}`, overflow: 'hidden' }}>
-                    {video.youtubeId ? (
-                      <div style={{ position: 'relative', paddingBottom: '56.25%', height: 0 }}>
-                        <iframe
-                          src={`https://www.youtube.com/embed/${video.youtubeId}`}
-                          title={video.title}
-                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                          allowFullScreen
-                          style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', border: 'none' }}
-                        />
-                      </div>
-                    ) : (
-                      <div style={{ padding: '20px', display: 'flex', alignItems: 'center', gap: '12px' }}>
-                        <div style={{ width: '44px', height: '44px', borderRadius: '10px', backgroundColor: isDark ? '#374151' : '#fef2f2', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                          <Play style={{ width: '20px', height: '20px', color: '#dc2626' }} />
-                        </div>
-                        <div>
+                {chapter?.videos?.map((video: any) => {
+                  const ytId = video.youtubeId || extractYoutubeId(video.youtubeUrl)
+                  return (
+                    <div key={video.id} style={{ backgroundColor: cardBg, borderRadius: '14px', border: `1px solid ${border}`, overflow: 'hidden' }}>
+                      {ytId ? (
+                        <>
+                          <div style={{ position: 'relative', paddingBottom: '56.25%', height: 0 }}>
+                            <iframe
+                              src={`https://www.youtube.com/embed/${ytId}`}
+                              title={video.title}
+                              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                              allowFullScreen
+                              style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', border: 'none' }}
+                            />
+                          </div>
+                          <div style={{ padding: '12px 16px' }}>
+                            <h3 style={{ fontSize: '14px', fontWeight: '600', color: text }}>{video.title}</h3>
+                          </div>
+                        </>
+                      ) : (
+                        <div style={{ padding: '20px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                          <div style={{ width: '44px', height: '44px', borderRadius: '10px', backgroundColor: isDark ? '#374151' : '#fef2f2', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <Play style={{ width: '20px', height: '20px', color: '#dc2626' }} />
+                          </div>
                           <h3 style={{ fontSize: '15px', fontWeight: '600', color: text }}>{video.title}</h3>
-                          {video.youtubeUrl && (
-                            <a href={video.youtubeUrl} target="_blank" rel="noreferrer" style={{ color: '#3b82f6', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '4px', marginTop: '4px' }}>
-                              <ExternalLink style={{ width: '12px', height: '12px' }} /> Watch on YouTube
-                            </a>
-                          )}
                         </div>
-                      </div>
-                    )}
-                    {video.title && video.youtubeId && (
-                      <div style={{ padding: '12px 16px' }}>
-                        <h3 style={{ fontSize: '14px', fontWeight: '600', color: text }}>{video.title}</h3>
-                      </div>
-                    )}
-                  </div>
-                ))}
+                      )}
+                    </div>
+                  )
+                })}
               </div>
             )}
 
