@@ -26,12 +26,20 @@ public class McqTest {
 
     @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "chapter_id", nullable = false)
+    @JoinColumn(name = "chapter_id")
     private SubjectChapter chapter;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "notes_id")
     private ChapterNotes notes;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "exam_id")
+    private Exam exam;
+
+    @Column(nullable = false)
+    @Builder.Default
+    private double negativeMarking = 0.25;
 
     @Column(nullable = false)
     private String title;

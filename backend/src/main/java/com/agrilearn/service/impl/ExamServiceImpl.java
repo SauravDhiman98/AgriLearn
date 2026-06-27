@@ -359,4 +359,11 @@ public class ExamServiceImpl implements ExamService {
         // Always proxy through backend to avoid CORS issues with B2/MinIO
         return contextPath + "/files/proxy/" + documentsBucket + "/" + storedObjectName;
     }
+
+    @Override
+    public void deleteMockTest(Long testId) {
+        McqTest test = testRepo.findById(testId)
+                .orElseThrow(() -> new ResourceNotFoundException("MockTest", testId));
+        testRepo.delete(test);
+    }
 }

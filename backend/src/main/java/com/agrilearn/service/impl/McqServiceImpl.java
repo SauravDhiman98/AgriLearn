@@ -8,6 +8,7 @@ import com.agrilearn.repository.*;
 import com.agrilearn.service.AiMcqGeneratorService;
 import com.agrilearn.service.McqService;
 import com.agrilearn.service.MinioService;
+import com.agrilearn.service.MinioService;
 import org.springframework.beans.factory.annotation.Value;
 import java.io.InputStream;
 import org.apache.pdfbox.pdmodel.PDDocument;
@@ -38,6 +39,7 @@ public class McqServiceImpl implements McqService {
     private final ChapterNotesRepository notesRepo;
     private final SubjectChapterRepository chapterRepo;
     private final UserRepository userRepo;
+    private final ExamRepository examRepo;
     private final AiMcqGeneratorService aiService;
     private final ObjectMapper objectMapper;
     private final MinioService minioService;
@@ -55,6 +57,11 @@ public class McqServiceImpl implements McqService {
         r.setAiGenerated(test.isAiGenerated());
         r.setTotalQuestions(test.getTotalQuestions());
         r.setTimeLimitMinutes(test.getTimeLimitMinutes());
+        r.setNegativeMarking(test.getNegativeMarking());
+        if (test.getExam() != null) {
+            r.setExamId(test.getExam().getId());
+            r.setExamName(test.getExam().getName());
+        }
 
         List<McqQuestion> questions = questionRepo.findByTestIdOrderByOrderIndexAsc(testId);
         if (includeAnswers) {
@@ -71,14 +78,22 @@ public class McqServiceImpl implements McqService {
         User user = userRepo.findById(userId).orElseThrow(() -> new ResourceNotFoundException("User", userId));
         List<McqQuestion> questions = questionRepo.findByTestIdOrderByOrderIndexAsc(req.getTestId());
 
-        int score = 0;
+        int correct = 0;
+        int wrong = 0;
         Map<Long, String> answers = req.getAnswers() != null ? req.getAnswers() : new HashMap<>();
         for (McqQuestion q : questions) {
             String selected = answers.get(q.getId());
-            if (selected != null && selected.equalsIgnoreCase(q.getCorrectOption())) {
-                score++;
+            if (selected != null && !selected.isBlank()) {
+                if (selected.equalsIgnoreCase(q.getCorrectOption())) {
+                    correct++;
+                } else {
+                    wrong++;
+                }
             }
         }
+        int unattempted = questions.size() - correct - wrong;
+        double negMark = test.getNegativeMarking();
+        double netScore = correct - (wrong * negMark);
 
         String answersJson;
         try {
@@ -91,19 +106,24 @@ public class McqServiceImpl implements McqService {
         McqAttempt attempt = McqAttempt.builder()
                 .user(user)
                 .test(test)
-                .score(score)
+                .score(correct)
                 .totalQuestions(questions.size())
                 .answers(answersJson)
+                .timeTakenSeconds(req.getTimeTakenSeconds())
                 .build();
         attempt = attemptRepo.save(attempt);
 
         ExamDto.McqAttemptResponse r = new ExamDto.McqAttemptResponse();
         r.setId(attempt.getId());
-        r.setScore(score);
+        r.setScore(correct);
         r.setTotalQuestions(questions.size());
-        r.setCorrectAnswers(score);
-        r.setWrongAnswers(questions.size() - score);
-        r.setPercentage(questions.isEmpty() ? 0 : (double) score / questions.size() * 100);
+        r.setCorrectAnswers(correct);
+        r.setWrongAnswers(wrong);
+        r.setUnattempted(unattempted);
+        r.setPercentage(questions.isEmpty() ? 0 : (double) correct / questions.size() * 100);
+        r.setNetScore(netScore);
+        r.setNegativeMarking(negMark);
+        r.setTimeTakenSeconds(req.getTimeTakenSeconds());
         r.setUserAnswers(answers);
         r.setQuestions(questions.stream().map(this::toQuestionWithAnswerResponse).collect(Collectors.toList()));
         return r;
@@ -222,6 +242,51 @@ public class McqServiceImpl implements McqService {
             log.warn("Failed to parse MCQ attempt answers", e);
             return new HashMap<>();
         }
+    }
+
+    @Override
+    public ExamDto.McqTestResponse createExamMockTest(Long examId, ExamDto.CreateMockTestRequest req) {
+        com.agrilearn.entity.Exam exam = examRepo.findById(examId)
+                .orElseThrow(() -> new ResourceNotFoundException("Exam", examId));
+
+        McqTest test = McqTest.builder()
+                .exam(exam)
+                .title(req.getTitle())
+                .aiGenerated(false)
+                .totalQuestions(req.getTotalQuestions())
+                .timeLimitMinutes(req.getTimeLimitMinutes())
+                .negativeMarking(req.getNegativeMarking())
+                .build();
+        test = testRepo.save(test);
+
+        ExamDto.McqTestResponse r = new ExamDto.McqTestResponse();
+        r.setId(test.getId());
+        r.setTitle(test.getTitle());
+        r.setAiGenerated(false);
+        r.setTotalQuestions(test.getTotalQuestions());
+        r.setTimeLimitMinutes(test.getTimeLimitMinutes());
+        r.setNegativeMarking(test.getNegativeMarking());
+        r.setExamId(examId);
+        r.setQuestionCount(0);
+        return r;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<ExamDto.McqTestResponse> listExamMockTests(Long examId) {
+        return testRepo.findByExamIdOrderByCreatedAtDesc(examId).stream().map(test -> {
+            ExamDto.McqTestResponse r = new ExamDto.McqTestResponse();
+            r.setId(test.getId());
+            r.setTitle(test.getTitle());
+            r.setAiGenerated(test.isAiGenerated());
+            r.setTotalQuestions(test.getTotalQuestions());
+            r.setTimeLimitMinutes(test.getTimeLimitMinutes());
+            r.setNegativeMarking(test.getNegativeMarking());
+            r.setExamId(examId);
+            int qCount = questionRepo.findByTestIdOrderByOrderIndexAsc(test.getId()).size();
+            r.setQuestionCount(qCount);
+            return r;
+        }).collect(Collectors.toList());
     }
 
     private ExamDto.McqQuestionResponse toQuestionResponse(McqQuestion q) {

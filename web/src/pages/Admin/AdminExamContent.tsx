@@ -75,6 +75,13 @@ export default function AdminExamContent() {
   const [saving, setSaving] = useState(false)
   const [msg, setMsg] = useState<{ type: 'ok' | 'err'; text: string } | null>(null)
 
+  // Mock test state
+  const [mockTests, setMockTests] = useState<any[]>([])
+  const [showAddMockTest, setShowAddMockTest] = useState(false)
+  const [mockTestForm, setMockTestForm] = useState({ title: '', totalQuestions: 100, timeLimitMinutes: 120, negativeMarking: 0.25 })
+  const [selectedMockTest, setSelectedMockTest] = useState<any | null>(null)
+  const [mockCsvFile, setMockCsvFile] = useState<File | null>(null)
+
   const bg = isDark ? '#111827' : '#f9fafb'
   const cardBg = isDark ? '#1f2937' : '#ffffff'
   const border = isDark ? '#374151' : '#e5e7eb'
@@ -90,6 +97,7 @@ export default function AdminExamContent() {
     setSelectedExam(exam); setSelectedSubject(null); setChapters([]); setSelectedChapter(null); setNotes([]); setVideos([])
     setLoading(true)
     examApi.getById(exam.id).then(r => setSubjects(r.data.subjects || [])).finally(() => setLoading(false))
+    examApi.getMockTests(exam.id).then(r => setMockTests(r.data || [])).catch(() => {})
   }
 
   const loadChapters = (subject: Subject) => {
@@ -448,6 +456,57 @@ export default function AdminExamContent() {
               </div>
             ))}
             {!loading && subjects.length === 0 && <p style={{ padding: '16px', fontSize: '13px', color: muted }}>No subjects yet. Add one!</p>}
+
+            {/* Mock Tests section within Subjects column */}
+            <div style={{ borderTop: `1px solid ${border}`, padding: '10px 0 0' }}>
+              <div style={{ ...colHeader, borderBottom: 'none', paddingBottom: '4px' }}>
+                <span style={{ fontWeight: '700', fontSize: '14px', color: text }}>🎯 Mock Tests</span>
+                <button style={btnSm} onClick={() => setShowAddMockTest(true)}>
+                  <Plus style={{ width: '13px', height: '13px' }} /> Add
+                </button>
+              </div>
+              {mockTests.map((mt: any) => (
+                <div key={mt.id} style={{ ...itemRow, backgroundColor: selectedMockTest?.id === mt.id ? (isDark ? '#374151' : '#e0f2fe') : 'transparent' }}
+                  onClick={() => setSelectedMockTest(selectedMockTest?.id === mt.id ? null : mt)}>
+                  <Brain style={{ width: '14px', height: '14px', color: '#7c3aed', flexShrink: 0 }} />
+                  <span style={{ flex: 1, fontSize: '13px' }}>{mt.title}</span>
+                  <span style={{ fontSize: '11px', color: muted }}>{mt.questionCount || 0}Q</span>
+                </div>
+              ))}
+              {mockTests.length === 0 && <p style={{ padding: '8px 16px', fontSize: '12px', color: muted }}>No mock tests yet.</p>}
+
+              {/* Upload CSV for selected mock test */}
+              {selectedMockTest && (
+                <div style={{ margin: '8px 12px', backgroundColor: isDark ? '#1f2937' : '#f0f4ff', borderRadius: '10px', padding: '12px', border: `1px solid ${border}` }}>
+                  <p style={{ fontSize: '12px', fontWeight: '700', color: text, marginBottom: '8px' }}>📤 Upload Questions: {selectedMockTest.title}</p>
+                  <input type="file" accept=".csv" onChange={e => setMockCsvFile(e.target.files?.[0] || null)} style={{ fontSize: '12px', marginBottom: '8px', width: '100%' }} />
+                  <button
+                    style={{ ...btnSm, width: '100%', justifyContent: 'center', backgroundColor: '#7c3aed', color: '#fff' }}
+                    onClick={async () => {
+                      if (!mockCsvFile) return
+                      setSaving(true)
+                      try {
+                        const fd = new FormData(); fd.append('file', mockCsvFile)
+                        const r = await examApi.uploadMockTestCsv(selectedMockTest.id, fd)
+                        setMsg({ type: 'ok', text: `✅ ${r.data.questionsUploaded} questions uploaded!` })
+                        examApi.getMockTests(selectedExam.id).then(r2 => setMockTests(r2.data || []))
+                        setMockCsvFile(null)
+                      } catch { setMsg({ type: 'err', text: 'Upload failed' }) }
+                      finally { setSaving(false) }
+                    }}
+                    disabled={!mockCsvFile || saving}
+                  >{saving ? 'Uploading...' : 'Upload CSV'}</button>
+                  <button onClick={async () => {
+                    if (!confirm('Delete this mock test?')) return
+                    await examApi.deleteMockTest(selectedMockTest.id)
+                    setMockTests(prev => prev.filter(m => m.id !== selectedMockTest.id))
+                    setSelectedMockTest(null)
+                  }} style={{ ...btnSm, width: '100%', justifyContent: 'center', marginTop: '6px', backgroundColor: '#dc2626', color: '#fff' }}>
+                    <Trash2 style={{ width: '12px', height: '12px' }} /> Delete Test
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         )}
 
@@ -806,6 +865,40 @@ export default function AdminExamContent() {
           {docFile && <p style={{ fontSize: '12px', color: muted, marginBottom: '12px' }}>Selected: {docFile.name} ({(docFile.size / 1024).toFixed(1)} KB)</p>}
           <button style={{ ...btnPrimary, backgroundColor: '#7c3aed' }} onClick={handleDocExamInfoUpload} disabled={!docFile || saving}>
             {saving ? <><Loader2 style={{ width: '14px', height: '14px', display: 'inline', marginRight: '6px' }} />Uploading...</> : '📤 Upload Document'}
+          </button>
+        </Modal>
+      )}
+
+      {/* === Add Mock Test Modal === */}
+      {showAddMockTest && selectedExam && (
+        <Modal title={`Add Mock Test — ${selectedExam.name}`} onClose={() => setShowAddMockTest(false)} cardBg={cardBg} border={border} text={text} muted={muted}>
+          <Field label="Test Title *" muted={muted}>
+            <input style={inputStyle} value={mockTestForm.title} onChange={e => setMockTestForm(p => ({ ...p, title: e.target.value }))} placeholder="e.g. IBPS AFO Full Mock Test 1" />
+          </Field>
+          <Field label="Total Questions" muted={muted}>
+            <input type="number" style={inputStyle} value={mockTestForm.totalQuestions} onChange={e => setMockTestForm(p => ({ ...p, totalQuestions: Number(e.target.value) }))} />
+          </Field>
+          <Field label="Time Limit (minutes)" muted={muted}>
+            <input type="number" style={inputStyle} value={mockTestForm.timeLimitMinutes} onChange={e => setMockTestForm(p => ({ ...p, timeLimitMinutes: Number(e.target.value) }))} />
+          </Field>
+          <Field label="Negative Marking (per wrong answer)" muted={muted}>
+            <input type="number" step="0.25" style={inputStyle} value={mockTestForm.negativeMarking} onChange={e => setMockTestForm(p => ({ ...p, negativeMarking: Number(e.target.value) }))} />
+          </Field>
+          <p style={{ fontSize: '12px', color: muted, marginBottom: '14px' }}>
+            💡 After creating, upload questions via CSV (same format as chapter MCQ: question, optionA, optionB, optionC, optionD, correctOption, explanation)
+          </p>
+          <button style={btnPrimary} disabled={!mockTestForm.title.trim() || saving} onClick={async () => {
+            setSaving(true)
+            try {
+              const r = await examApi.createMockTest(selectedExam.id, mockTestForm)
+              setMockTests(prev => [r.data, ...prev])
+              setShowAddMockTest(false)
+              setMockTestForm({ title: '', totalQuestions: 100, timeLimitMinutes: 120, negativeMarking: 0.25 })
+              setMsg({ type: 'ok', text: '✅ Mock test created! Now upload questions via CSV.' })
+            } catch { setMsg({ type: 'err', text: 'Failed to create mock test' }) }
+            finally { setSaving(false) }
+          }}>
+            {saving ? 'Creating...' : '✅ Create Mock Test'}
           </button>
         </Modal>
       )}

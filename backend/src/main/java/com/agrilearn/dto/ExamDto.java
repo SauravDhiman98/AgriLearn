@@ -134,6 +134,9 @@ public class ExamDto {
         private int totalQuestions;
         private int timeLimitMinutes;
         private Long notesId;
+        private Long examId;
+        private int questionCount;
+        private double negativeMarking;
     }
 
     @Data
@@ -143,7 +146,18 @@ public class ExamDto {
         private boolean aiGenerated;
         private int totalQuestions;
         private int timeLimitMinutes;
+        private double negativeMarking;
+        private Long examId;
+        private String examName;
         private List<McqQuestionResponse> questions;
+    }
+
+    @Data
+    public static class CreateMockTestRequest {
+        private String title;
+        private int totalQuestions;
+        private int timeLimitMinutes;
+        private double negativeMarking = 0.25;
     }
 
     @Data
@@ -168,6 +182,7 @@ public class ExamDto {
     public static class McqAttemptRequest {
         private Long testId;
         private Map<Long, String> answers;
+        private int timeTakenSeconds;
     }
 
     @Data
@@ -177,7 +192,11 @@ public class ExamDto {
         private int totalQuestions;
         private int correctAnswers;
         private int wrongAnswers;
+        private int unattempted;
         private double percentage;
+        private double netScore;
+        private double negativeMarking;
+        private int timeTakenSeconds;
         private List<McqQuestionWithAnswerResponse> questions;
         private Map<Long, String> userAnswers;
     }

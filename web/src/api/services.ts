@@ -110,9 +110,12 @@ export const examApi = {
   getSubject: (id: number) => apiClient.get(`/subjects/${id}`),
   getChapter: (id: number) => apiClient.get(`/exam-chapters/${id}`),
   getTest: (id: number) => apiClient.get(`/mcq-tests/${id}`),
-  submitAttempt: (testId: number, answers: Record<number, string>) =>
-    apiClient.post(`/mcq-tests/${testId}/submit`, { testId, answers }),
+  submitAttempt: (testId: number, answers: Record<number, string>, timeTakenSeconds = 0) =>
+    apiClient.post(`/mcq-tests/${testId}/submit`, { testId, answers, timeTakenSeconds }),
   getAttempts: (testId: number) => apiClient.get(`/mcq-tests/${testId}/attempts`),
+
+  // Mock Tests
+  getMockTests: (examId: number) => apiClient.get(`/exams/${examId}/mock-tests`),
 
   // Admin
   createExam: (data: any) => apiClient.post('/admin/exams', data),
@@ -133,6 +136,13 @@ export const examApi = {
   createSection: (examId: number, data: any) => apiClient.post(`/admin/exams/${examId}/sections`, data),
   updateSection: (sectionId: number, data: any) => apiClient.put(`/admin/sections/${sectionId}`, data),
   deleteSection: (sectionId: number) => apiClient.delete(`/admin/sections/${sectionId}`),
+  // Admin Mock Tests
+  createMockTest: (examId: number, data: any) => apiClient.post(`/admin/exams/${examId}/mock-tests`, data),
+  deleteMockTest: (testId: number) => apiClient.delete(`/admin/mcq-tests/${testId}`),
+  uploadMockTestCsv: (mockTestId: number, formData: FormData) =>
+    apiClient.post(`/admin/mock-tests/${mockTestId}/upload-csv`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    }),
 }
 
 export const subscriptionApi = {

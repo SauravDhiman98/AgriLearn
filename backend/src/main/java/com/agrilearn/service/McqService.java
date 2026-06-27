@@ -9,4 +9,6 @@ public interface McqService {
     ExamDto.McqAttemptResponse submitAttempt(Long userId, ExamDto.McqAttemptRequest req);
     List<ExamDto.McqAttemptResponse> getUserAttempts(Long userId, Long testId);
     ExamDto.McqTestResponse generateAiMcq(Long notesId, int questionCount, Long chapterId);
+    ExamDto.McqTestResponse createExamMockTest(Long examId, ExamDto.CreateMockTestRequest req);
+    List<ExamDto.McqTestResponse> listExamMockTests(Long examId);
 }

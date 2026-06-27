@@ -39,6 +39,10 @@ public class McqAttempt {
     @Column(columnDefinition = "TEXT")
     private String answers;
 
+    @Column(nullable = false)
+    @Builder.Default
+    private int timeTakenSeconds = 0;
+
     @CreatedDate
     @Column(nullable = false, updatable = false)
     private LocalDateTime completedAt;

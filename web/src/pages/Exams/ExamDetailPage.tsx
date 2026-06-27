@@ -3,9 +3,9 @@ import { useQuery } from 'react-query'
 import { Link, useParams } from 'react-router-dom'
 import { examApi } from '../../api/services'
 import { useTheme } from '../../context/ThemeContext'
-import { ChevronRight, ChevronLeft, ChevronDown, ChevronUp } from 'lucide-react'
+import { ChevronRight, ChevronLeft, ChevronDown, ChevronUp, Clock, FileQuestion } from 'lucide-react'
 
-type ExamTab = 'subjects' | 'info'
+type ExamTab = 'subjects' | 'mock-tests' | 'info'
 
 export default function ExamDetailPage() {
   const { id } = useParams<{ id: string }>()
@@ -17,6 +17,10 @@ export default function ExamDetailPage() {
     select: res => res.data,
   })
   const { data: sections = [] } = useQuery(['exam-sections', id], () => examApi.getSections(Number(id)), {
+    select: res => res.data,
+    enabled: !!id,
+  })
+  const { data: mockTests = [] } = useQuery(['mock-tests', id], () => examApi.getMockTests(Number(id)), {
     select: res => res.data,
     enabled: !!id,
   })
@@ -47,7 +51,8 @@ export default function ExamDetailPage() {
   }
 
   const TABS: { key: ExamTab; label: string }[] = [
-    { key: 'subjects', label: '📖 Subjects' }
+    { key: 'subjects', label: '📖 Subjects' },
+    { key: 'mock-tests', label: '🎯 Mock Tests' },
   ]
 
   return (
@@ -131,6 +136,63 @@ export default function ExamDetailPage() {
             </div>
           </div>
         )}
+
+        {/* ── Mock Tests Tab ── */}
+        {activeTab === 'mock-tests' && (
+          <div>
+            <h2 style={{ fontSize: '20px', fontWeight: '700', color: text, marginBottom: '8px' }}>
+              🎯 Mock Tests ({(mockTests as any[]).length})
+            </h2>
+            <p style={{ fontSize: '13px', color: muted, marginBottom: '20px' }}>
+              Full-length mock tests simulating the actual {exam?.name} exam experience with timer, negative marking and detailed analysis.
+            </p>
+            {(mockTests as any[]).length === 0 && (
+              <div style={{ textAlign: 'center', padding: '60px 20px', color: muted }}>
+                <div style={{ fontSize: '48px', marginBottom: '12px' }}>📝</div>
+                <p>No mock tests available yet. Check back soon!</p>
+              </div>
+            )}
+            <div style={{ display: 'grid', gap: '14px' }}>
+              {(mockTests as any[]).map((mt: any, idx: number) => (
+                <Link key={mt.id} to={`/mock-tests/${mt.id}`} style={{ textDecoration: 'none' }}>
+                  <div style={{
+                    backgroundColor: cardBg, borderRadius: '14px', padding: '20px',
+                    border: `1px solid ${border}`, display: 'flex', alignItems: 'center', gap: '16px',
+                  }}>
+                    <div style={{
+                      width: '52px', height: '52px', borderRadius: '12px', flexShrink: 0,
+                      background: 'linear-gradient(135deg, #1e3a5f, #3b82f6)',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      fontSize: '20px', color: '#fff', fontWeight: '800',
+                    }}>{idx + 1}</div>
+                    <div style={{ flex: 1 }}>
+                      <h3 style={{ fontSize: '16px', fontWeight: '700', color: text, marginBottom: '6px' }}>{mt.title}</h3>
+                      <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
+                        <span style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '13px', color: muted }}>
+                          <FileQuestion style={{ width: '14px', height: '14px' }} />
+                          {mt.questionCount || mt.totalQuestions} Questions
+                        </span>
+                        <span style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '13px', color: muted }}>
+                          <Clock style={{ width: '14px', height: '14px' }} />
+                          {mt.timeLimitMinutes} Minutes
+                        </span>
+                        {mt.negativeMarking > 0 && (
+                          <span style={{ fontSize: '13px', color: '#f59e0b' }}>
+                            −{mt.negativeMarking} Negative Marking
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <div style={{ backgroundColor: '#16a34a', color: '#fff', borderRadius: '10px', padding: '8px 18px', fontWeight: '700', fontSize: '14px', flexShrink: 0 }}>
+                      Start →
+                    </div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
+
       </div>
     </div>
   )

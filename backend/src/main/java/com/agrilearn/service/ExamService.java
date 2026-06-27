@@ -25,4 +25,5 @@ public interface ExamService {
     void deleteVideo(Long videoId);
     void deleteChapter(Long chapterId);
     void deleteSubject(Long subjectId);
+    void deleteMockTest(Long testId);
 }

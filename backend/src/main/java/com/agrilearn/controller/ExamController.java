@@ -68,6 +68,26 @@ public class ExamController {
         return ResponseEntity.ok(mcqService.getUserAttempts(principal.getId(), id));
     }
 
+    @GetMapping("/exams/{examId}/mock-tests")
+    public ResponseEntity<List<ExamDto.McqTestResponse>> getExamMockTests(@PathVariable Long examId) {
+        return ResponseEntity.ok(mcqService.listExamMockTests(examId));
+    }
+
+    @PostMapping("/admin/exams/{examId}/mock-tests")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ExamDto.McqTestResponse> createMockTest(
+            @PathVariable Long examId,
+            @RequestBody ExamDto.CreateMockTestRequest req) {
+        return ResponseEntity.ok(mcqService.createExamMockTest(examId, req));
+    }
+
+    @DeleteMapping("/admin/mcq-tests/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Void> deleteMockTest(@PathVariable Long id) {
+        examService.deleteMockTest(id);
+        return ResponseEntity.noContent().build();
+    }
+
     @PostMapping("/admin/exams")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ExamDto.ExamResponse> createExam(@RequestBody ExamDto.CreateExamRequest req) {

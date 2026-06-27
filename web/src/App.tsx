@@ -24,6 +24,8 @@ import ExamInfoPage from './pages/Exams/ExamInfoPage'
 import SubjectDetailPage from './pages/Exams/SubjectDetailPage'
 import ChapterDetailPage from './pages/Exams/ChapterDetailPage'
 import McqTestPage from './pages/Exams/McqTestPage'
+import MockTestPage from './pages/Exams/MockTestPage'
+import MockTestResultPage from './pages/Exams/MockTestResultPage'
 import PrivacyPolicyPage from './pages/PrivacyPolicyPage'
 import TermsPage from './pages/TermsPage'
 import AboutPage from './pages/AboutPage'
@@ -68,6 +70,8 @@ export default function App() {
         {/* Protected routes */}
         <Route path="/dashboard" element={<PrivateRoute><DashboardPage /></PrivateRoute>} />
         <Route path="/mcq-tests/:id" element={<PrivateRoute><McqTestPage /></PrivateRoute>} />
+        <Route path="/mock-tests/:testId" element={<PrivateRoute><MockTestPage /></PrivateRoute>} />
+        <Route path="/mock-tests/:testId/result/:attemptId" element={<PrivateRoute><MockTestResultPage /></PrivateRoute>} />
         <Route path="/courses/:courseId/lessons/:lessonId" element={<PrivateRoute><LessonPage /></PrivateRoute>} />
         <Route path="/courses/:id/learn" element={<PrivateRoute><LessonPage /></PrivateRoute>} />
         <Route path="/profile" element={<PrivateRoute><ProfilePage /></PrivateRoute>} />

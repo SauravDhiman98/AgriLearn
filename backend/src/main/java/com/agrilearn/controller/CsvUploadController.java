@@ -292,6 +292,57 @@ public class CsvUploadController {
         return Character.toUpperCase(s.charAt(0)) + s.substring(1);
     }
 
+    // ── Mock Test Question CSV Upload ───────────────────────────────────────
+
+    @PostMapping("/admin/mock-tests/{mockTestId}/upload-csv")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Map<String, Object>> uploadMockTestCsv(
+            @PathVariable Long mockTestId,
+            @RequestParam("file") MultipartFile file) throws Exception {
+
+        McqTest test = mcqTestRepo.findById(mockTestId)
+                .orElseThrow(() -> new ResourceNotFoundException("MockTest", mockTestId));
+
+        List<String[]> rows = parseCsv(file);
+        if (rows.isEmpty()) throw new BadRequestException("CSV file is empty");
+
+        // Delete existing questions before re-upload
+        mcqQuestionRepo.deleteAll(mcqQuestionRepo.findByTestIdOrderByOrderIndexAsc(mockTestId));
+
+        List<McqQuestion> questions = new ArrayList<>();
+        int orderIdx = 0;
+        for (String[] row : rows) {
+            if (row.length < 6) continue;
+            String question = clean(row[0]);
+            if (question.isEmpty()) continue;
+
+            McqQuestion q = McqQuestion.builder()
+                    .test(test)
+                    .question(question)
+                    .optionA(clean(row[1]))
+                    .optionB(clean(row[2]))
+                    .optionC(clean(row[3]))
+                    .optionD(clean(row[4]))
+                    .correctOption(clean(row[5]).toUpperCase())
+                    .explanation(row.length > 6 ? clean(row[6]) : null)
+                    .orderIndex(orderIdx++)
+                    .build();
+            questions.add(q);
+        }
+
+        if (questions.isEmpty()) throw new BadRequestException("No valid questions found in CSV");
+
+        mcqQuestionRepo.saveAll(questions);
+        test.setTotalQuestions(questions.size());
+        mcqTestRepo.save(test);
+
+        log.info("Uploaded {} questions to mock test {}", questions.size(), mockTestId);
+        return ResponseEntity.ok(Map.of(
+                "testId", test.getId(),
+                "questionsUploaded", questions.size()
+        ));
+    }
+
     private List<String[]> parseCsv(MultipartFile file) throws Exception {
         List<String[]> result = new ArrayList<>();
         try (BufferedReader reader = new BufferedReader(
