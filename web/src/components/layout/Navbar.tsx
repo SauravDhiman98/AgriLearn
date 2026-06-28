@@ -1,11 +1,12 @@
 import { useState, useRef } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useDispatch, useSelector } from 'react-redux'
 import { RootState, AppDispatch } from '../../store'
 import { logout } from '../../store/slices/authSlice'
 import { ShoppingCart, Menu, X, Globe, Sun, Moon, Search } from 'lucide-react'
 import { useTheme } from '../../context/ThemeContext'
+import { useFlag } from '../../context/FeatureFlagContext'
 
 const LANGUAGES = [{ code: 'en', label: 'English' }, { code: 'hi', label: 'हिंदी' }, { code: 'mr', label: 'मराठी' }, { code: 'pa', label: 'ਪੰਜਾਬੀ' }]
 
@@ -16,6 +17,9 @@ export default function Navbar() {
   const { isAuthenticated, user } = useSelector((s: RootState) => s.auth)
   const cartCount = useSelector((s: RootState) => s.cart.items.length)
   const { toggleTheme, isDark } = useTheme()
+  const showPricing = useFlag('PRICING')
+  const showSearch = useFlag('SEARCH')
+  const location = useLocation()
   const [menuOpen, setMenuOpen] = useState(false)
   const [langOpen, setLangOpen] = useState(false)
   const [profileOpen, setProfileOpen] = useState(false)
@@ -24,14 +28,24 @@ export default function Navbar() {
   const openProfile = () => { if (profileCloseTimer.current) clearTimeout(profileCloseTimer.current); setProfileOpen(true) }
   const closeProfileDelayed = () => { profileCloseTimer.current = setTimeout(() => setProfileOpen(false), 300) }
   const handleSearch = () => { const value = searchTerm.trim(); navigate(value ? `/search?q=${encodeURIComponent(value)}` : '/search'); setMenuOpen(false); setSearchTerm('') }
-  const navLinks = [{ to: '/exams', label: 'Exams' }, { to: '/live-classes', label: 'Videos' }, { to: '/forum', label: 'Community' }, { to: '/marketplace', label: 'Store' }, { to: '/exam-info', label: 'Exam Info' }, { to: '/pricing', label: 'Pricing' }]
+  const navLinks = [
+    { to: '/exams', label: 'Exams' },
+    { to: '/live-classes', label: 'Videos' },
+    { to: '/forum', label: 'Community' },
+    { to: '/marketplace', label: 'Store' },
+    { to: '/exam-info', label: 'Exam Info' },
+    ...(showPricing ? [{ to: '/pricing', label: 'Pricing' }] : []),
+  ]
   return (
     <nav style={{ backgroundColor: isDark ? '#1f2937' : '#ffffff', borderBottom: `1px solid ${isDark ? '#374151' : '#e5e7eb'}`, position: 'sticky', top: 0, zIndex: 50, transition: 'background-color 0.2s ease' }}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16 gap-4">
           <Link to="/" className="flex items-center gap-2 font-bold text-xl" style={{ color: '#194552' }}><img src="/logo.png" alt="Tassy Point" className="w-10 h-10 object-contain" style={{ background: '#194552', borderRadius: '8px' }} /><span style={{ color: isDark ? '#f9fafb' : '#194552' }}>TASSY POINT</span></Link>
-          <div className="hidden lg:flex items-center gap-4">{navLinks.map(link => <Link key={link.to} to={link.to} style={{ color: isDark ? '#d1d5db' : '#4b5563', fontWeight: 500, whiteSpace: 'nowrap', fontSize: '14px' }} className="hover:text-green-600 transition-colors">{link.label}</Link>)}</div>
-          <div className="hidden md:flex items-center" style={{ flex: 1, maxWidth: '340px', marginLeft: '16px', marginRight: '16px' }}><div style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '8px', backgroundColor: isDark ? '#111827' : '#f8fafc', border: `1px solid ${isDark ? '#374151' : '#e5e7eb'}`, borderRadius: '999px', padding: '8px 12px' }}><Search className="w-4 h-4" style={{ color: isDark ? '#9ca3af' : '#6b7280', flexShrink: 0 }} /><input value={searchTerm} onChange={e => setSearchTerm(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleSearch()} placeholder="Search exams, subjects..." style={{ flex: 1, background: 'transparent', border: 'none', outline: 'none', color: isDark ? '#f9fafb' : '#111827', fontSize: '14px', minWidth: 0 }} />{searchTerm && <button onClick={() => setSearchTerm('')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: isDark ? '#9ca3af' : '#6b7280', fontSize: '16px', lineHeight: 1, flexShrink: 0 }}>×</button>}</div></div>
+          <div className="hidden lg:flex items-center gap-4">{navLinks.map(link => {
+            const isActive = location.pathname === link.to || location.pathname.startsWith(link.to + '/')
+            return <Link key={link.to} to={link.to} style={{ color: isActive ? '#16a34a' : (isDark ? '#d1d5db' : '#4b5563'), fontWeight: isActive ? 700 : 500, whiteSpace: 'nowrap', fontSize: '14px', borderBottom: isActive ? '2px solid #16a34a' : '2px solid transparent', paddingBottom: '2px', transition: 'all 0.15s' }} className="hover:text-green-600 transition-colors">{link.label}</Link>
+          })}</div>
+          {showSearch && <div className="hidden md:flex items-center" style={{ flex: 1, maxWidth: '340px', marginLeft: '16px', marginRight: '16px' }}><div style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '8px', backgroundColor: isDark ? '#111827' : '#f8fafc', border: `1px solid ${isDark ? '#374151' : '#e5e7eb'}`, borderRadius: '999px', padding: '8px 12px' }}><Search className="w-4 h-4" style={{ color: isDark ? '#9ca3af' : '#6b7280', flexShrink: 0 }} /><input value={searchTerm} onChange={e => setSearchTerm(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleSearch()} placeholder="Search exams, subjects..." style={{ flex: 1, background: 'transparent', border: 'none', outline: 'none', color: isDark ? '#f9fafb' : '#111827', fontSize: '14px', minWidth: 0 }} />{searchTerm && <button onClick={() => setSearchTerm('')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: isDark ? '#9ca3af' : '#6b7280', fontSize: '16px', lineHeight: 1, flexShrink: 0 }}>×</button>}</div></div>}
           <div className="flex items-center gap-3">
             <div className="relative hidden md:block"><button onClick={() => setLangOpen(!langOpen)} style={{ color: isDark ? '#9ca3af' : '#6b7280' }} className="flex items-center gap-1 hover:text-gray-900"><Globe className="w-4 h-4" /><span className="text-sm uppercase">{i18n.language.slice(0, 2)}</span></button>{langOpen && <div style={{ backgroundColor: isDark ? '#1f2937' : '#ffffff', border: `1px solid ${isDark ? '#374151' : '#e5e7eb'}` }} className="absolute right-0 mt-2 w-36 rounded-lg shadow-lg py-1 z-50">{LANGUAGES.map(lang => <button key={lang.code} onClick={() => { i18n.changeLanguage(lang.code); setLangOpen(false) }} style={{ color: isDark ? '#d1d5db' : '#374151' }} className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100">{lang.label}</button>)}</div>}</div>
             <button type="button" onClick={toggleTheme} style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '5px 10px', borderRadius: '20px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', border: `1px solid ${isDark ? '#4b5563' : '#d1d5db'}`, backgroundColor: isDark ? '#374151' : '#f3f4f6', color: isDark ? '#f9fafb' : '#374151', transition: 'all 0.2s ease' }}>{isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}{isDark ? 'Light' : 'Dark'}</button>
@@ -41,7 +55,7 @@ export default function Navbar() {
             <button style={{ color: isDark ? '#9ca3af' : '#6b7280' }} className="md:hidden" onClick={() => setMenuOpen(!menuOpen)}>{menuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}</button>
           </div>
         </div>
-        {menuOpen && <div style={{ borderTop: `1px solid ${isDark ? '#374151' : '#e5e7eb'}` }} className="md:hidden py-4 space-y-2"><div style={{ display: 'flex', alignItems: 'center', gap: '8px', backgroundColor: isDark ? '#111827' : '#f8fafc', border: `1px solid ${isDark ? '#374151' : '#e5e7eb'}`, borderRadius: '999px', padding: '8px 12px', marginBottom: '10px' }}><Search className="w-4 h-4" style={{ color: isDark ? '#9ca3af' : '#6b7280' }} /><input value={searchTerm} onChange={e => setSearchTerm(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleSearch()} placeholder="Search exams, subjects..." style={{ flex: 1, background: 'transparent', border: 'none', outline: 'none', color: isDark ? '#f9fafb' : '#111827', fontSize: '14px' }} /></div>{navLinks.map(link => <Link key={link.to} to={link.to} onClick={() => setMenuOpen(false)} style={{ color: isDark ? '#d1d5db' : '#374151' }} className="block py-2 font-medium">{link.label}</Link>)}<button onClick={toggleTheme} style={{ color: isDark ? '#d1d5db' : '#374151' }} className="flex items-center gap-2 py-2 font-medium w-full">{isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}{isDark ? 'Light Mode' : 'Dark Mode'}</button>{isAuthenticated && <Link to="/dashboard" onClick={() => setMenuOpen(false)} style={{ color: isDark ? '#d1d5db' : '#374151' }} className="block py-2 font-medium">Dashboard</Link>}{!isAuthenticated && <div className="pt-2 flex gap-2"><Link to="/login" onClick={() => setMenuOpen(false)} className="btn-outline flex-1 text-center text-sm">{t('nav.login')}</Link><Link to="/register" onClick={() => setMenuOpen(false)} className="btn-primary flex-1 text-center text-sm">{t('nav.register')}</Link></div>}</div>}
+        {menuOpen && <div style={{ borderTop: `1px solid ${isDark ? '#374151' : '#e5e7eb'}` }} className="md:hidden py-4 space-y-2"><div style={{ display: 'flex', alignItems: 'center', gap: '8px', backgroundColor: isDark ? '#111827' : '#f8fafc', border: `1px solid ${isDark ? '#374151' : '#e5e7eb'}`, borderRadius: '999px', padding: '8px 12px', marginBottom: '10px' }}><Search className="w-4 h-4" style={{ color: isDark ? '#9ca3af' : '#6b7280' }} /><input value={searchTerm} onChange={e => setSearchTerm(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleSearch()} placeholder="Search exams, subjects..." style={{ flex: 1, background: 'transparent', border: 'none', outline: 'none', color: isDark ? '#f9fafb' : '#111827', fontSize: '14px' }} /></div>{navLinks.map(link => { const isActive = location.pathname === link.to || location.pathname.startsWith(link.to + '/'); return <Link key={link.to} to={link.to} onClick={() => setMenuOpen(false)} style={{ color: isActive ? '#16a34a' : (isDark ? '#d1d5db' : '#374151'), fontWeight: isActive ? 700 : 500, borderLeft: isActive ? '3px solid #16a34a' : '3px solid transparent', paddingLeft: '10px' }} className="block py-2">{link.label}</Link> })}<button onClick={toggleTheme} style={{ color: isDark ? '#d1d5db' : '#374151' }} className="flex items-center gap-2 py-2 font-medium w-full">{isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}{isDark ? 'Light Mode' : 'Dark Mode'}</button>{isAuthenticated && <Link to="/dashboard" onClick={() => setMenuOpen(false)} style={{ color: location.pathname === '/dashboard' ? '#16a34a' : (isDark ? '#d1d5db' : '#374151'), fontWeight: location.pathname === '/dashboard' ? 700 : 500 }} className="block py-2 pl-3">Dashboard</Link>}{!isAuthenticated && <div className="pt-2 flex gap-2"><Link to="/login" onClick={() => setMenuOpen(false)} className="btn-outline flex-1 text-center text-sm">{t('nav.login')}</Link><Link to="/register" onClick={() => setMenuOpen(false)} className="btn-primary flex-1 text-center text-sm">{t('nav.register')}</Link></div>}</div>}
       </div>
     </nav>
   )

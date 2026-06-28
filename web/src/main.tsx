@@ -10,6 +10,7 @@ import './index.css'
 import App from './App'
 import { store } from './store'
 import { ThemeProvider } from './context/ThemeContext'
+import { FeatureFlagProvider } from './context/FeatureFlagContext'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -23,9 +24,11 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
       <QueryClientProvider client={queryClient}>
         <BrowserRouter>
           <ThemeProvider>
-            <App />
-            <ToastContainer position="top-right" autoClose={3000} />
-          </ThemeProvider>
+              <FeatureFlagProvider>
+                <App />
+                <ToastContainer position="top-right" autoClose={3000} />
+              </FeatureFlagProvider>
+            </ThemeProvider>
         </BrowserRouter>
       </QueryClientProvider>
     </Provider>

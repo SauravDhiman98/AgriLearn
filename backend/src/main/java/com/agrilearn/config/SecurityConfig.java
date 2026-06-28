@@ -60,8 +60,8 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/admin/mcq/template", "/admin/exam-info/template").permitAll()
                         // Razorpay webhook — no auth, signature verified in service
                         .requestMatchers(HttpMethod.POST, "/subscriptions/webhook/razorpay").permitAll()
-                        // Subscription plans — public listing
-                        .requestMatchers(HttpMethod.GET, "/subscriptions/plans").permitAll()
+                        // Subscription plans + feature flags — public
+                        .requestMatchers(HttpMethod.GET, "/subscriptions/plans", "/config/features").permitAll()
                         // SPA routes — serve index.html, auth handled client-side
                         .requestMatchers(HttpMethod.GET, "/login", "/register", "/dashboard",
                                 "/profile", "/forum/**", "/marketplace/**",

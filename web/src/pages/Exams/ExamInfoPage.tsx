@@ -128,11 +128,27 @@ export default function ExamInfoPage() {
 
                       {/* Section content */}
                       {isOpen && section.sectionType === 'DOC' && section.description && (
-                        <div
-                          className={`prose prose-slate max-w-none ${isDark ? 'prose-invert' : ''} exam-doc-content`}
-                          style={{ padding: '24px', overflowX: 'auto' }}
-                          dangerouslySetInnerHTML={{ __html: section.description }}
-                        />
+                        <>
+                          {isDark && (
+                            <style>{`
+                              .exam-doc-content { color: #f9fafb !important; background: transparent !important; }
+                              .exam-doc-content * { color: #e5e7eb !important; background-color: transparent !important; border-color: #374151 !important; }
+                              .exam-doc-content h1,.exam-doc-content h2,.exam-doc-content h3,.exam-doc-content h4 { color: #f9fafb !important; }
+                              .exam-doc-content a { color: #34d399 !important; }
+                              .exam-doc-content table { border-collapse: collapse !important; width: 100% !important; }
+                              .exam-doc-content th { background-color: #1f2937 !important; color: #f9fafb !important; border: 1px solid #374151 !important; padding: 8px 12px !important; }
+                              .exam-doc-content td { border: 1px solid #374151 !important; padding: 8px 12px !important; color: #e5e7eb !important; }
+                              .exam-doc-content tr:nth-child(even) td { background-color: #1f2937 !important; }
+                              .exam-doc-content strong, .exam-doc-content b { color: #f9fafb !important; }
+                              .exam-doc-content blockquote { border-left: 3px solid #374151 !important; color: #9ca3af !important; }
+                            `}</style>
+                          )}
+                          <div
+                            className={`prose prose-slate max-w-none ${isDark ? 'prose-invert' : ''} exam-doc-content`}
+                            style={{ padding: '24px', overflowX: 'auto', color: text, backgroundColor: 'transparent' }}
+                            dangerouslySetInnerHTML={{ __html: section.description }}
+                          />
+                        </>
                       )}
                       {isOpen && section.sectionType !== 'DOC' && section.description && (
                         <div style={{ padding: '12px 20px 0', fontSize: '14px', color: text, lineHeight: '1.6' }}>
