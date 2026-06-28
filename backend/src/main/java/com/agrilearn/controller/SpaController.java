@@ -11,34 +11,30 @@ import org.springframework.web.bind.annotation.RestController;
 import java.io.IOException;
 
 /**
- * Serves React's index.html for all non-API, non-static routes.
- * Enables client-side routing (React Router) when the app is
- * served from the same Spring Boot container.
+ * Catch-all SPA controller — serves React's index.html for every GET request
+ * that is NOT an API call and NOT a static asset.
+ * This enables React Router client-side routing on hard refresh / direct URL.
  */
 @RestController
 public class SpaController {
 
     private final Resource indexHtml = new ClassPathResource("static/index.html");
 
-    @GetMapping(value = {
-        "/",
-        "/login", "/register",
-        "/dashboard", "/profile",
-        "/exams/**", "/exam-info",
-        "/subjects/**", "/exam-chapters/**",
-        "/mcq-tests/**",
-        "/courses/**",
-        "/forum/**",
-        "/marketplace/**",
-        "/live-classes",
-        "/admin/**",
-        "/instructor/**"
-    }, produces = MediaType.TEXT_HTML_VALUE)
+    /** Matches any path that doesn't start with /api, /actuator, or look like a static file */
+    @GetMapping(value = "/**", produces = MediaType.TEXT_HTML_VALUE)
     public ResponseEntity<Resource> spa(HttpServletRequest request) throws IOException {
-        if (!indexHtml.exists()) {
-            // Not running in bundled mode (local dev) — let Spring return 404
+        String path = request.getRequestURI();
+
+        // Let Spring handle actual API, actuator and static asset requests
+        if (path.startsWith("/api/") || path.startsWith("/actuator")
+                || path.contains(".") ) {  // .js .css .png .ico etc
             return ResponseEntity.notFound().build();
         }
+
+        if (!indexHtml.exists()) {
+            return ResponseEntity.notFound().build();
+        }
+
         return ResponseEntity.ok()
                 .contentType(MediaType.TEXT_HTML)
                 .body(indexHtml);
