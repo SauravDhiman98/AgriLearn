@@ -1,15 +1,13 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react'
-import axios from 'axios'
-
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8080/api/v1'
+import apiClient from '../api/axios'
 
 type Flags = Record<string, boolean>
 
 const FeatureFlagContext = createContext<Flags>({})
 
-// Default flags — used until API responds (prevents flash)
+// Default flags — all ON; DB overrides specific ones (e.g. PRICING=false until live)
 const DEFAULTS: Flags = {
-  PRICING: false,
+  PRICING: true,
   MARKETPLACE: true,
   LIVE_CLASSES: true,
   COMMUNITY: true,
@@ -22,9 +20,9 @@ export function FeatureFlagProvider({ children }: { children: ReactNode }) {
   const [flags, setFlags] = useState<Flags>(DEFAULTS)
 
   useEffect(() => {
-    axios.get(`${API_BASE}/config/features`)
+    apiClient.get('/config/features')
       .then(r => setFlags({ ...DEFAULTS, ...r.data }))
-      .catch(() => setFlags(DEFAULTS)) // fall back to defaults silently
+      .catch(() => setFlags(DEFAULTS))
   }, [])
 
   return (
@@ -40,5 +38,5 @@ export function useFeatureFlags() {
 
 export function useFlag(key: string): boolean {
   const flags = useContext(FeatureFlagContext)
-  return flags[key] ?? true // default to true if flag not found
+  return flags[key] ?? true
 }
