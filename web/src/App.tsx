@@ -28,6 +28,8 @@ import McqTestPage from './pages/Exams/McqTestPage'
 import MockTestPage from './pages/Exams/MockTestPage'
 import MockTestResultPage from './pages/Exams/MockTestResultPage'
 import PracticeModePage from './pages/Exams/PracticeModePage'
+import ForgotPasswordPage from './pages/Auth/ForgotPasswordPage'
+import ResetPasswordPage from './pages/Auth/ResetPasswordPage'
 import PrivacyPolicyPage from './pages/PrivacyPolicyPage'
 import TermsPage from './pages/TermsPage'
 import AboutPage from './pages/AboutPage'
@@ -69,6 +71,8 @@ export default function App() {
         <Route path="/pricing" element={<PricingPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
+        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+        <Route path="/reset-password" element={<ResetPasswordPage />} />
         <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
         <Route path="/terms" element={<TermsPage />} />
         <Route path="/about" element={<AboutPage />} />

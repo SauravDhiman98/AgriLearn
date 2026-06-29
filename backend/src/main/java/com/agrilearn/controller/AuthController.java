@@ -12,6 +12,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import com.agrilearn.dto.request.ResetPasswordRequest;
+
 @RestController
 @RequestMapping("/auth")
 @RequiredArgsConstructor
@@ -49,6 +51,13 @@ public class AuthController {
     @Operation(summary = "Send password reset email")
     public ResponseEntity<String> forgotPassword(@RequestParam String email) {
         authService.forgotPassword(email);
-        return ResponseEntity.ok("Password reset email sent");
+        return ResponseEntity.ok("If this email is registered, a reset link has been sent");
+    }
+
+    @PostMapping("/reset-password")
+    @Operation(summary = "Reset password using token from email")
+    public ResponseEntity<String> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
+        authService.resetPassword(request.getToken(), request.getNewPassword());
+        return ResponseEntity.ok("Password reset successfully");
     }
 }

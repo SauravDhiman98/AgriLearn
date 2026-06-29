@@ -53,6 +53,10 @@ public class User {
     private String emailVerificationToken;
     private LocalDateTime emailVerifiedAt;
 
+    @JsonIgnore
+    private String passwordResetToken;
+    private LocalDateTime passwordResetTokenExpiry;
+
     @Builder.Default
     private int streakCount = 0;
 

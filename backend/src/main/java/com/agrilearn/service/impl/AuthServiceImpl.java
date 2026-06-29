@@ -9,6 +9,8 @@ import com.agrilearn.exception.BadRequestException;
 import com.agrilearn.repository.UserRepository;
 import com.agrilearn.security.JwtTokenProvider;
 import com.agrilearn.service.AuthService;
+import com.agrilearn.service.EmailService;
+import org.springframework.beans.factory.annotation.Value;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -18,6 +20,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Service
@@ -30,6 +33,10 @@ public class AuthServiceImpl implements AuthService {
     private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
     private final JwtTokenProvider jwtTokenProvider;
+    private final EmailService emailService;
+
+    @Value("${app.frontend-url:https://agrilearn-4qhy.onrender.com}")
+    private String frontendUrl;
 
     @Override
     public AuthResponse register(RegisterRequest request) {
@@ -115,8 +122,31 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public void forgotPassword(String email) {
         userRepository.findByEmail(email).ifPresent(user -> {
-            // TODO: generate reset token and send email
-            log.info("Password reset requested for: {}", email);
+            String token = UUID.randomUUID().toString();
+            user.setPasswordResetToken(token);
+            user.setPasswordResetTokenExpiry(LocalDateTime.now().plusHours(1));
+            userRepository.save(user);
+
+            String resetLink = frontendUrl + "/reset-password?token=" + token;
+            emailService.sendPasswordResetEmail(email, user.getFirstName(), resetLink);
+            log.info("Password reset email sent for: {}", email);
         });
+    }
+
+    @Override
+    public void resetPassword(String token, String newPassword) {
+        User user = userRepository.findByPasswordResetToken(token)
+                .orElseThrow(() -> new BadRequestException("Invalid or expired reset token"));
+
+        if (user.getPasswordResetTokenExpiry() == null ||
+                user.getPasswordResetTokenExpiry().isBefore(LocalDateTime.now())) {
+            throw new BadRequestException("Password reset token has expired. Please request a new one.");
+        }
+
+        user.setPassword(passwordEncoder.encode(newPassword));
+        user.setPasswordResetToken(null);
+        user.setPasswordResetTokenExpiry(null);
+        userRepository.save(user);
+        log.info("Password reset successful for: {}", user.getEmail());
     }
 }
