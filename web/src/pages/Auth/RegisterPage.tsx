@@ -6,12 +6,6 @@ import { registerAsync } from '../../store/slices/authSlice'
 import { Leaf, AlertCircle } from 'lucide-react'
 import { useTheme } from '../../context/ThemeContext'
 
-const ROLES = [
-  { value: 'STUDENT', label: '🎓 Student', desc: 'I\'m studying agriculture' },
-  { value: 'FARMER', label: '🌾 Farmer', desc: 'I\'m an active farmer' },
-  { value: 'INSTRUCTOR', label: '👨‍🏫 Instructor', desc: 'I want to teach' },
-]
-
 const LANGUAGES = [
   { value: 'en', label: 'English' },
   { value: 'hi', label: 'हिंदी' },
@@ -79,25 +73,6 @@ export default function RegisterPage() {
           )}
 
           <form onSubmit={handleSubmit} className="space-y-4">
-            {/* Role selection */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2" style={{ color: text }}>I am a...</label>
-              <div className="grid grid-cols-3 gap-2">
-                {ROLES.map(r => (
-                  <button type="button" key={r.value}
-                    onClick={() => setForm(f => ({ ...f, role: r.value }))}
-                    className={`border-2 rounded-lg p-3 text-center text-xs transition-all ${
-                      form.role === r.value
-                        ? 'border-green-500 bg-green-50 text-green-700'
-                        : 'border-gray-200 hover:border-gray-300'
-                    }`}>
-                    <div className="text-lg mb-1">{r.label.split(' ')[0]}</div>
-                    <div className="font-medium">{r.label.split(' ')[1]}</div>
-                  </button>
-                ))}
-              </div>
-            </div>
-
             {/* Name */}
             <div className="grid grid-cols-2 gap-3">
               <div>
