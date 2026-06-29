@@ -12,7 +12,14 @@ const { errorMiddleware, notFoundHandler } = require('./middleware/errorMiddlewa
 const { aggregateDailyStats, formatDate, runDailyMaintenance, shiftDate, syncUserSnapshot } = require('./services/aggregationService')
 
 const PORT = Number(process.env.PORT || 3001)
-const allowedOrigins = new Set(['http://localhost:3000', 'http://localhost:5173', 'http://localhost:5174'])
+
+// Allow localhost for dev + any Render/Railway domains set via env
+const allowedOrigins = new Set([
+  'http://localhost:3000',
+  'http://localhost:5173',
+  'http://localhost:5174',
+  ...(process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim()) : []),
+])
 
 async function startServer() {
   await initializeDatabase()
