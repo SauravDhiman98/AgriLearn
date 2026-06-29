@@ -1,9 +1,19 @@
 import axios from 'axios'
 import Constants from 'expo-constants'
-import { store } from '../store'
-import { logout } from '../store/slices/authSlice'
 
 const BASE_URL = Constants.expoConfig?.extra?.apiBaseUrl || 'http://10.0.2.2:8080/api/v1'
+
+// Injected from App.tsx after store is created — breaks the circular dependency
+let _getToken: (() => string | null) = () => null
+let _onUnauthorized: (() => void) = () => {}
+
+export const configureApiClient = (
+  getToken: () => string | null,
+  onUnauthorized: () => void
+) => {
+  _getToken = getToken
+  _onUnauthorized = onUnauthorized
+}
 
 const apiClient = axios.create({
   baseURL: BASE_URL,
@@ -12,7 +22,7 @@ const apiClient = axios.create({
 })
 
 apiClient.interceptors.request.use((config) => {
-  const token = store.getState().auth.accessToken
+  const token = _getToken()
   if (token) config.headers.Authorization = `Bearer ${token}`
   return config
 })
@@ -20,7 +30,7 @@ apiClient.interceptors.request.use((config) => {
 apiClient.interceptors.response.use(
   res => res,
   error => {
-    if (error.response?.status === 401) store.dispatch(logout())
+    if (error.response?.status === 401) _onUnauthorized()
     return Promise.reject(error)
   }
 )

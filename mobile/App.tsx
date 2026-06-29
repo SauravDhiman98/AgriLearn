@@ -8,8 +8,16 @@ import { View, Text } from 'react-native'
 import './src/i18n'
 import RootNavigator from './src/navigation/RootNavigator'
 import { store } from './src/store'
+import { logout } from './src/store/slices/authSlice'
+import { configureApiClient } from './src/services/api'
 import React from 'react'
 import { ThemeProvider, useTheme } from './src/context/ThemeContext'
+
+// Wire up API client with store — done here to break circular dependency
+configureApiClient(
+  () => store.getState().auth.accessToken,
+  () => store.dispatch(logout())
+)
 
 class ErrorBoundary extends React.Component<{children: React.ReactNode}, {hasError: boolean, error: string}> {
   constructor(props: any) {
