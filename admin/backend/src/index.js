@@ -13,14 +13,6 @@ const { aggregateDailyStats, formatDate, runDailyMaintenance, shiftDate, syncUse
 
 const PORT = Number(process.env.PORT || 3001)
 
-// Allow localhost for dev + any Render/Railway domains set via env
-const allowedOrigins = new Set([
-  'http://localhost:3000',
-  'http://localhost:5173',
-  'http://localhost:5174',
-  ...(process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim()) : []),
-])
-
 async function startServer() {
   await initializeDatabase()
 
@@ -30,16 +22,8 @@ async function startServer() {
 
   const app = express()
 
-  app.use(
-    cors({
-      origin(origin, callback) {
-        if (!origin || allowedOrigins.has(origin)) {
-          return callback(null, true)
-        }
-        return callback(new Error('Not allowed by CORS'))
-      },
-    })
-  )
+// Admin dashboard — JWT is the security layer, allow all origins
+app.use(cors())
   app.use(express.json())
 
   app.get('/health', (req, res) => {
