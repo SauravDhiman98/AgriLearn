@@ -1,3 +1,4 @@
+import 'react-native-url-polyfill/auto'
 import { useEffect } from 'react'
 import { Provider } from 'react-redux'
 import { NavigationContainer, DarkTheme, DefaultTheme } from '@react-navigation/native'
