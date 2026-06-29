@@ -1,5 +1,4 @@
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs'
-import Ionicons from '@expo/vector-icons/Ionicons'
 import HomeScreen from '../screens/Home/HomeScreen'
 import ExamsScreen from '../screens/Exams/ExamsScreen'
 import DashboardScreen from '../screens/Dashboard/DashboardScreen'
@@ -27,36 +26,11 @@ export default function TabNavigator() {
         headerTintColor: '#fff',
         headerTitleStyle: { fontWeight: 'bold' },
       }}>
-      <Tab.Screen name="Home" component={HomeScreen}
-        options={{
-          title: 'Tassy Point',
-          tabBarLabel: 'Home',
-          tabBarIcon: ({ color, size }) => <Ionicons name="home-outline" size={size} color={color} />,
-        }} />
-      <Tab.Screen name="Exams" component={ExamsScreen}
-        options={{
-          title: 'Exams',
-          tabBarLabel: 'Exams',
-          tabBarIcon: ({ color, size }) => <Ionicons name="book-outline" size={size} color={color} />,
-        }} />
-      <Tab.Screen name="Dashboard" component={DashboardScreen}
-        options={{
-          title: 'Dashboard',
-          tabBarLabel: 'Dashboard',
-          tabBarIcon: ({ color, size }) => <Ionicons name="grid-outline" size={size} color={color} />,
-        }} />
-      <Tab.Screen name="Forum" component={ForumScreen}
-        options={{
-          title: 'Community',
-          tabBarLabel: 'Forum',
-          tabBarIcon: ({ color, size }) => <Ionicons name="chatbubbles-outline" size={size} color={color} />,
-        }} />
-      <Tab.Screen name="Profile" component={ProfileScreen}
-        options={{
-          title: 'Profile',
-          tabBarLabel: 'Profile',
-          tabBarIcon: ({ color, size }) => <Ionicons name="person-outline" size={size} color={color} />,
-        }} />
+      <Tab.Screen name="Home" component={HomeScreen} options={{ title: 'Tassy Point', tabBarLabel: '🏠 Home' }} />
+      <Tab.Screen name="Exams" component={ExamsScreen} options={{ title: 'Exams', tabBarLabel: '📋 Exams' }} />
+      <Tab.Screen name="Dashboard" component={DashboardScreen} options={{ title: 'Dashboard', tabBarLabel: '📊 Dashboard' }} />
+      <Tab.Screen name="Forum" component={ForumScreen} options={{ title: 'Community', tabBarLabel: '💬 Forum' }} />
+      <Tab.Screen name="Profile" component={ProfileScreen} options={{ title: 'Profile', tabBarLabel: '👤 Profile' }} />
     </Tab.Navigator>
   )
 }

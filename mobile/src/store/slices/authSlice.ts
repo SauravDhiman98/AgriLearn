@@ -1,5 +1,5 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit'
-import * as SecureStore from 'expo-secure-store'
+import AsyncStorage from '@react-native-async-storage/async-storage'
 import { authApi } from '../../services/api'
 
 interface User {
@@ -22,8 +22,8 @@ export const loginAsync = createAsyncThunk(
   async ({ email, password }: { email: string; password: string }, { rejectWithValue }) => {
     try {
       const res = await authApi.login(email, password)
-      await SecureStore.setItemAsync('accessToken', res.data.accessToken)
-      await SecureStore.setItemAsync('refreshToken', res.data.refreshToken)
+      await AsyncStorage.setItem('accessToken', res.data.accessToken)
+      await AsyncStorage.setItem('refreshToken', res.data.refreshToken)
       return res.data
     } catch (err: unknown) {
       const error = err as { response?: { data?: { message?: string } } }
@@ -37,8 +37,8 @@ export const registerAsync = createAsyncThunk(
   async (data: Parameters<typeof authApi.register>[0], { rejectWithValue }) => {
     try {
       const res = await authApi.register(data)
-      await SecureStore.setItemAsync('accessToken', res.data.accessToken)
-      await SecureStore.setItemAsync('refreshToken', res.data.refreshToken)
+      await AsyncStorage.setItem('accessToken', res.data.accessToken)
+      await AsyncStorage.setItem('refreshToken', res.data.refreshToken)
       return res.data
     } catch (err: unknown) {
       const error = err as { response?: { data?: { message?: string } } }
@@ -56,8 +56,8 @@ const authSlice = createSlice({
       state.isAuthenticated = false
       // Fire-and-forget — don't await in sync reducer
       Promise.all([
-        SecureStore.deleteItemAsync('accessToken'),
-        SecureStore.deleteItemAsync('refreshToken'),
+        AsyncStorage.removeItem('accessToken'),
+        AsyncStorage.removeItem('refreshToken'),
       ]).catch(() => {})
     },
     hydrateAuth(state, action: PayloadAction<{ accessToken: string; user: User }>) {
@@ -93,3 +93,4 @@ const authSlice = createSlice({
 
 export const { logout, hydrateAuth } = authSlice.actions
 export default authSlice.reducer
+
