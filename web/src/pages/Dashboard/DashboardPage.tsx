@@ -18,9 +18,9 @@ export default function DashboardPage() {
   const text = isDark ? '#f9fafb' : '#111827'
   const muted = isDark ? '#9ca3af' : '#6b7280'
 
-  const { data: myCourses = [] } = useQuery('myCourses', courseApi.getMyCourses, { select: res => res.data })
-  const { data: stats } = useQuery('my-stats', gamificationApi.getMyStats, { select: res => res.data })
-  const { data: attempts = [] } = useQuery('recent-attempts', examApi.getRecentAttempts, { select: res => res.data })
+  const { data: myCourses = [] } = useQuery(['myCourses', user?.id], courseApi.getMyCourses, { select: res => res.data, enabled: !!user?.id })
+  const { data: stats } = useQuery(['my-stats', user?.id], gamificationApi.getMyStats, { select: res => res.data, enabled: !!user?.id })
+  const { data: attempts = [] } = useQuery(['recent-attempts', user?.id], examApi.getRecentAttempts, { select: res => res.data, enabled: !!user?.id })
 
   const statCards = [
     { icon: BookOpen, label: 'Enrolled Courses', value: myCourses.length, accent: '#16a34a' },
