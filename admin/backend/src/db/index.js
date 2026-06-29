@@ -1,15 +1,19 @@
-const fs = require('fs')
-const path = require('path')
-const Database = require('better-sqlite3')
+require('dotenv').config()
+const { Pool } = require('pg')
 
-const dataDir = path.join(__dirname, '..', '..', 'data')
-const dbPath = path.join(dataDir, 'admin.db')
+const databaseUrl = process.env.DATABASE_URL || 'postgresql://agrilearn:agrilearn123@localhost:5432/agrilearn'
+const normalizedDatabaseUrl = databaseUrl.toLowerCase()
 
-if (!fs.existsSync(dataDir)) {
-  fs.mkdirSync(dataDir, { recursive: true })
-}
+const pool = new Pool({
+  connectionString: databaseUrl,
+  ssl:
+    normalizedDatabaseUrl.includes('railway') || normalizedDatabaseUrl.includes('ssl')
+      ? { rejectUnauthorized: false }
+      : false,
+})
 
-const db = new Database(dbPath)
-db.pragma('journal_mode = WAL')
+pool.on('error', (err) => {
+  console.error('Unexpected PostgreSQL pool error:', err)
+})
 
-module.exports = db
+module.exports = pool

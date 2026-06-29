@@ -17,8 +17,8 @@ const allowedOrigins = new Set(['http://localhost:3000', 'http://localhost:5173'
 async function startServer() {
   await initializeDatabase()
 
-  aggregateDailyStats(formatDate())
-  aggregateDailyStats(shiftDate(formatDate(), -1))
+  await aggregateDailyStats(formatDate())
+  await aggregateDailyStats(shiftDate(formatDate(), -1))
   await syncUserSnapshot(formatDate())
 
   const app = express()
