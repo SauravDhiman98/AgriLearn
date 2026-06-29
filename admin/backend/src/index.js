@@ -22,8 +22,16 @@ async function startServer() {
 
   const app = express()
 
-// Admin dashboard — JWT is the security layer, allow all origins
-app.use(cors())
+  // Explicit CORS — must come before ALL routes so OPTIONS preflight is handled first
+  const corsOptions = {
+    origin: '*',
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    optionsSuccessStatus: 204,
+  }
+  app.use(cors(corsOptions))
+  app.options('*', cors(corsOptions)) // explicit preflight handler for every route
+
   app.use(express.json())
 
   app.get('/health', (req, res) => {
