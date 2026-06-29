@@ -63,7 +63,7 @@ export default function RegisterPage() {
             </div>
           </div>
           <h1 className="text-2xl font-bold text-gray-900 text-center mb-1" style={{ color: text }}>Create your account</h1>
-          <p className="text-gray-500 text-center text-sm mb-6" style={{ color: muted }}>Start learning agriculture for free</p>
+          <p className="text-gray-500 text-center text-sm mb-6" style={{ color: muted }}>Create your account to get started</p>
 
           {localError && (
             <div className="flex items-start gap-2 bg-red-50 border border-red-200 text-red-700 rounded-lg p-3 text-sm mb-4">
