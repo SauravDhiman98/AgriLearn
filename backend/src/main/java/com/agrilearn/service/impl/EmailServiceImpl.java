@@ -2,45 +2,48 @@ package com.agrilearn.service.impl;
 
 import com.agrilearn.service.EmailService;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.mail.javamail.JavaMailSender;
-import org.springframework.mail.javamail.MimeMessageHelper;
+import org.springframework.http.*;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
 
-import jakarta.mail.internet.MimeMessage;
+import java.util.Map;
 
 @Service
 @Slf4j
 public class EmailServiceImpl implements EmailService {
 
-    /** Injected only when spring.mail.username is configured */
-    @Autowired(required = false)
-    private JavaMailSender mailSender;
-
-    @Value("${spring.mail.username:}")
-    private String fromEmail;
-
-    /** Set MAIL_ENABLED=true in Railway/Render to actually send emails */
+    /** Set MAIL_ENABLED=true + RESEND_API_KEY in Railway to actually send emails */
     @Value("${app.email.enabled:false}")
     private boolean emailEnabled;
+
+    /**
+     * Resend API key — get a free one at https://resend.com (3,000 emails/month free).
+     * Uses HTTPS so it works on Railway (Railway blocks SMTP ports 587/465).
+     */
+    @Value("${resend.api-key:}")
+    private String resendApiKey;
+
+    /** Sender address — must be a verified domain in Resend dashboard.
+     *  Use onboarding@resend.dev for testing (Resend's shared domain). */
+    @Value("${resend.from:Tassy Point <onboarding@resend.dev>}")
+    private String fromAddress;
+
+    private final RestTemplate restTemplate = new RestTemplate();
 
     @Async
     @Override
     public void sendPasswordResetEmail(String to, String firstName, String resetLink) {
-        if (!emailEnabled || mailSender == null) {
+        if (!emailEnabled) {
             log.info("Email disabled — password reset link for {}: {}", to, resetLink);
             return;
         }
+        if (resendApiKey == null || resendApiKey.isBlank()) {
+            log.warn("RESEND_API_KEY not set — password reset link for {}: {}", to, resetLink);
+            return;
+        }
         try {
-            MimeMessage message = mailSender.createMimeMessage();
-            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
-
-            helper.setFrom(fromEmail);
-            helper.setTo(to);
-            helper.setSubject("Reset Your Tassy Point Password");
-
             String html = """
                     <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:20px;">
                       <div style="background:#1a7a3c;padding:20px;border-radius:8px 8px 0 0;text-align:center;">
@@ -63,9 +66,29 @@ public class EmailServiceImpl implements EmailService {
                     </div>
                     """.formatted(firstName, resetLink, resetLink, resetLink);
 
-            helper.setText(html, true);
-            mailSender.send(message);
-            log.info("Password reset email sent to {}", to);
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            headers.setBearerAuth(resendApiKey);
+
+            Map<String, Object> body = Map.of(
+                "from", fromAddress,
+                "to", new String[]{to},
+                "subject", "Reset Your Tassy Point Password",
+                "html", html
+            );
+
+            ResponseEntity<String> response = restTemplate.exchange(
+                "https://api.resend.com/emails",
+                HttpMethod.POST,
+                new HttpEntity<>(body, headers),
+                String.class
+            );
+
+            if (response.getStatusCode().is2xxSuccessful()) {
+                log.info("Password reset email sent to {} via Resend", to);
+            } else {
+                log.error("Resend API returned {}: {}", response.getStatusCode(), response.getBody());
+            }
         } catch (Exception e) {
             log.error("Failed to send password reset email to {}: {}", to, e.getMessage());
         }

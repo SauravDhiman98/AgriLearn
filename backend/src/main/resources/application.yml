@@ -100,9 +100,17 @@ github:
 app:
   frontend-url: ${FRONTEND_URL:https://agrilearn-4qhy.onrender.com}
   email:
-    # Set MAIL_ENABLED=true + MAIL_USERNAME + MAIL_PASSWORD in Railway to enable real email sending.
+    # Set MAIL_ENABLED=true + RESEND_API_KEY in Railway to enable real email sending.
+    # Uses Resend HTTP API (works on Railway — Railway blocks SMTP ports 587/465).
     # When false, reset links are printed to logs only (safe default for dev/staging).
     enabled: ${MAIL_ENABLED:false}
+
+# Resend email API (https://resend.com — 3,000 emails/month free, no SMTP needed)
+resend:
+  api-key: ${RESEND_API_KEY:}
+  # Use onboarding@resend.dev for testing without domain verification.
+  # For production, add your domain in Resend dashboard and change this.
+  from: ${RESEND_FROM:Tassy Point <onboarding@resend.dev>}
 
 # Springdoc OpenAPI
 springdoc:
