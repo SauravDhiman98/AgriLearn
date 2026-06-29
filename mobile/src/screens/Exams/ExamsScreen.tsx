@@ -30,20 +30,8 @@ export default function ExamsScreen() {
       try {
         const res = await examApi.list()
         const examList = getItems(res.data)
-        const examsWithCounts = await Promise.all(
-          examList.map(async (exam: any) => {
-            try {
-              const mockTestsRes = await examApi.getMockTests(exam.id)
-              const mockTests = getItems(mockTestsRes.data)
-              return { ...exam, mockTestCount: mockTests.length }
-            } catch {
-              return { ...exam, mockTestCount: 0 }
-            }
-          })
-        )
-
         if (!mounted) return
-        setExams(examsWithCounts)
+        setExams(examList)
         setError('')
       } catch (err: any) {
         if (!mounted) return
@@ -91,7 +79,6 @@ export default function ExamsScreen() {
               <Text style={[styles.description, { color: colors.textMuted }]} numberOfLines={3}>
                 {item.description || 'Exam-focused preparation resources and mock tests.'}
               </Text>
-              <Text style={[styles.mockCount, { color: colors.primary }]}>Mock Tests: {item.mockTestCount ?? 0}</Text>
             </View>
           </TouchableOpacity>
         )}
