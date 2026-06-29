@@ -1,4 +1,5 @@
 import axios from 'axios'
+import { trackApiCall } from '../utils/tracker'
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api/v1'
 
@@ -8,12 +9,14 @@ const apiClient = axios.create({
   timeout: 30000,
 })
 
-// Attach JWT on every request
+// Attach JWT on every request + record start time for response-time tracking
 apiClient.interceptors.request.use((config) => {
   const token = localStorage.getItem('accessToken')
   if (token) {
     config.headers.Authorization = `Bearer ${token}`
   }
+  // Store request start time on the config object
+  ;(config as any)._startTime = Date.now()
   return config
 })
 
@@ -31,9 +34,29 @@ const processQueue = (error: unknown, token: string | null) => {
 }
 
 apiClient.interceptors.response.use(
-  (res) => res,
+  (res) => {
+    // Track successful API calls
+    const startTime = (res.config as any)._startTime
+    const responseTimeMs = startTime ? Date.now() - startTime : 0
+    const url = res.config.url || ''
+    // Only track Spring Boot API calls (ignore refresh/auth internals)
+    if (url && !url.includes('/auth/refresh')) {
+      trackApiCall(res.config.method?.toUpperCase() || 'GET', url, res.status, responseTimeMs)
+    }
+    return res
+  },
   async (error) => {
     const original = error.config
+
+    // Track error responses
+    if (error.response && original) {
+      const startTime = (original as any)._startTime
+      const responseTimeMs = startTime ? Date.now() - startTime : 0
+      const url = original.url || ''
+      if (url && !url.includes('/auth/refresh')) {
+        trackApiCall(original.method?.toUpperCase() || 'GET', url, error.response.status, responseTimeMs)
+      }
+    }
 
     // Attempt refresh on 401 (expired token) or 403 when a token exists (expired token reaching admin endpoints)
     const hasToken = !!localStorage.getItem('accessToken')

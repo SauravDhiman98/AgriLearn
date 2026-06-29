@@ -1,7 +1,7 @@
 import 'react-native-url-polyfill/auto'
 import React, { useEffect } from 'react'
 import { Provider } from 'react-redux'
-import { NavigationContainer, DarkTheme, DefaultTheme } from '@react-navigation/native'
+import { NavigationContainer, DarkTheme, DefaultTheme, useNavigationContainerRef } from '@react-navigation/native'
 import { SafeAreaProvider } from 'react-native-safe-area-context'
 import { StatusBar } from 'expo-status-bar'
 import { View, Text, ScrollView, ActivityIndicator, Image } from 'react-native'
@@ -12,7 +12,7 @@ import { store } from './src/store'
 import type { RootState, AppDispatch } from './src/store'
 import { logout } from './src/store/slices/authSlice'
 import { restoreSession } from './src/store/slices/authSlice'
-import { configureApiClient } from './src/services/api'
+import { configureApiClient, trackMobilePageView } from './src/services/api'
 import './src/i18n'
 import RootNavigator from './src/navigation/RootNavigator'
 import { ThemeProvider, useTheme } from './src/context/ThemeContext'
@@ -58,10 +58,18 @@ function ThemedApp() {
   const dispatch = useDispatch<AppDispatch>()
   const sessionRestored = useSelector((s: RootState) => s.auth.sessionRestored)
   const [fontsLoaded] = useFonts({ ...Ionicons.font })
+  const navRef = useNavigationContainerRef()
 
   useEffect(() => {
     dispatch(restoreSession())
   }, [dispatch])
+
+  const onNavStateChange = () => {
+    const currentRoute = navRef.getCurrentRoute()
+    if (currentRoute?.name) {
+      trackMobilePageView(`/${currentRoute.name}`)
+    }
+  }
 
   if (!fontsLoaded || !sessionRestored) {
     return (
@@ -83,7 +91,7 @@ function ThemedApp() {
 
   return (
     <SafeAreaProvider>
-      <NavigationContainer theme={isDark ? DarkTheme : DefaultTheme}>
+      <NavigationContainer ref={navRef} theme={isDark ? DarkTheme : DefaultTheme} onStateChange={onNavStateChange}>
         <RootNavigator />
         <StatusBar style={isDark ? 'light' : 'dark'} />
       </NavigationContainer>

@@ -1,6 +1,8 @@
-import { Routes, Route, Navigate } from 'react-router-dom'
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
+import { useEffect } from 'react'
 import { useSelector } from 'react-redux'
 import { RootState } from './store'
+import { trackPageView, trackSessionEnd } from './utils/tracker'
 import MainLayout from './components/layout/MainLayout'
 import HomePage from './pages/Home/HomePage'
 import LoginPage from './pages/Auth/LoginPage'
@@ -48,6 +50,19 @@ function AdminRoute({ children }: { children: React.ReactNode }) {
 }
 
 export default function App() {
+  const location = useLocation()
+
+  // Track every page view
+  useEffect(() => {
+    trackPageView(location.pathname + location.search)
+  }, [location.pathname, location.search])
+
+  // Track session end when user closes / navigates away
+  useEffect(() => {
+    window.addEventListener('beforeunload', trackSessionEnd)
+    return () => window.removeEventListener('beforeunload', trackSessionEnd)
+  }, [])
+
   return (
     <>
       <ScrollToTop />

@@ -1,7 +1,9 @@
 import axios from 'axios'
 import Constants from 'expo-constants'
+import AsyncStorage from '@react-native-async-storage/async-storage'
 
 const BASE_URL = Constants.expoConfig?.extra?.apiBaseUrl || 'http://10.0.2.2:8080/api/v1'
+const ADMIN_API = 'https://tassy-admin-backend.up.railway.app'
 
 // Strips /api/v1 to get the server root (used for resolving relative file URLs like /uploads/notes/file.pdf)
 export const API_ORIGIN = BASE_URL.replace(/\/api\/v\d+\/?$/, '')
@@ -18,6 +20,34 @@ export const configureApiClient = (
   _onUnauthorized = onUnauthorized
 }
 
+// Fire-and-forget tracking helpers — never throw
+async function trackVisit(path: string): Promise<void> {
+  try {
+    const sessionId = `mob-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
+    let userId: number | undefined
+    try {
+      const userStr = await AsyncStorage.getItem('user')
+      userId = userStr ? JSON.parse(userStr)?.id : undefined
+    } catch { /* ignore */ }
+
+    fetch(`${ADMIN_API}/api/track/visit`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ sessionId, userId, path, platform: 'mobile' }),
+    }).catch(() => {})
+  } catch { /* ignore */ }
+}
+
+function trackApiCallAsync(method: string, endpoint: string, statusCode: number, responseTimeMs: number): void {
+  fetch(`${ADMIN_API}/api/track/api-call`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ method, endpoint, statusCode, responseTimeMs, platform: 'mobile' }),
+  }).catch(() => {})
+}
+
+export { trackVisit as trackMobilePageView }
+
 const apiClient = axios.create({
   baseURL: BASE_URL,
   headers: { 'Content-Type': 'application/json' },
@@ -27,12 +57,29 @@ const apiClient = axios.create({
 apiClient.interceptors.request.use((config) => {
   const token = _getToken()
   if (token) config.headers.Authorization = `Bearer ${token}`
+  ;(config as any)._startTime = Date.now()
   return config
 })
 
 apiClient.interceptors.response.use(
-  res => res,
+  res => {
+    const startTime = (res.config as any)._startTime
+    const ms = startTime ? Date.now() - startTime : 0
+    const url = res.config.url || ''
+    if (url && !url.includes('/auth/')) {
+      trackApiCallAsync(res.config.method?.toUpperCase() || 'GET', url, res.status, ms)
+    }
+    return res
+  },
   error => {
+    if (error.response) {
+      const startTime = (error.config as any)?._startTime
+      const ms = startTime ? Date.now() - startTime : 0
+      const url = error.config?.url || ''
+      if (url && !url.includes('/auth/')) {
+        trackApiCallAsync(error.config?.method?.toUpperCase() || 'GET', url, error.response.status, ms)
+      }
+    }
     if (error.response?.status === 401) _onUnauthorized()
     return Promise.reject(error)
   }
