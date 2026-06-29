@@ -1,26 +1,26 @@
-const axios = require('axios')
+const pool = require('../db')
 
-function normalizeSpringPayload(payload = {}) {
-  return {
-    totalUsers: Number(payload.totalUsers ?? payload.total_users ?? payload.userCount ?? 0),
-    newToday: Number(payload.newToday ?? payload.new_today ?? payload.todayNewUsers ?? 0),
-    activeToday: Number(payload.activeToday ?? payload.active_today ?? payload.todayActiveUsers ?? 0),
-  }
-}
-
+// Query user stats directly from the shared PostgreSQL DB (Spring Boot users table)
 async function fetchSpringAnalytics() {
-  const baseUrl = process.env.SPRING_BOOT_URL || 'http://localhost:8080/api/v1'
-  const token = process.env.SPRING_BOOT_ADMIN_TOKEN
-
   try {
-    const response = await axios.get(`${baseUrl}/admin/analytics`, {
-      timeout: 10000,
-      headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-    })
+    const today = new Date().toISOString().split('T')[0]
 
-    return normalizeSpringPayload(response.data)
+    const { rows } = await pool.query(`
+      SELECT
+        COUNT(*)::int AS total_users,
+        COUNT(*) FILTER (WHERE created_at::date = $1)::int AS new_today,
+        COUNT(*) FILTER (WHERE updated_at::date = $1)::int AS active_today
+      FROM users
+    `, [today])
+
+    const row = rows[0]
+    return {
+      totalUsers: row.total_users || 0,
+      newToday: row.new_today || 0,
+      activeToday: row.active_today || 0,
+    }
   } catch (error) {
-    console.warn('Unable to fetch Spring Boot analytics snapshot:', error.message)
+    console.warn('Unable to fetch user analytics from DB:', error.message)
     return null
   }
 }

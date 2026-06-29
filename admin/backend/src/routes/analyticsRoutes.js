@@ -90,9 +90,9 @@ router.get('/overview', async (req, res, next) => {
     const last7Start = shiftDate(today, -6)
     const last30Start = shiftDate(today, -29)
 
-    const [snapshotResult, visitsResult, apiCallsResult, todaySummary, yesterdaySummary, last7DaysSummary, last30DaysSummary] =
+    const [userCountResult, visitsResult, apiCallsResult, todaySummary, yesterdaySummary, last7DaysSummary, last30DaysSummary] =
       await Promise.all([
-        pool.query('SELECT total_users FROM user_snapshots ORDER BY snapshot_date DESC, id DESC LIMIT 1'),
+        pool.query('SELECT COUNT(*)::int AS count FROM users'),
         pool.query('SELECT COUNT(*) AS count FROM visits'),
         pool.query('SELECT COUNT(*) AS count FROM api_logs'),
         getRangeSummary(today, today),
@@ -107,7 +107,7 @@ router.get('/overview', async (req, res, next) => {
       last7Days: last7DaysSummary,
       last30Days: last30DaysSummary,
       allTime: {
-        totalUsers: toInt(snapshotResult.rows[0]?.total_users),
+        totalUsers: toInt(userCountResult.rows[0]?.count),
         totalVisits: toInt(visitsResult.rows[0].count),
         totalApiCalls: toInt(apiCallsResult.rows[0].count),
       },
@@ -505,6 +505,64 @@ router.get('/users', async (req, res, next) => {
         activeToday: toInt(row.activeToday),
       }))
     )
+  } catch (error) {
+    next(error)
+  }
+})
+
+// Direct query on Spring Boot users table — real-time user stats
+router.get('/users-detail', async (req, res, next) => {
+  try {
+    const days = parsePositiveInt(req.query.days, 30)
+    const startDate = shiftDate(formatDate(), -(days - 1))
+
+    const [summaryResult, dailyResult, rolesResult, recentResult] = await Promise.all([
+      // Overall counts
+      pool.query(`
+        SELECT
+          COUNT(*)::int AS total,
+          COUNT(*) FILTER (WHERE created_at::date = CURRENT_DATE)::int AS new_today,
+          COUNT(*) FILTER (WHERE created_at >= NOW() - INTERVAL '7 days')::int AS new_last_7,
+          COUNT(*) FILTER (WHERE created_at >= NOW() - INTERVAL '30 days')::int AS new_last_30,
+          COUNT(*) FILTER (WHERE enabled = true)::int AS verified,
+          COUNT(*) FILTER (WHERE enabled = false)::int AS unverified
+        FROM users
+      `),
+      // Daily new registrations for chart
+      pool.query(`
+        SELECT
+          created_at::date AS date,
+          COUNT(*)::int AS new_users
+        FROM users
+        WHERE created_at::date >= $1
+        GROUP BY created_at::date
+        ORDER BY created_at::date ASC
+      `, [startDate]),
+      // Breakdown by role
+      pool.query(`
+        SELECT role, COUNT(*)::int AS count
+        FROM users
+        GROUP BY role
+        ORDER BY count DESC
+      `),
+      // Recent signups
+      pool.query(`
+        SELECT
+          id, first_name AS "firstName", last_name AS "lastName",
+          email, role, enabled,
+          created_at AS "createdAt"
+        FROM users
+        ORDER BY created_at DESC
+        LIMIT 20
+      `),
+    ])
+
+    res.json({
+      summary: summaryResult.rows[0],
+      daily: dailyResult.rows.map(r => ({ ...r, date: typeof r.date === 'string' ? r.date : formatDate(r.date) })),
+      roles: rolesResult.rows,
+      recentSignups: recentResult.rows,
+    })
   } catch (error) {
     next(error)
   }

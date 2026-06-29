@@ -1,145 +1,142 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import {
-  Area,
-  AreaChart,
-  Bar,
-  BarChart,
-  CartesianGrid,
-  Legend,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
+  Area, AreaChart, Bar, BarChart,
+  CartesianGrid, Cell, PieChart, Pie,
+  ResponsiveContainer, Tooltip, XAxis, YAxis,
 } from 'recharts'
 import client from '../api/client'
 import { ChartCard } from '../components/ChartCard'
 import { EmptyState } from '../components/EmptyState'
-import type { DailyStat, UserSnapshot } from '../types'
-import { chartColors, formatDateLabel, formatNumber } from '../utils/format'
+import { StatCard } from '../components/StatCard'
+import { chartColors, formatDateLabel } from '../utils/format'
+
+interface UserDetail {
+  summary: {
+    total: number; new_today: number; new_last_7: number
+    new_last_30: number; verified: number; unverified: number
+  }
+  daily: { date: string; new_users: number }[]
+  roles: { role: string; count: number }[]
+  recentSignups: { id: number; firstName: string; lastName: string; email: string; role: string; enabled: boolean; createdAt: string }[]
+}
 
 export default function UserAnalyticsPage() {
-  const [snapshots, setSnapshots] = useState<UserSnapshot[]>([])
-  const [dailyStats, setDailyStats] = useState<DailyStat[]>([])
+  const [data, setData] = useState<UserDetail | null>(null)
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    Promise.all([
-      client.get<UserSnapshot[]>('/api/analytics/users'),
-      client.get<DailyStat[]>('/api/analytics/daily?days=30'),
-    ]).then(([snapshotResponse, dailyResponse]) => {
-      setSnapshots(snapshotResponse.data)
-      setDailyStats(dailyResponse.data)
-    })
+    client.get<UserDetail>('/api/analytics/users-detail?days=30')
+      .then(r => setData(r.data))
+      .finally(() => setLoading(false))
   }, [])
 
-  const growthData = useMemo(
-    () =>
-      snapshots.map((snapshot) => ({
-        ...snapshot,
-        label: formatDateLabel(snapshot.snapshotDate),
-      })),
-    [snapshots]
-  )
+  if (loading) return <div className="text-muted text-center py-20">Loading user analytics...</div>
+  if (!data) return <EmptyState title="Failed to load" subtitle="Could not fetch user data." />
 
-  const userMixData = useMemo(
-    () =>
-      dailyStats.map((stat) => ({
-        ...stat,
-        label: formatDateLabel(stat.date),
-      })),
-    [dailyStats]
-  )
+  const { summary, daily, roles, recentSignups } = data
+
+  const dailyChartData = daily.map(d => ({ ...d, label: formatDateLabel(d.date) }))
 
   return (
-    <div className="space-y-8">
-      <ChartCard title="Growth Chart" description="Total users captured from Spring Boot snapshot history.">
-        {growthData.length ? (
-          <div className="h-[340px]">
+    <div className="space-y-6">
+      {/* Summary cards */}
+      <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
+        <StatCard title="Total Users" value={summary.total} tone="green" />
+        <StatCard title="New Today" value={summary.new_today} tone="blue" />
+        <StatCard title="Last 7 Days" value={summary.new_last_7} tone="amber" />
+        <StatCard title="Last 30 Days" value={summary.new_last_30} tone="pink" />
+        <StatCard title="Verified" value={summary.verified} tone="green" />
+        <StatCard title="Unverified" value={summary.unverified} tone="amber" />
+      </div>
+
+      {/* Daily registrations chart */}
+      <ChartCard title="Daily New Registrations" description="New users registered each day (last 30 days)">
+        {dailyChartData.length ? (
+          <div className="h-[300px]">
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={growthData}>
+              <AreaChart data={dailyChartData}>
                 <defs>
-                  <linearGradient id="growthFill" x1="0" y1="0" x2="0" y2="1">
+                  <linearGradient id="regFill" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor={chartColors[0]} stopOpacity={0.5} />
                     <stop offset="95%" stopColor={chartColors[0]} stopOpacity={0.05} />
                   </linearGradient>
                 </defs>
                 <CartesianGrid stroke="#334155" strokeDasharray="3 3" />
-                <XAxis dataKey="label" stroke="#94a3b8" />
-                <YAxis stroke="#94a3b8" />
-                <Tooltip contentStyle={{ background: '#0f172a', borderColor: '#334155', borderRadius: 16 }} />
-                <Area type="monotone" dataKey="totalUsers" stroke={chartColors[0]} fill="url(#growthFill)" strokeWidth={3} />
+                <XAxis dataKey="label" stroke="#94a3b8" tick={{ fontSize: 11 }} />
+                <YAxis stroke="#94a3b8" allowDecimals={false} />
+                <Tooltip contentStyle={{ background: '#0f172a', borderColor: '#334155', borderRadius: 12 }} />
+                <Area type="monotone" dataKey="new_users" name="New Users" stroke={chartColors[0]} fill="url(#regFill)" strokeWidth={2} />
               </AreaChart>
             </ResponsiveContainer>
           </div>
-        ) : (
-          <EmptyState title="No user snapshots" subtitle="Daily Spring Boot snapshots will populate this chart." />
-        )}
+        ) : <EmptyState title="No registrations yet" subtitle="User registrations will appear here." />}
       </ChartCard>
 
-      <ChartCard title="New vs Returning Users" description="Stacked daily user mix for the last 30 days.">
-        {userMixData.length ? (
-          <div className="h-[340px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={userMixData}>
-                <CartesianGrid stroke="#334155" strokeDasharray="3 3" />
-                <XAxis dataKey="label" stroke="#94a3b8" />
-                <YAxis stroke="#94a3b8" />
-                <Tooltip contentStyle={{ background: '#0f172a', borderColor: '#334155', borderRadius: 16 }} />
-                <Legend />
-                <Bar dataKey="newUsers" stackId="users" fill={chartColors[0]} radius={[6, 6, 0, 0]} />
-                <Bar dataKey="returningUsers" stackId="users" fill={chartColors[1]} radius={[6, 6, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        ) : (
-          <EmptyState />
-        )}
-      </ChartCard>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Role distribution */}
+        <ChartCard title="Users by Role" description="Breakdown of user roles">
+          {roles.length ? (
+            <div className="h-[240px] flex items-center justify-center">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie data={roles} dataKey="count" nameKey="role" cx="50%" cy="50%" outerRadius={90} label={({ role, percent }) => `${role} ${(percent * 100).toFixed(0)}%`}>
+                    {roles.map((_, i) => <Cell key={i} fill={chartColors[i % chartColors.length]} />)}
+                  </Pie>
+                  <Tooltip contentStyle={{ background: '#0f172a', borderColor: '#334155', borderRadius: 12 }} />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+          ) : <EmptyState />}
+        </ChartCard>
 
-      <ChartCard title="Daily New Users" description="New user counts inferred from first tracked visits.">
-        {userMixData.length ? (
-          <div className="h-[320px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={userMixData}>
-                <CartesianGrid stroke="#334155" strokeDasharray="3 3" />
-                <XAxis dataKey="label" stroke="#94a3b8" />
-                <YAxis stroke="#94a3b8" />
-                <Tooltip contentStyle={{ background: '#0f172a', borderColor: '#334155', borderRadius: 16 }} />
-                <Bar dataKey="newUsers" fill={chartColors[2]} radius={[8, 8, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        ) : (
-          <EmptyState />
-        )}
-      </ChartCard>
+        {/* Bar chart */}
+        <ChartCard title="Registration Trend" description="New users per day">
+          {dailyChartData.length ? (
+            <div className="h-[240px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={dailyChartData}>
+                  <CartesianGrid stroke="#334155" strokeDasharray="3 3" />
+                  <XAxis dataKey="label" stroke="#94a3b8" tick={{ fontSize: 10 }} />
+                  <YAxis stroke="#94a3b8" allowDecimals={false} />
+                  <Tooltip contentStyle={{ background: '#0f172a', borderColor: '#334155', borderRadius: 12 }} />
+                  <Bar dataKey="new_users" name="New Users" fill={chartColors[1]} radius={[6, 6, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          ) : <EmptyState />}
+        </ChartCard>
+      </div>
 
-      <ChartCard title="User Snapshot Table" description="Daily snapshot values fetched from the Spring Boot backend.">
+      {/* Recent signups table */}
+      <ChartCard title="Recent Signups" description="Last 20 registered users">
         <div className="overflow-x-auto">
           <table className="min-w-full text-left text-sm">
             <thead className="text-muted">
               <tr>
-                <th className="pb-3">Date</th>
-                <th className="pb-3">Total Users</th>
-                <th className="pb-3">New Today</th>
-                <th className="pb-3">Active Today</th>
+                <th className="pb-3 pr-4">Name</th>
+                <th className="pb-3 pr-4">Email</th>
+                <th className="pb-3 pr-4">Role</th>
+                <th className="pb-3 pr-4">Status</th>
+                <th className="pb-3">Joined</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
-              {snapshots.length ? (
-                snapshots.map((snapshot) => (
-                  <tr key={snapshot.id}>
-                    <td className="py-3 font-medium text-app-text">{snapshot.snapshotDate}</td>
-                    <td className="py-3 text-app-text">{formatNumber(snapshot.totalUsers)}</td>
-                    <td className="py-3 text-app-text">{formatNumber(snapshot.newToday)}</td>
-                    <td className="py-3 text-app-text">{formatNumber(snapshot.activeToday)}</td>
-                  </tr>
-                ))
-              ) : (
-                <tr>
-                  <td className="py-6" colSpan={4}>
-                    <EmptyState title="No user history" subtitle="No Spring Boot user snapshots have been stored yet." />
+              {recentSignups.length ? recentSignups.map(u => (
+                <tr key={u.id}>
+                  <td className="py-3 pr-4 font-medium text-app-text">{u.firstName} {u.lastName}</td>
+                  <td className="py-3 pr-4 text-muted">{u.email}</td>
+                  <td className="py-3 pr-4">
+                    <span className="px-2 py-1 rounded-full text-xs font-bold bg-green-900/40 text-green-400">{u.role}</span>
                   </td>
+                  <td className="py-3 pr-4">
+                    <span className={`px-2 py-1 rounded-full text-xs font-bold ${u.enabled ? 'bg-green-900/40 text-green-400' : 'bg-yellow-900/40 text-yellow-400'}`}>
+                      {u.enabled ? 'Verified' : 'Pending'}
+                    </span>
+                  </td>
+                  <td className="py-3 text-muted">{new Date(u.createdAt).toLocaleDateString()}</td>
                 </tr>
+              )) : (
+                <tr><td colSpan={5} className="py-6"><EmptyState title="No users yet" /></td></tr>
               )}
             </tbody>
           </table>
