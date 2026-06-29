@@ -13,10 +13,46 @@ const { aggregateDailyStats, formatDate, runDailyMaintenance, shiftDate, syncUse
 
 const PORT = Number(process.env.PORT || 3001)
 
-async function startServer() {
-  await initializeDatabase()
+// Build and start Express immediately — DB errors must never prevent the server from binding
+const app = express()
 
-  // Run startup analytics sync — non-fatal: server must start even if these fail
+const corsOptions = {
+  origin: '*',
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  optionsSuccessStatus: 204,
+}
+app.use(cors(corsOptions))
+app.options('*', cors(corsOptions))
+app.use(express.json())
+
+app.get('/health', (_req, res) => {
+  res.json({ status: 'ok', ts: new Date().toISOString() })
+})
+
+app.use('/api/auth', authRoutes)
+app.use('/api/analytics', analyticsRoutes)
+app.use('/api/track', trackRoutes)
+app.use('/api/settings', settingsRoutes)
+
+app.use(notFoundHandler)
+app.use(errorMiddleware)
+
+// Listen first — Railway needs the port to bind before health checks
+app.listen(PORT, () => {
+  console.log(`Tassy Point admin backend running on port ${PORT}`)
+})
+
+// DB init and startup analytics run AFTER server is already listening
+async function initializeAsync() {
+  try {
+    await initializeDatabase()
+    console.log('Database ready')
+  } catch (err) {
+    console.error('Database initialization failed (routes may error):', err.message)
+    return // skip analytics sync if tables don't exist
+  }
+
   try {
     await aggregateDailyStats(formatDate())
     await aggregateDailyStats(shiftDate(formatDate(), -1))
@@ -24,49 +60,15 @@ async function startServer() {
   } catch (err) {
     console.warn('Startup analytics sync failed (non-fatal):', err.message)
   }
-
-  const app = express()
-
-  // Explicit CORS — must come before ALL routes so OPTIONS preflight is handled first
-  const corsOptions = {
-    origin: '*',
-    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
-    optionsSuccessStatus: 204,
-  }
-  app.use(cors(corsOptions))
-  app.options('*', cors(corsOptions)) // explicit preflight handler for every route
-
-  app.use(express.json())
-
-  app.get('/health', (req, res) => {
-    res.json({ status: 'ok' })
-  })
-
-  app.use('/api/auth', authRoutes)
-  app.use('/api/analytics', analyticsRoutes)
-  app.use('/api/track', trackRoutes)
-  app.use('/api/settings', settingsRoutes)
-
-  app.use(notFoundHandler)
-  app.use(errorMiddleware)
-
-  cron.schedule('0 0 * * *', async () => {
-    try {
-      await runDailyMaintenance()
-      console.log('Daily admin analytics maintenance completed')
-    } catch (error) {
-      console.error('Daily admin analytics maintenance failed:', error)
-    }
-  })
-
-  app.listen(PORT, () => {
-    console.log(`Tassy Point admin backend running on http://localhost:${PORT}`)
-  })
 }
 
-startServer().catch((error) => {
-  console.error('Failed to start admin backend:', error)
-  // Exit so Railway/process manager restarts the service
-  process.exit(1)
+initializeAsync()
+
+cron.schedule('0 0 * * *', async () => {
+  try {
+    await runDailyMaintenance()
+    console.log('Daily admin analytics maintenance completed')
+  } catch (error) {
+    console.error('Daily admin analytics maintenance failed:', error)
+  }
 })
