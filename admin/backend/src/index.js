@@ -16,9 +16,14 @@ const PORT = Number(process.env.PORT || 3001)
 async function startServer() {
   await initializeDatabase()
 
-  await aggregateDailyStats(formatDate())
-  await aggregateDailyStats(shiftDate(formatDate(), -1))
-  await syncUserSnapshot(formatDate())
+  // Run startup analytics sync — non-fatal: server must start even if these fail
+  try {
+    await aggregateDailyStats(formatDate())
+    await aggregateDailyStats(shiftDate(formatDate(), -1))
+    await syncUserSnapshot(formatDate())
+  } catch (err) {
+    console.warn('Startup analytics sync failed (non-fatal):', err.message)
+  }
 
   const app = express()
 
@@ -62,5 +67,6 @@ async function startServer() {
 
 startServer().catch((error) => {
   console.error('Failed to start admin backend:', error)
+  // Exit so Railway/process manager restarts the service
   process.exit(1)
 })
