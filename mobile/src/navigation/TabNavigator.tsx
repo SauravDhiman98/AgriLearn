@@ -1,16 +1,15 @@
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs'
-import { useTranslation } from 'react-i18next'
+import Ionicons from '@expo/vector-icons/Ionicons'
 import HomeScreen from '../screens/Home/HomeScreen'
-import CoursesScreen from '../screens/Courses/CoursesScreen'
+import ExamsScreen from '../screens/Exams/ExamsScreen'
+import DashboardScreen from '../screens/Dashboard/DashboardScreen'
 import ForumScreen from '../screens/Forum/ForumScreen'
-import MarketplaceScreen from '../screens/Marketplace/MarketplaceScreen'
 import ProfileScreen from '../screens/Profile/ProfileScreen'
 import { useTheme } from '../context/ThemeContext'
 
 const Tab = createBottomTabNavigator()
 
 export default function TabNavigator() {
-  const { t } = useTranslation()
   const { colors } = useTheme()
 
   return (
@@ -29,15 +28,35 @@ export default function TabNavigator() {
         headerTitleStyle: { fontWeight: 'bold' },
       }}>
       <Tab.Screen name="Home" component={HomeScreen}
-        options={{ title: 'Tassy Point', tabBarLabel: 'Home' }} />
-      <Tab.Screen name="Courses" component={CoursesScreen}
-        options={{ title: 'Courses', tabBarLabel: 'Courses' }} />
+        options={{
+          title: 'Tassy Point',
+          tabBarLabel: 'Home',
+          tabBarIcon: ({ color, size }) => <Ionicons name="home-outline" size={size} color={color} />,
+        }} />
+      <Tab.Screen name="Exams" component={ExamsScreen}
+        options={{
+          title: 'Exams',
+          tabBarLabel: 'Exams',
+          tabBarIcon: ({ color, size }) => <Ionicons name="book-outline" size={size} color={color} />,
+        }} />
+      <Tab.Screen name="Dashboard" component={DashboardScreen}
+        options={{
+          title: 'Dashboard',
+          tabBarLabel: 'Dashboard',
+          tabBarIcon: ({ color, size }) => <Ionicons name="grid-outline" size={size} color={color} />,
+        }} />
       <Tab.Screen name="Forum" component={ForumScreen}
-        options={{ title: 'Community', tabBarLabel: 'Forum' }} />
-      <Tab.Screen name="Marketplace" component={MarketplaceScreen}
-        options={{ title: 'Marketplace', tabBarLabel: 'Market' }} />
+        options={{
+          title: 'Community',
+          tabBarLabel: 'Forum',
+          tabBarIcon: ({ color, size }) => <Ionicons name="chatbubbles-outline" size={size} color={color} />,
+        }} />
       <Tab.Screen name="Profile" component={ProfileScreen}
-        options={{ title: 'Profile', tabBarLabel: 'Profile' }} />
+        options={{
+          title: 'Profile',
+          tabBarLabel: 'Profile',
+          tabBarIcon: ({ color, size }) => <Ionicons name="person-outline" size={size} color={color} />,
+        }} />
     </Tab.Navigator>
   )
 }

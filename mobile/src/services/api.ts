@@ -30,6 +30,7 @@ export const authApi = {
     apiClient.post('/auth/register', data),
   login: (email: string, password: string) =>
     apiClient.post('/auth/login', { email, password }),
+  forgotPassword: (email: string) => apiClient.post(`/auth/forgot-password?email=${email}`),
 }
 
 export const courseApi = {
@@ -41,6 +42,17 @@ export const courseApi = {
   getProgress: (id: number) => apiClient.get(`/courses/${id}/progress`),
   completeLesson: (courseId: number, lessonId: number) =>
     apiClient.post(`/courses/${courseId}/lessons/${lessonId}/complete`),
+}
+
+export const examApi = {
+  list: () => apiClient.get('/exams'),
+  getById: (id: number) => apiClient.get(`/exams/${id}`),
+  getMockTests: (examId: number) => apiClient.get(`/exams/${examId}/mock-tests`),
+  getRecentAttempts: () => apiClient.get('/me/attempts/recent'),
+}
+
+export const gamificationApi = {
+  getMyStats: () => apiClient.get('/me/stats'),
 }
 
 export const forumApi = {

@@ -6,6 +6,20 @@ import { RootState } from '../../store'
 import { courseApi } from '../../services/api'
 import { useTheme } from '../../context/ThemeContext'
 
+const CATEGORIES = [
+  { key: 'IBPS_AFO', emoji: '🌾', label: 'IBPS AFO' },
+  { key: 'UPCATET', emoji: '🎓', label: 'UPCATET' },
+  { key: 'FCI', emoji: '🏭', label: 'FCI' },
+  { key: 'NABARD', emoji: '🏦', label: 'NABARD' },
+]
+
+const QUICK_ACTIONS = [
+  { emoji: '📋', label: 'Mock Tests', screen: 'Exams' },
+  { emoji: '📚', label: 'Study Material', screen: 'Courses' },
+  { emoji: '💬', label: 'Community', screen: 'Forum' },
+  { emoji: '👤', label: 'Profile', screen: 'Profile' },
+]
+
 export default function HomeScreen() {
   const navigation = useNavigation<any>()
   const { user, isAuthenticated } = useSelector((s: RootState) => s.auth)
@@ -20,22 +34,15 @@ export default function HomeScreen() {
       .finally(() => setLoading(false))
   }, [])
 
-  const CATEGORIES = [
-    { key: 'UPSC', emoji: '📚', label: 'UPSC' },
-    { key: 'SSC', emoji: '📝', label: 'SSC' },
-    { key: 'RAILWAY', emoji: '🚂', label: 'Railway' },
-    { key: 'IBPS', emoji: '🏦', label: 'IBPS / Bank' },
-  ]
-
   return (
     <ScrollView style={{ flex: 1, backgroundColor: colors.background }} showsVerticalScrollIndicator={false}>
       {/* Hero Banner */}
       <View style={[styles.hero, { backgroundColor: colors.hero }]}>
-        <Text style={[styles.heroTag, { color: colors.primary }]}>🎓 India's #1 Exam Prep Platform</Text>
+        <Text style={[styles.heroTag, { color: colors.primaryLight }]}>Tassy Point</Text>
         <Text style={[styles.heroTitle, { color: colors.heroText }]}>
-          {isAuthenticated ? `Welcome back, ${user?.firstName}!` : 'Learn Smart.\nCrack Exams.'}
+          {isAuthenticated ? `Welcome back, ${user?.firstName}!` : `India's #1\nAgri Exam Prep`}
         </Text>
-        <Text style={[styles.heroSubtitle, { color: isDark ? '#9ca3af' : '#d1fae5' }]}>Expert video lectures & exam-focused community</Text>
+        <Text style={[styles.heroSubtitle, { color: isDark ? '#9ca3af' : '#d1fae5' }]}>Mock tests, courses and community support for agri aspirants</Text>
         {!isAuthenticated && (
           <TouchableOpacity style={styles.heroCta} onPress={() => navigation.navigate('Register')}>
             <Text style={styles.heroCtaText}>Get Started Free</Text>
@@ -49,7 +56,7 @@ export default function HomeScreen() {
         <View style={styles.categoryGrid}>
           {CATEGORIES.map(cat => (
             <TouchableOpacity key={cat.key}
-              onPress={() => navigation.navigate('Courses', { category: cat.key })}
+              onPress={() => navigation.navigate('Exams')}
               style={[styles.categoryCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
               <Text style={styles.categoryEmoji}>{cat.emoji}</Text>
               <Text style={[styles.categoryLabel, { color: colors.text }]}>{cat.label}</Text>
@@ -103,12 +110,7 @@ export default function HomeScreen() {
       <View style={[styles.section, { marginBottom: 20 }]}>
         <Text style={[styles.sectionTitle, { color: colors.text }]}>Quick Actions</Text>
         <View style={styles.quickActions}>
-          {[
-            { emoji: '🎥', label: 'Video Lectures', screen: 'Courses' },
-            { emoji: '💬', label: 'Community', screen: 'Forum' },
-            { emoji: '🛒', label: 'Marketplace', screen: 'Marketplace' },
-            { emoji: '👤', label: 'My Profile', screen: 'Profile' },
-          ].map(action => (
+          {QUICK_ACTIONS.map(action => (
             <TouchableOpacity key={action.label}
               style={[styles.quickActionBtn, { backgroundColor: colors.card, borderColor: colors.border }]}
               onPress={() => navigation.navigate(action.screen)}>
@@ -124,9 +126,9 @@ export default function HomeScreen() {
 
 const styles = StyleSheet.create({
   hero: { padding: 24, paddingTop: 32 },
-  heroTag: { fontSize: 12, fontWeight: '600', marginBottom: 8 },
-  heroTitle: { fontSize: 26, fontWeight: 'bold', lineHeight: 34, marginBottom: 8 },
-  heroSubtitle: { fontSize: 14, marginBottom: 20 },
+  heroTag: { fontSize: 14, fontWeight: '700', marginBottom: 8, textTransform: 'uppercase', letterSpacing: 1 },
+  heroTitle: { fontSize: 30, fontWeight: 'bold', lineHeight: 38, marginBottom: 8 },
+  heroSubtitle: { fontSize: 14, marginBottom: 20, lineHeight: 20 },
   heroCta: { backgroundColor: '#fbbf24', paddingHorizontal: 20, paddingVertical: 12, borderRadius: 10, alignSelf: 'flex-start' },
   heroCtaText: { color: '#1a1a1a', fontWeight: 'bold', fontSize: 15 },
   section: { padding: 16 },

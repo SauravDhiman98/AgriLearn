@@ -23,7 +23,7 @@ export default function LoginScreen() {
   return (
     <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.container}>
       <ScrollView contentContainerStyle={styles.inner}>
-        <Text style={styles.logo}>🌿 AgriLearn</Text>
+        <Text style={styles.logo}>TASSY POINT</Text>
         <Text style={styles.title}>Welcome back!</Text>
         <Text style={styles.subtitle}>Login to continue learning</Text>
 
@@ -45,6 +45,9 @@ export default function LoginScreen() {
         <TouchableOpacity onPress={() => navigation.navigate('Register')} style={styles.link}>
           <Text style={styles.linkText}>Don't have an account? <Text style={styles.linkBold}>Sign up free</Text></Text>
         </TouchableOpacity>
+        <TouchableOpacity onPress={() => navigation.navigate('ForgotPassword')} style={styles.forgotLink}>
+          <Text style={styles.forgotText}>Forgot Password?</Text>
+        </TouchableOpacity>
       </ScrollView>
     </KeyboardAvoidingView>
   )
@@ -53,7 +56,7 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#f9fafb' },
   inner: { padding: 24, paddingTop: 40 },
-  logo: { fontSize: 22, fontWeight: 'bold', color: '#15803d', marginBottom: 24, textAlign: 'center' },
+  logo: { fontSize: 24, fontWeight: 'bold', color: '#194552', marginBottom: 24, textAlign: 'center', letterSpacing: 1 },
   title: { fontSize: 24, fontWeight: 'bold', color: '#111827', marginBottom: 4 },
   subtitle: { fontSize: 14, color: '#6b7280', marginBottom: 24 },
   error: { backgroundColor: '#fee2e2', color: '#dc2626', padding: 12, borderRadius: 8, marginBottom: 16, fontSize: 13 },
@@ -65,4 +68,6 @@ const styles = StyleSheet.create({
   link: { marginTop: 24, alignItems: 'center' },
   linkText: { color: '#6b7280', fontSize: 14 },
   linkBold: { color: '#16a34a', fontWeight: '600' },
+  forgotLink: { marginTop: 16, alignItems: 'center' },
+  forgotText: { color: '#194552', fontSize: 14, fontWeight: '600' },
 })
