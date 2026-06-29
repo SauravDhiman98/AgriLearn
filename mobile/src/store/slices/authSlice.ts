@@ -1,6 +1,7 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { authApi } from '../../services/api'
+import apiClient from '../../services/api'
 
 interface User {
   id: number; email: string; firstName: string; lastName: string
@@ -10,12 +11,32 @@ interface User {
 interface AuthState {
   user: User | null; accessToken: string | null; refreshToken: string | null
   isAuthenticated: boolean; loading: boolean; error: string | null
+  sessionRestored: boolean
 }
 
 const initialState: AuthState = {
   user: null, accessToken: null, refreshToken: null,
   isAuthenticated: false, loading: false, error: null,
+  sessionRestored: false,
 }
+
+// Called once on app startup — reads saved token and fetches user profile.
+// IMPORTANT: Redux store token is null at this point, so we pass the token
+// directly in the Authorization header instead of relying on the interceptor.
+export const restoreSession = createAsyncThunk('auth/restoreSession', async () => {
+  const accessToken = await AsyncStorage.getItem('accessToken')
+  if (!accessToken) return null
+  try {
+    const res = await apiClient.get('/users/me', {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    })
+    return { accessToken, user: res.data }
+  } catch {
+    // Token expired or invalid — clear storage
+    await AsyncStorage.multiRemove(['accessToken', 'refreshToken'])
+    return null
+  }
+})
 
 export const loginAsync = createAsyncThunk(
   'auth/login',
@@ -54,7 +75,6 @@ const authSlice = createSlice({
     logout(state) {
       state.user = null; state.accessToken = null; state.refreshToken = null
       state.isAuthenticated = false
-      // Fire-and-forget — don't await in sync reducer
       Promise.all([
         AsyncStorage.removeItem('accessToken'),
         AsyncStorage.removeItem('refreshToken'),
@@ -68,6 +88,17 @@ const authSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
+      .addCase(restoreSession.fulfilled, (state, action) => {
+        state.sessionRestored = true
+        if (action.payload) {
+          state.accessToken = action.payload.accessToken
+          state.user = action.payload.user
+          state.isAuthenticated = true
+        }
+      })
+      .addCase(restoreSession.rejected, (state) => {
+        state.sessionRestored = true
+      })
       .addCase(loginAsync.pending, (state) => { state.loading = true; state.error = null })
       .addCase(loginAsync.fulfilled, (state, action) => {
         state.loading = false; state.isAuthenticated = true

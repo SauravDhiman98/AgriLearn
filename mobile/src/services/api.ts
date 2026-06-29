@@ -3,6 +3,9 @@ import Constants from 'expo-constants'
 
 const BASE_URL = Constants.expoConfig?.extra?.apiBaseUrl || 'http://10.0.2.2:8080/api/v1'
 
+// Strips /api/v1 to get the server root (used for resolving relative file URLs like /uploads/notes/file.pdf)
+export const API_ORIGIN = BASE_URL.replace(/\/api\/v\d+\/?$/, '')
+
 // Injected from App.tsx after store is created — breaks the circular dependency
 let _getToken: (() => string | null) = () => null
 let _onUnauthorized: (() => void) = () => {}
@@ -57,8 +60,19 @@ export const courseApi = {
 export const examApi = {
   list: () => apiClient.get('/exams'),
   getById: (id: number) => apiClient.get(`/exams/${id}`),
+  getSubject: (id: number) => apiClient.get(`/subjects/${id}`),
+  getChapter: (id: number) => apiClient.get(`/exam-chapters/${id}`),
+  getTest: (id: number, withAnswers = false) => apiClient.get(`/mcq-tests/${id}`, { params: { withAnswers } }),
+  submitAttempt: (testId: number, answers: Record<number, string>, timeTakenSeconds = 0) =>
+    apiClient.post(`/mcq-tests/${testId}/submit`, { testId, answers, timeTakenSeconds }),
+  getAttempts: (testId: number) => apiClient.get(`/mcq-tests/${testId}/attempts`),
   getMockTests: (examId: number) => apiClient.get(`/exams/${examId}/mock-tests`),
+  getLeaderboard: (testId: number) => apiClient.get(`/mock-tests/${testId}/leaderboard`),
   getRecentAttempts: () => apiClient.get('/me/attempts/recent'),
+}
+
+export const searchApi = {
+  search: (q: string) => apiClient.get('/search', { params: { q } }),
 }
 
 export const gamificationApi = {

@@ -1,0 +1,4 @@
+backend\node_modules
+backend\data\admin.db
+frontend\node_modules
+frontend\dist
