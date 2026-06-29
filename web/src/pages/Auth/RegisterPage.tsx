@@ -121,8 +121,8 @@ export default function RegisterPage() {
 
             <p className="text-xs text-gray-400 text-center" style={{ color: muted }}>
               By registering, you agree to our{' '}
-              <a href="#" className="text-green-600">Terms of Service</a> and{' '}
-              <a href="#" className="text-green-600">Privacy Policy</a>
+              <Link to="/terms" className="text-green-600 hover:underline">Terms of Service</Link> and{' '}
+              <Link to="/privacy-policy" className="text-green-600 hover:underline">Privacy Policy</Link>
             </p>
           </form>
 
