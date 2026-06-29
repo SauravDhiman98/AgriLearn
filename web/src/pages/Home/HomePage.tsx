@@ -5,7 +5,7 @@ import { useSelector } from 'react-redux'
 import { RootState } from '../../store'
 import { courseApi } from '../../api/services'
 import CourseCard from '../../components/course/CourseCard'
-import { Users, BookOpen, Video, MessageSquare, ShoppingBag, Star } from 'lucide-react'
+import { Users, BookOpen, Video, MessageSquare, ClipboardList, Info } from 'lucide-react'
 import { useTheme } from '../../context/ThemeContext'
 
 const CATEGORIES = [
@@ -51,7 +51,7 @@ export default function HomePage() {
               TASSY POINT
             </h1>
             <p className="text-lg text-green-100 mb-6 max-w-xl">
-              A free online education center — Notes, Tests, Video Lectures & Job Alerts for all competitive exams.
+              A free online education center — Notes, Mock Tests, Video Lectures & Exam Info for all competitive agriculture exams.
             </p>
             <div className="flex flex-col sm:flex-row gap-3">
               {isAuthenticated ? (
@@ -125,11 +125,11 @@ export default function HomePage() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {[
               { icon: Video, title: 'Free Video Lectures', desc: 'Watch high-quality video lectures on YouTube — completely free, no subscription needed.' },
-              { icon: BookOpen, title: 'Free Notes & PDFs', desc: 'Access chapter-wise notes, PDFs and study material for all competitive exams at zero cost.' },
+              { icon: BookOpen, title: 'Free Notes & PDFs', desc: 'Access chapter-wise notes, PDFs and study material for all competitive agriculture exams at zero cost.' },
               { icon: MessageSquare, title: 'MCQ Practice Tests', desc: 'AI-generated chapter-wise MCQ tests to test your knowledge and track your progress.' },
-              { icon: Star, title: 'Job Alerts', desc: 'Get the latest government job alerts, exam notifications and application deadlines.' },
-              { icon: ShoppingBag, title: 'Exam Solutions', desc: 'Previous year paper solutions and answer keys for UPSC, SSC, NEET, JEE and more.' },
-              { icon: Users, title: '15+ Exams Covered', desc: 'ICAR, SSC, UP Police, CTET, UPTET, Delhi Police, UPCATET, NEET, JEE, Haryana Police, Patwari, CGL, CHSL, UPSC, CLAT.' },
+              { icon: ClipboardList, title: 'Full Mock Tests', desc: 'Attempt full-length mock tests with timer, negative marking and detailed result analysis.' },
+              { icon: Info, title: 'Exam Information', desc: 'Complete guide on eligibility, syllabus, exam pattern and important dates for each exam.' },
+              { icon: Users, title: 'Community Forum', desc: 'Ask doubts, share knowledge and connect with thousands of agriculture exam aspirants.' },
             ].map(({ icon: Icon, title, desc }) => (
               <div key={title} className="bg-white rounded-xl p-6 shadow-sm" style={{ backgroundColor: cardBg, border: `1px solid ${border}` }}>
                 <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center mb-4">
