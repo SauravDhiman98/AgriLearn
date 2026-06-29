@@ -47,7 +47,10 @@ public class EmailServiceImpl implements EmailService {
             String html = """
                     <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:20px;">
                       <div style="background:#1a7a3c;padding:20px;border-radius:8px 8px 0 0;text-align:center;">
-                        <h1 style="color:#fff;margin:0;font-size:24px;">🌱 Tassy Point</h1>
+                        <img src="https://agrilearn-4qhy.onrender.com/logo.png"
+                             alt="Tassy Point"
+                             style="width:48px;height:48px;object-fit:contain;border-radius:10px;margin-bottom:8px;display:block;margin-left:auto;margin-right:auto;" />
+                        <h1 style="color:#fff;margin:0;font-size:24px;letter-spacing:1px;">TASSY POINT</h1>
                       </div>
                       <div style="background:#f9f9f9;padding:30px;border-radius:0 0 8px 8px;border:1px solid #e0e0e0;">
                         <h2 style="color:#333;margin-top:0;">Reset Your Password</h2>
