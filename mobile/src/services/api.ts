@@ -3,7 +3,8 @@ import Constants from 'expo-constants'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 
 const BASE_URL = Constants.expoConfig?.extra?.apiBaseUrl || 'http://10.0.2.2:8080/api/v1'
-const ADMIN_API = 'https://tassy-admin-backend.up.railway.app'
+// Tracking goes to the same Spring Boot backend (no separate admin backend calls from mobile)
+const TRACK_BASE = BASE_URL.replace(/\/$/, '')
 
 // Strips /api/v1 to get the server root (used for resolving relative file URLs like /uploads/notes/file.pdf)
 export const API_ORIGIN = BASE_URL.replace(/\/api\/v\d+\/?$/, '')
@@ -30,7 +31,7 @@ async function trackVisit(path: string): Promise<void> {
       userId = userStr ? JSON.parse(userStr)?.id : undefined
     } catch { /* ignore */ }
 
-    fetch(`${ADMIN_API}/api/track/visit`, {
+    fetch(`${TRACK_BASE}/track/visit`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ sessionId, userId, path, platform: 'mobile' }),
@@ -39,7 +40,7 @@ async function trackVisit(path: string): Promise<void> {
 }
 
 function trackApiCallAsync(method: string, endpoint: string, statusCode: number, responseTimeMs: number): void {
-  fetch(`${ADMIN_API}/api/track/api-call`, {
+  fetch(`${TRACK_BASE}/track/api-call`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ method, endpoint, statusCode, responseTimeMs, platform: 'mobile' }),

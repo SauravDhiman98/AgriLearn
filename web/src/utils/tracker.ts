@@ -1,5 +1,6 @@
-// Sends analytics events to the Tassy Point admin backend (Railway)
-const ADMIN_API = import.meta.env.VITE_ADMIN_API_URL || 'https://tassy-admin-backend.up.railway.app'
+// Sends analytics events to the Spring Boot backend (same server as the main app)
+const API_BASE = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api/v1')
+  .replace(/\/$/, '') // strip trailing slash
 
 const SESSION_KEY = 'tassy_session_id'
 const SESSION_START_KEY = 'tassy_session_start'
@@ -25,7 +26,7 @@ function getUserId(): number | undefined {
 
 async function post(path: string, body: object): Promise<void> {
   try {
-    await fetch(`${ADMIN_API}${path}`, {
+    await fetch(`${API_BASE}${path}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
@@ -39,7 +40,7 @@ async function post(path: string, body: object): Promise<void> {
 export function trackPageView(path: string): void {
   const sessionId = getOrCreateSessionId()
   const userId = getUserId()
-  post('/api/track/visit', {
+  post('/track/visit', {
     sessionId,
     userId,
     path,
@@ -56,7 +57,7 @@ export function trackApiCall(
   responseTimeMs: number
 ): void {
   const userId = getUserId()
-  post('/api/track/api-call', {
+  post('/track/api-call', {
     method,
     endpoint,
     statusCode,
@@ -78,8 +79,8 @@ export function trackSessionEnd(): void {
       [JSON.stringify({ sessionId, durationSeconds })],
       { type: 'application/json' }
     )
-    navigator.sendBeacon(`${ADMIN_API}/api/track/visit-end`, blob)
+    navigator.sendBeacon(`${API_BASE}/track/visit-end`, blob)
   } else {
-    post('/api/track/visit-end', { sessionId, durationSeconds })
+    post('/track/visit-end', { sessionId, durationSeconds })
   }
 }
