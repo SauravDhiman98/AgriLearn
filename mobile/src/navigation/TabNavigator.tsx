@@ -41,7 +41,7 @@ export default function TabNavigator() {
       <Tab.Screen
         name="Home"
         getComponent={() => require('../screens/Home/HomeScreen').default}
-        options={{ title: 'Tassy Point', tabBarLabel: 'Home' }}
+        options={{ headerShown: false, tabBarLabel: 'Home' }}
       />
       <Tab.Screen
         name="Exams"
