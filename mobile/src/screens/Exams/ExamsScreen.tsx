@@ -189,20 +189,24 @@ export default function ExamsScreen() {
 
       {/* ── filter tabs ── */}
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tabsRow}>
-        {FILTER_TABS.map(tab => (
-          <TouchableOpacity
-            key={tab}
-            style={[
-              styles.tab,
-              { backgroundColor: isDark ? '#1e293b' : '#fff' },
-              activeTab === tab && styles.tabActive,
-            ]}
-            onPress={() => setActiveTab(tab)}>
-            <Text style={[styles.tabText, { color: isDark ? '#cbd5e1' : '#374151' }, activeTab === tab && styles.tabTextActive]}>
-              {tab}
-            </Text>
-          </TouchableOpacity>
-        ))}
+        {FILTER_TABS.map(tab => {
+          const isActive = activeTab === tab
+          return (
+            <TouchableOpacity
+              key={tab}
+              style={[
+                styles.tab,
+                isActive
+                  ? styles.tabActive
+                  : { backgroundColor: isDark ? '#1e3a2f' : '#dcfce7', borderColor: '#86efac' },
+              ]}
+              onPress={() => setActiveTab(tab)}>
+              <Text style={[styles.tabText, { color: isActive ? '#fff' : (isDark ? '#86efac' : '#14532d') }]}>
+                {tab}
+              </Text>
+            </TouchableOpacity>
+          )
+        })}
       </ScrollView>
 
       {/* ── error ── */}
@@ -258,10 +262,10 @@ const styles = StyleSheet.create({
   searchInput: { flex: 1, fontSize: 14, paddingVertical: 0, marginLeft: 8 },
 
   // tabs
-  tabsRow: { paddingHorizontal: 14, paddingBottom: 10, paddingTop: 2 },
-  tab: { borderRadius: 20, borderWidth: 1.5, borderColor: '#d1d5db', paddingVertical: 7, paddingHorizontal: 18, marginRight: 8, shadowColor: '#000', shadowOpacity: 0.04, shadowRadius: 3, elevation: 1 },
+  tabsRow: { paddingHorizontal: 14, paddingBottom: 10, paddingTop: 4 },
+  tab: { borderRadius: 20, borderWidth: 1.5, borderColor: '#86efac', paddingVertical: 8, paddingHorizontal: 18, marginRight: 8 },
   tabActive: { backgroundColor: '#16a34a', borderColor: '#16a34a' },
-  tabText: { fontSize: 13, fontWeight: '700' },
+  tabText: { fontSize: 13, fontWeight: '800' },
   tabTextActive: { color: '#fff' },
 
   // error
