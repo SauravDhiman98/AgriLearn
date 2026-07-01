@@ -198,10 +198,10 @@ export default function ExamsScreen() {
                 styles.tab,
                 isActive
                   ? styles.tabActive
-                  : { backgroundColor: isDark ? '#1e3a2f' : '#dcfce7', borderColor: '#86efac' },
+                    : { backgroundColor: isDark ? '#0f172a' : '#ffffff', borderColor: '#16a34a' },
               ]}
               onPress={() => setActiveTab(tab)}>
-              <Text style={[styles.tabText, { color: isActive ? '#fff' : (isDark ? '#86efac' : '#14532d') }]}>
+                <Text style={[styles.tabText, { color: isActive ? '#fff' : (isDark ? '#4ade80' : '#111827') }]}>
                 {tab}
               </Text>
             </TouchableOpacity>
@@ -263,7 +263,7 @@ const styles = StyleSheet.create({
 
   // tabs
   tabsRow: { paddingHorizontal: 14, paddingBottom: 10, paddingTop: 4 },
-  tab: { borderRadius: 20, borderWidth: 1.5, borderColor: '#86efac', paddingVertical: 8, paddingHorizontal: 18, marginRight: 8 },
+  tab: { borderRadius: 20, borderWidth: 1.5, borderColor: '#16a34a', paddingVertical: 8, paddingHorizontal: 18, marginRight: 8 },
   tabActive: { backgroundColor: '#16a34a', borderColor: '#16a34a' },
   tabText: { fontSize: 13, fontWeight: '800' },
   tabTextActive: { color: '#fff' },
