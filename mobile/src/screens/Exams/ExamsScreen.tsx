@@ -192,9 +192,15 @@ export default function ExamsScreen() {
         {FILTER_TABS.map(tab => (
           <TouchableOpacity
             key={tab}
-            style={[styles.tab, activeTab === tab && styles.tabActive]}
+            style={[
+              styles.tab,
+              { backgroundColor: isDark ? '#1e293b' : '#fff' },
+              activeTab === tab && styles.tabActive,
+            ]}
             onPress={() => setActiveTab(tab)}>
-            <Text style={[styles.tabText, activeTab === tab && styles.tabTextActive]}>{tab}</Text>
+            <Text style={[styles.tabText, { color: isDark ? '#cbd5e1' : '#374151' }, activeTab === tab && styles.tabTextActive]}>
+              {tab}
+            </Text>
           </TouchableOpacity>
         ))}
       </ScrollView>
@@ -248,29 +254,29 @@ const styles = StyleSheet.create({
   bannerBadgeLabel: { color: '#bbf7d0', fontSize: 11 },
 
   // search
-  searchBox: { flexDirection: 'row', alignItems: 'center', marginHorizontal: 14, marginTop: -10, marginBottom: 10, borderRadius: 14, paddingHorizontal: 12, paddingVertical: 10, gap: 8, shadowColor: '#000', shadowOpacity: 0.08, shadowRadius: 8, elevation: 4 },
-  searchInput: { flex: 1, fontSize: 14, paddingVertical: 0 },
+  searchBox: { flexDirection: 'row', alignItems: 'center', marginHorizontal: 14, marginTop: -10, marginBottom: 8, borderRadius: 14, paddingHorizontal: 12, paddingVertical: 10, shadowColor: '#000', shadowOpacity: 0.08, shadowRadius: 8, elevation: 4 },
+  searchInput: { flex: 1, fontSize: 14, paddingVertical: 0, marginLeft: 8 },
 
   // tabs
-  tabsRow: { paddingHorizontal: 14, paddingBottom: 10, gap: 8 },
-  tab: { borderRadius: 20, borderWidth: 1.5, borderColor: '#e2e8f0', paddingVertical: 6, paddingHorizontal: 16 },
+  tabsRow: { paddingHorizontal: 14, paddingBottom: 10, paddingTop: 2 },
+  tab: { borderRadius: 20, borderWidth: 1.5, borderColor: '#d1d5db', paddingVertical: 7, paddingHorizontal: 18, marginRight: 8, shadowColor: '#000', shadowOpacity: 0.04, shadowRadius: 3, elevation: 1 },
   tabActive: { backgroundColor: '#16a34a', borderColor: '#16a34a' },
-  tabText: { fontSize: 13, fontWeight: '600', color: '#64748b' },
+  tabText: { fontSize: 13, fontWeight: '700' },
   tabTextActive: { color: '#fff' },
 
   // error
-  errorBox: { flexDirection: 'row', alignItems: 'center', marginHorizontal: 14, borderRadius: 12, padding: 12, gap: 8, marginBottom: 8 },
-  errorText: { color: '#ef4444', fontSize: 13, flex: 1 },
+  errorBox: { flexDirection: 'row', alignItems: 'center', marginHorizontal: 14, borderRadius: 12, padding: 12, marginBottom: 8 },
+  errorText: { color: '#ef4444', fontSize: 13, flex: 1, marginLeft: 6 },
 
   // list
-  listContent: { padding: 14, gap: 14, paddingBottom: 32 },
+  listContent: { padding: 14, paddingBottom: 32 },
   emptyContainer: { flexGrow: 1, justifyContent: 'center', padding: 24 },
   emptyState: { alignItems: 'center', paddingVertical: 40 },
   emptyTitle: { fontSize: 18, fontWeight: '700', marginTop: 16 },
   emptySubtitle: { fontSize: 13, marginTop: 6, textAlign: 'center' },
 
   // exam card
-  examCard: { borderRadius: 18, flexDirection: 'row', overflow: 'hidden', shadowColor: '#000', shadowOpacity: 0.07, shadowRadius: 10, elevation: 3 },
+  examCard: { borderRadius: 18, flexDirection: 'row', overflow: 'hidden', shadowColor: '#000', shadowOpacity: 0.07, shadowRadius: 10, elevation: 3, marginBottom: 14 },
   cardStrip: { width: 5 },
   cardContent: { flex: 1, padding: 14 },
   cardHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 },
@@ -279,10 +285,10 @@ const styles = StyleSheet.create({
   cardTagText: { fontSize: 11, fontWeight: '700' },
   cardTitle: { fontSize: 16, fontWeight: '800', marginBottom: 4 },
   cardDesc: { fontSize: 13, lineHeight: 18, marginBottom: 10 },
-  cardStats: { flexDirection: 'row', gap: 14, marginBottom: 12 },
-  cardStatItem: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  cardStatText: { fontSize: 12 },
-  cardCta: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', borderRadius: 12, paddingVertical: 10, gap: 6 },
-  cardCtaText: { color: '#fff', fontSize: 13, fontWeight: '700' },
+  cardStats: { flexDirection: 'row', marginBottom: 12 },
+  cardStatItem: { flexDirection: 'row', alignItems: 'center', marginRight: 14 },
+  cardStatText: { fontSize: 12, marginLeft: 4 },
+  cardCta: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', borderRadius: 12, paddingVertical: 10 },
+  cardCtaText: { color: '#fff', fontSize: 13, fontWeight: '700', marginRight: 6 },
 })
 
