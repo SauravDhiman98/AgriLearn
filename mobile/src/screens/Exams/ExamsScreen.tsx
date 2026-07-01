@@ -1,168 +1,288 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
-import { ActivityIndicator, FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import {
+  ActivityIndicator, FlatList, RefreshControl, ScrollView,
+  StyleSheet, Text, TextInput, TouchableOpacity, View,
+} from 'react-native'
 import { useNavigation } from '@react-navigation/native'
+import { Ionicons } from '@expo/vector-icons'
+import { LinearGradient } from 'expo-linear-gradient'
 import { examApi } from '../../services/api'
 import { useTheme } from '../../context/ThemeContext'
 
-const getExamList = (data: any) => {
+// ─── helpers ─────────────────────────────────────────────────────────────────
+const getExamList = (data: any): any[] => {
   if (Array.isArray(data)) return data
   if (Array.isArray(data?.content)) return data.content
   return []
 }
 
-const withTimeout = async <T,>(promise: Promise<T>, timeoutMs = 8000) => {
-  return Promise.race([
-    promise,
-    new Promise<T>((_, reject) => {
-      const timer = setTimeout(() => {
-        clearTimeout(timer)
-        reject(new Error('Request timed out. Please try again.'))
-      }, timeoutMs)
-    }),
-  ])
+const withTimeout = <T,>(p: Promise<T>, ms = 8000) =>
+  Promise.race([p, new Promise<T>((_, rej) => setTimeout(() => rej(new Error('Timed out')), ms))])
+
+const EXAM_META: Record<string, { color: string; iconName: any; tag: string }> = {
+  'ibps':    { color: '#16a34a', iconName: 'leaf',           tag: 'Agriculture' },
+  'nabard':  { color: '#2563eb', iconName: 'business',       tag: 'Banking' },
+  'fci':     { color: '#ea580c', iconName: 'cube',           tag: 'Food Corp' },
+  'upcatet': { color: '#9333ea', iconName: 'school',         tag: 'University' },
+  'iari':    { color: '#0891b2', iconName: 'flask',          tag: 'Research' },
+  'rrb':     { color: '#be123c', iconName: 'train',          tag: 'Railway' },
+  'default': { color: '#16a34a', iconName: 'book',           tag: 'Exam' },
 }
 
-const getExamEmoji = (name: string) => {
-  const label = name.toLowerCase()
-  if (label.includes('ibps')) return '🌾'
-  if (label.includes('upcatet')) return '🎓'
-  if (label.includes('fci')) return '🏭'
-  if (label.includes('nabard')) return '🏦'
-  if (label.includes('rrb')) return '🚆'
-  if (label.includes('cane')) return '🌱'
-  return '📘'
+function getExamMeta(name: string) {
+  const n = (name || '').toLowerCase()
+  if (n.includes('ibps'))    return EXAM_META.ibps
+  if (n.includes('nabard'))  return EXAM_META.nabard
+  if (n.includes('fci'))     return EXAM_META.fci
+  if (n.includes('upcatet')) return EXAM_META.upcatet
+  if (n.includes('iari'))    return EXAM_META.iari
+  if (n.includes('rrb'))     return EXAM_META.rrb
+  return EXAM_META.default
 }
 
+const FILTER_TABS = ['All', 'IBPS', 'NABARD', 'FCI', 'UPCATET', 'RRB']
+
+// ─── sub-components ──────────────────────────────────────────────────────────
+function ExamCard({ item, onPress, isDark }: { item: any; onPress: () => void; isDark: boolean }) {
+  const meta = getExamMeta(item.name)
+  const bg = isDark ? '#1e293b' : '#fff'
+
+  return (
+    <TouchableOpacity style={[styles.examCard, { backgroundColor: bg }]} onPress={onPress} activeOpacity={0.85}>
+      {/* colour accent strip */}
+      <View style={[styles.cardStrip, { backgroundColor: meta.color }]} />
+
+      <View style={styles.cardContent}>
+        {/* icon + tag */}
+        <View style={styles.cardHeader}>
+          <View style={[styles.cardIconBox, { backgroundColor: meta.color + '18' }]}>
+            <Ionicons name={meta.iconName} size={22} color={meta.color} />
+          </View>
+          <View style={[styles.cardTag, { backgroundColor: meta.color + '18' }]}>
+            <Text style={[styles.cardTagText, { color: meta.color }]}>{meta.tag}</Text>
+          </View>
+        </View>
+
+        <Text style={[styles.cardTitle, { color: isDark ? '#f1f5f9' : '#0f172a' }]} numberOfLines={2}>
+          {item.name || 'Exam'}
+        </Text>
+        <Text style={[styles.cardDesc, { color: isDark ? '#94a3b8' : '#64748b' }]} numberOfLines={2}>
+          {item.description || 'Practice with subject-wise tests and full mock exams.'}
+        </Text>
+
+        {/* stats row */}
+        <View style={styles.cardStats}>
+          <View style={styles.cardStatItem}>
+            <Ionicons name="documents-outline" size={13} color={isDark ? '#94a3b8' : '#64748b'} />
+            <Text style={[styles.cardStatText, { color: isDark ? '#94a3b8' : '#64748b' }]}>
+              {item.subjectCount ?? item.subjects?.length ?? '—'} Subjects
+            </Text>
+          </View>
+          <View style={styles.cardStatItem}>
+            <Ionicons name="clipboard-outline" size={13} color={isDark ? '#94a3b8' : '#64748b'} />
+            <Text style={[styles.cardStatText, { color: isDark ? '#94a3b8' : '#64748b' }]}>
+              {item.mockTestCount ?? item.mockTests?.length ?? '—'} Tests
+            </Text>
+          </View>
+          <View style={styles.cardStatItem}>
+            <Ionicons name="time-outline" size={13} color={isDark ? '#94a3b8' : '#64748b'} />
+            <Text style={[styles.cardStatText, { color: isDark ? '#94a3b8' : '#64748b' }]}>Free</Text>
+          </View>
+        </View>
+
+        {/* CTA */}
+        <TouchableOpacity style={[styles.cardCta, { backgroundColor: meta.color }]} onPress={onPress}>
+          <Text style={styles.cardCtaText}>Start Preparing</Text>
+          <Ionicons name="arrow-forward" size={14} color="#fff" />
+        </TouchableOpacity>
+      </View>
+    </TouchableOpacity>
+  )
+}
+
+// ─── main screen ─────────────────────────────────────────────────────────────
 export default function ExamsScreen() {
   const navigation = useNavigation<any>()
-  const { colors } = useTheme()
-  const [exams, setExams] = useState<any[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState('')
+  const { isDark } = useTheme()
+  const [exams, setExams]         = useState<any[]>([])
+  const [loading, setLoading]     = useState(true)
+  const [refreshing, setRefreshing] = useState(false)
+  const [error, setError]         = useState('')
+  const [search, setSearch]       = useState('')
+  const [activeTab, setActiveTab] = useState('All')
 
-  useEffect(() => {
-    let active = true
-
-    const loadExams = async () => {
-      setLoading(true)
-      try {
-        const response = await withTimeout(examApi.list())
-        if (!active) return
-        setExams(getExamList(response.data))
-        setError('')
-      } catch (err: any) {
-        if (!active) return
-        setError(err?.response?.data?.message || err?.message || 'Unable to load exams right now.')
-        setExams([])
-      } finally {
-        if (active) setLoading(false)
-      }
-    }
-
-    loadExams()
-
-    return () => {
-      active = false
+  const load = useCallback(async () => {
+    try {
+      const res = await withTimeout(examApi.list())
+      setExams(getExamList(res.data))
+      setError('')
+    } catch (err: any) {
+      setError(err?.response?.data?.message || err?.message || 'Unable to load exams.')
+      setExams([])
     }
   }, [])
 
-  const contentContainerStyle = useMemo(
-    () => (exams.length === 0 ? styles.emptyList : styles.listContent),
-    [exams.length]
-  )
+  useEffect(() => { load().finally(() => setLoading(false)) }, [load])
 
-  const handleExamPress = useCallback((examId: number) => {
-    navigation.navigate('ExamDetail', { examId })
-  }, [navigation])
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true)
+    await load()
+    setRefreshing(false)
+  }, [load])
 
-  const renderItem = useCallback(({ item }: { item: any }) => (
-    <TouchableOpacity
-      style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}
-      onPress={() => handleExamPress(item.id)}
-      activeOpacity={0.88}>
-      <View style={[styles.iconWrap, { backgroundColor: colors.primaryLight }]}>
-        <Text style={styles.iconText}>{getExamEmoji(String(item?.name || ''))}</Text>
-      </View>
-
-      <View style={styles.cardBody}>
-        <Text style={[styles.examTitle, { color: colors.text }]} numberOfLines={1}>
-          {item?.name || 'Exam'}
-        </Text>
-        <Text style={[styles.description, { color: colors.textMuted }]} numberOfLines={2}>
-          {item?.description || 'Exam-specific practice sets and mock tests.'}
-        </Text>
-
-        <View style={[styles.button, { backgroundColor: colors.primary }]}>
-          <Text style={styles.buttonText}>View Tests →</Text>
-        </View>
-      </View>
-    </TouchableOpacity>
-  ), [colors.border, colors.card, colors.primary, colors.primaryLight, colors.text, colors.textMuted, handleExamPress])
+  const filtered = useMemo(() => {
+    let list = exams
+    if (activeTab !== 'All') {
+      list = list.filter(e => (e.name || '').toLowerCase().includes(activeTab.toLowerCase()))
+    }
+    if (search.trim()) {
+      const q = search.toLowerCase()
+      list = list.filter(e =>
+        (e.name || '').toLowerCase().includes(q) ||
+        (e.description || '').toLowerCase().includes(q)
+      )
+    }
+    return list
+  }, [exams, activeTab, search])
 
   if (loading) {
     return (
-      <View style={[styles.center, { backgroundColor: colors.background }]}>
-        <ActivityIndicator size="large" color={colors.primary} />
-        <Text style={[styles.helperText, { color: colors.textMuted }]}>Loading exams...</Text>
+      <View style={[styles.center, { backgroundColor: isDark ? '#0f172a' : '#f8fafc' }]}>
+        <ActivityIndicator size="large" color="#16a34a" />
+        <Text style={[styles.loadingText, { color: isDark ? '#94a3b8' : '#64748b' }]}>Loading exams...</Text>
       </View>
     )
   }
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
+    <View style={[styles.container, { backgroundColor: isDark ? '#0f172a' : '#f8fafc' }]}>
+
+      {/* ── top banner ── */}
+      <LinearGradient colors={['#166534','#16a34a']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.topBanner}>
+        <View>
+          <Text style={styles.bannerTitle}>Agricultural Exams 🌾</Text>
+          <Text style={styles.bannerSub}>IBPS AFO · NABARD · FCI · UPCATET & more</Text>
+        </View>
+        <View style={styles.bannerBadge}>
+          <Text style={styles.bannerBadgeNum}>{exams.length}</Text>
+          <Text style={styles.bannerBadgeLabel}>Exams</Text>
+        </View>
+      </LinearGradient>
+
+      {/* ── search bar ── */}
+      <View style={[styles.searchBox, { backgroundColor: isDark ? '#1e293b' : '#fff' }]}>
+        <Ionicons name="search-outline" size={18} color={isDark ? '#94a3b8' : '#94a3b8'} />
+        <TextInput
+          style={[styles.searchInput, { color: isDark ? '#f1f5f9' : '#0f172a' }]}
+          placeholder="Search exams..."
+          placeholderTextColor={isDark ? '#64748b' : '#94a3b8'}
+          value={search}
+          onChangeText={setSearch}
+          returnKeyType="search"
+        />
+        {search.length > 0 && (
+          <TouchableOpacity onPress={() => setSearch('')}>
+            <Ionicons name="close-circle" size={18} color="#94a3b8" />
+          </TouchableOpacity>
+        )}
+      </View>
+
+      {/* ── filter tabs ── */}
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tabsRow}>
+        {FILTER_TABS.map(tab => (
+          <TouchableOpacity
+            key={tab}
+            style={[styles.tab, activeTab === tab && styles.tabActive]}
+            onPress={() => setActiveTab(tab)}>
+            <Text style={[styles.tabText, activeTab === tab && styles.tabTextActive]}>{tab}</Text>
+          </TouchableOpacity>
+        ))}
+      </ScrollView>
+
+      {/* ── error ── */}
       {error ? (
-        <View style={[styles.messageCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-          <Text style={styles.errorTitle}>Couldn't load exams</Text>
-          <Text style={[styles.errorText, { color: colors.textMuted }]}>{error}</Text>
+        <View style={[styles.errorBox, { backgroundColor: isDark ? '#1e293b' : '#fff' }]}>
+          <Ionicons name="warning-outline" size={18} color="#ef4444" />
+          <Text style={styles.errorText}>{error}</Text>
         </View>
       ) : null}
 
+      {/* ── exam list ── */}
       <FlatList
-        data={exams}
-        keyExtractor={(item) => String(item.id)}
-        renderItem={renderItem}
+        data={filtered}
+        keyExtractor={item => String(item.id)}
+        renderItem={({ item }) => (
+          <ExamCard item={item} isDark={isDark} onPress={() => navigation.navigate('ExamDetail', { examId: item.id })} />
+        )}
+        contentContainerStyle={filtered.length === 0 ? styles.emptyContainer : styles.listContent}
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={contentContainerStyle}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#16a34a" />}
         ListEmptyComponent={
-          !error ? (
-            <View style={styles.center}>
-              <Text style={styles.emptyEmoji}>📋</Text>
-              <Text style={[styles.emptyTitle, { color: colors.text }]}>No exams available</Text>
-              <Text style={[styles.helperText, { color: colors.textMuted }]}>
-                Fresh exam categories will appear here soon.
-              </Text>
-            </View>
-          ) : null
+          <View style={styles.emptyState}>
+            <Ionicons name="search" size={48} color={isDark ? '#334155' : '#cbd5e1'} />
+            <Text style={[styles.emptyTitle, { color: isDark ? '#f1f5f9' : '#0f172a' }]}>
+              {search ? 'No results found' : 'No exams available'}
+            </Text>
+            <Text style={[styles.emptySubtitle, { color: isDark ? '#94a3b8' : '#64748b' }]}>
+              {search ? `Try a different search term` : 'Check back soon for new exam categories'}
+            </Text>
+          </View>
         }
       />
     </View>
   )
 }
 
+// ─── styles ──────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  listContent: { padding: 16, gap: 12 },
-  emptyList: { flexGrow: 1, justifyContent: 'center', padding: 24 },
-  card: { borderWidth: 1, borderRadius: 18, padding: 16, flexDirection: 'row' },
-  iconWrap: {
-    width: 64,
-    height: 64,
-    borderRadius: 18,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 14,
-  },
-  iconText: { fontSize: 30 },
-  cardBody: { flex: 1 },
-  examTitle: { fontSize: 17, fontWeight: '700', marginBottom: 8 },
-  description: { fontSize: 13, lineHeight: 19, marginBottom: 14 },
-  button: { alignSelf: 'flex-start', paddingHorizontal: 14, paddingVertical: 10, borderRadius: 12 },
-  buttonText: { color: '#ffffff', fontSize: 13, fontWeight: '700' },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  helperText: { fontSize: 14, textAlign: 'center', marginTop: 10 },
-  messageCard: { borderWidth: 1, borderRadius: 16, margin: 16, marginBottom: 0, padding: 14 },
-  errorTitle: { color: '#dc2626', fontSize: 15, fontWeight: '700', marginBottom: 4 },
-  errorText: { fontSize: 13, lineHeight: 18 },
-  emptyEmoji: { fontSize: 42, marginBottom: 12 },
-  emptyTitle: { fontSize: 18, fontWeight: '700', marginBottom: 6 },
+  loadingText: { marginTop: 12, fontSize: 14 },
+
+  // top banner
+  topBanner: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 18, paddingTop: 14, paddingBottom: 18 },
+  bannerTitle: { color: '#fff', fontSize: 20, fontWeight: '800' },
+  bannerSub: { color: '#bbf7d0', fontSize: 12, marginTop: 3 },
+  bannerBadge: { alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.18)', borderRadius: 14, paddingVertical: 8, paddingHorizontal: 16 },
+  bannerBadgeNum: { color: '#fff', fontSize: 22, fontWeight: '800' },
+  bannerBadgeLabel: { color: '#bbf7d0', fontSize: 11 },
+
+  // search
+  searchBox: { flexDirection: 'row', alignItems: 'center', marginHorizontal: 14, marginTop: -10, marginBottom: 10, borderRadius: 14, paddingHorizontal: 12, paddingVertical: 10, gap: 8, shadowColor: '#000', shadowOpacity: 0.08, shadowRadius: 8, elevation: 4 },
+  searchInput: { flex: 1, fontSize: 14, paddingVertical: 0 },
+
+  // tabs
+  tabsRow: { paddingHorizontal: 14, paddingBottom: 10, gap: 8 },
+  tab: { borderRadius: 20, borderWidth: 1.5, borderColor: '#e2e8f0', paddingVertical: 6, paddingHorizontal: 16 },
+  tabActive: { backgroundColor: '#16a34a', borderColor: '#16a34a' },
+  tabText: { fontSize: 13, fontWeight: '600', color: '#64748b' },
+  tabTextActive: { color: '#fff' },
+
+  // error
+  errorBox: { flexDirection: 'row', alignItems: 'center', marginHorizontal: 14, borderRadius: 12, padding: 12, gap: 8, marginBottom: 8 },
+  errorText: { color: '#ef4444', fontSize: 13, flex: 1 },
+
+  // list
+  listContent: { padding: 14, gap: 14, paddingBottom: 32 },
+  emptyContainer: { flexGrow: 1, justifyContent: 'center', padding: 24 },
+  emptyState: { alignItems: 'center', paddingVertical: 40 },
+  emptyTitle: { fontSize: 18, fontWeight: '700', marginTop: 16 },
+  emptySubtitle: { fontSize: 13, marginTop: 6, textAlign: 'center' },
+
+  // exam card
+  examCard: { borderRadius: 18, flexDirection: 'row', overflow: 'hidden', shadowColor: '#000', shadowOpacity: 0.07, shadowRadius: 10, elevation: 3 },
+  cardStrip: { width: 5 },
+  cardContent: { flex: 1, padding: 14 },
+  cardHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 },
+  cardIconBox: { width: 40, height: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+  cardTag: { borderRadius: 8, paddingHorizontal: 10, paddingVertical: 4 },
+  cardTagText: { fontSize: 11, fontWeight: '700' },
+  cardTitle: { fontSize: 16, fontWeight: '800', marginBottom: 4 },
+  cardDesc: { fontSize: 13, lineHeight: 18, marginBottom: 10 },
+  cardStats: { flexDirection: 'row', gap: 14, marginBottom: 12 },
+  cardStatItem: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  cardStatText: { fontSize: 12 },
+  cardCta: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', borderRadius: 12, paddingVertical: 10, gap: 6 },
+  cardCtaText: { color: '#fff', fontSize: 13, fontWeight: '700' },
 })
+
