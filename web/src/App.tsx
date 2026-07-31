@@ -1,7 +1,8 @@
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { useEffect } from 'react'
-import { useSelector } from 'react-redux'
-import { RootState } from './store'
+import { useDispatch, useSelector } from 'react-redux'
+import { AppDispatch, RootState } from './store'
+import { verifySession } from './store/slices/authSlice'
 import { trackPageView, trackSessionEnd } from './utils/tracker'
 import MainLayout from './components/layout/MainLayout'
 import HomePage from './pages/Home/HomePage'
@@ -40,7 +41,10 @@ import PricingPage from './pages/PricingPage'
 import ScrollToTop from './components/ScrollToTop'
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated } = useSelector((s: RootState) => s.auth)
+  const { isAuthenticated, sessionChecked } = useSelector((s: RootState) => s.auth)
+  // Wait until the stored token has been verified against the backend before
+  // deciding — otherwise a stale/invalid token would grant access for an instant.
+  if (!sessionChecked) return null
   return isAuthenticated ? <>{children}</> : <Navigate to="/login" replace />
 }
 
@@ -51,6 +55,17 @@ function AdminRoute({ children }: { children: React.ReactNode }) {
 
 export default function App() {
   const location = useLocation()
+  const dispatch = useDispatch<AppDispatch>()
+  const { accessToken, sessionChecked } = useSelector((s: RootState) => s.auth)
+
+  // On app load, verify any stored token against the backend once. This
+  // prevents a leftover/invalid token (e.g. from before a server migration)
+  // from granting access to protected routes without a real login.
+  useEffect(() => {
+    if (accessToken && !sessionChecked) {
+      dispatch(verifySession())
+    }
+  }, [accessToken, sessionChecked, dispatch])
 
   // Track every page view
   useEffect(() => {
