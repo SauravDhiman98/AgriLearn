@@ -1,5 +1,5 @@
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { AppDispatch, RootState } from './store'
 import { verifySession } from './store/slices/authSlice'
@@ -40,16 +40,36 @@ import SearchPage from './pages/SearchPage'
 import PricingPage from './pages/PricingPage'
 import ScrollToTop from './components/ScrollToTop'
 
+// Full-screen spinner shown while verifying the stored JWT against the backend.
+// Without this, PrivateRoute returned null → blank white screen during Railway cold starts.
+function SessionLoader() {
+  return (
+    <div style={{
+      position: 'fixed', inset: 0, display: 'flex', flexDirection: 'column',
+      alignItems: 'center', justifyContent: 'center', backgroundColor: '#f9fafb', zIndex: 9999,
+    }}>
+      <img src="/logo.png" alt="Tassy Point" style={{ width: 72, height: 72, borderRadius: 16, marginBottom: 20, objectFit: 'contain' }} />
+      <div style={{
+        width: 40, height: 40, border: '4px solid #e5e7eb',
+        borderTopColor: '#16a34a', borderRadius: '50%', animation: 'spin 0.8s linear infinite',
+      }} />
+      <p style={{ marginTop: 16, color: '#6b7280', fontSize: 14 }}>Loading your session…</p>
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+    </div>
+  )
+}
+
 function PrivateRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, sessionChecked } = useSelector((s: RootState) => s.auth)
-  // Wait until the stored token has been verified against the backend before
-  // deciding — otherwise a stale/invalid token would grant access for an instant.
-  if (!sessionChecked) return null
+  // Show a spinner while the stored token is being verified against the backend.
+  // This prevents a blank screen during Railway free-tier cold starts (can be 10-30s).
+  if (!sessionChecked) return <SessionLoader />
   return isAuthenticated ? <>{children}</> : <Navigate to="/login" replace />
 }
 
 function AdminRoute({ children }: { children: React.ReactNode }) {
-  const { user } = useSelector((s: RootState) => s.auth)
+  const { user, sessionChecked } = useSelector((s: RootState) => s.auth)
+  if (!sessionChecked) return <SessionLoader />
   return user?.role === 'ADMIN' ? <>{children}</> : <Navigate to="/" replace />
 }
 
