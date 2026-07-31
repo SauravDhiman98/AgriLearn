@@ -98,7 +98,7 @@ github:
 
 # App configuration
 app:
-  frontend-url: ${FRONTEND_URL:https://agrilearn-4qhy.onrender.com}
+  frontend-url: ${FRONTEND_URL:https://tassypoint.in}
   email:
     # Set MAIL_ENABLED=true + RESEND_API_KEY in Railway to enable real email sending.
     # Uses Resend HTTP API (works on Railway — Railway blocks SMTP ports 587/465).
