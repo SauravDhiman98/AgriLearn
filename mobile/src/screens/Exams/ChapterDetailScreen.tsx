@@ -52,7 +52,8 @@ export default function ChapterDetailScreen() {
   const navigation = useNavigation<any>()
   const route = useRoute<any>()
   const { colors } = useTheme()
-  const { isAuthenticated } = useSelector((s: RootState) => s.auth)
+  const { isAuthenticated, user, accessToken } = useSelector((s: RootState) => s.auth)
+  const watermarkLabel = [user?.firstName, user?.lastName].filter(Boolean).join(' ') + (user?.email ? `  •  ${user.email}` : ' • Tassy Point')
   const chapterId = Number(route.params?.chapterId)
 
   // Prevent screenshots and screen recordings on this screen
@@ -102,10 +103,9 @@ export default function ChapterDetailScreen() {
   }
 
   const handleOpenNote = (note: NoteItem) => {
-    const url = resolveUrl(note.fileUrl)
-    if (url) {
-      // Open in-app modal WebView — prevents download via external browser
-      setPdfModal({ url, title: note.title })
+    if (note.id) {
+      // Server watermarks the PDF with user name+email before streaming it
+      setPdfModal({ url: `${API_ORIGIN}/api/v1/notes/${note.id}/view`, title: note.title })
     } else if (note.content) {
       Alert.alert(note.title, note.content)
     } else {
@@ -153,18 +153,41 @@ export default function ChapterDetailScreen() {
             </TouchableOpacity>
           </View>
           {pdfModal && (
-            <WebView
-              source={{ uri: pdfModal.url }}
-              style={{ flex: 1 }}
-              // Block long-press context menu (prevents "Save image / Download")
-              onLongPress={() => {}}
-              // Inject JS to disable right-click and long-press saving
-              injectedJavaScript={`
-                document.addEventListener('contextmenu', e => e.preventDefault());
-                document.addEventListener('selectstart', e => e.preventDefault());
-                true;
-              `}
-            />
+            <View style={{ flex: 1 }}>
+              <WebView
+                source={{ uri: pdfModal.url, headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {} }}
+                style={{ flex: 1 }}
+                onLongPress={() => {}}
+                injectedJavaScript={`
+                  document.addEventListener('contextmenu', e => e.preventDefault());
+                  document.addEventListener('selectstart', e => e.preventDefault());
+                  true;
+                `}
+              />
+              {/* Diagonal watermark overlay — pointerEvents none so WebView stays scrollable */}
+              <View style={{ position: 'absolute', inset: 0, pointerEvents: 'none' } as any}>
+                {Array.from({ length: 8 }).map((_, row) =>
+                  Array.from({ length: 4 }).map((__, col) => (
+                    <Text
+                      key={`${row}-${col}`}
+                      style={{
+                        position: 'absolute',
+                        top: row * 120 + (col % 2 === 0 ? 0 : 60),
+                        left: col * 100 - 40,
+                        color: 'rgba(30,30,30,0.12)',
+                        fontSize: 11,
+                        fontWeight: '700',
+                        transform: [{ rotate: '-30deg' }],
+                        width: 200,
+                      }}
+                      numberOfLines={1}
+                    >
+                      {watermarkLabel}
+                    </Text>
+                  ))
+                )}
+              </View>
+            </View>
           )}
         </SafeAreaView>
       </Modal>
