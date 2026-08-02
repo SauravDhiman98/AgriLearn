@@ -7,7 +7,7 @@ import { useTheme } from '../../context/ThemeContext'
 interface Exam { id: number; name: string; icon: string; description: string }
 interface Subject { id: number; name: string; description: string; icon: string; chapterCount: number }
 interface Chapter { id: number; title: string; notesCount: number; videosCount: number; testsCount: number }
-interface Note { id: number; title: string; content: string }
+interface Note { id: number; title: string; content: string; fileUrl?: string; fileType?: string; fileSize?: number }
 interface VideoItem { id: number; title: string; youtubeUrl: string }
 
 function Modal({
@@ -160,8 +160,13 @@ export default function AdminExamContent() {
     }
     setBulkUploading(false)
     if (successCount > 0) {
-      loadChapters(selectedSubject)
       flash('ok', `${successCount} chapter(s) uploaded successfully!`)
+      // Auto-close modal after 1.5s and refresh chapters
+      setTimeout(() => {
+        setShowBulkUpload(false)
+        setBulkEntries([])
+        loadChapters(selectedSubject)
+      }, 1500)
     }
   }
 
@@ -611,14 +616,19 @@ export default function AdminExamContent() {
               {notes.map(note => (
                 <div key={note.id} style={{ padding: '10px 12px', backgroundColor: isDark ? '#374151' : '#f0f9ff', borderRadius: '8px', marginBottom: '8px', display: 'flex', alignItems: 'flex-start', gap: '10px', border: `1px solid ${border}` }}>
                   <div style={{ flex: 1 }}>
-                    <p style={{ fontWeight: '600', fontSize: '13px', color: text, marginBottom: '2px' }}>{note.title}</p>
-                    <p style={{ fontSize: '12px', color: muted, lineHeight: '1.4', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
-                      {note.content?.substring(0, 100)}...
+                    <p style={{ fontWeight: '600', fontSize: '13px', color: text, marginBottom: '2px' }}>
+                      {note.fileType === 'pdf' || note.fileUrl ? '📄 ' : '📝 '}{note.title}
+                    </p>
+                    <p style={{ fontSize: '12px', color: muted, lineHeight: '1.4' }}>
+                      {note.fileType === 'pdf' || note.fileUrl
+                        ? `PDF file${note.fileSize ? ' · ' + (note.fileSize / 1024).toFixed(0) + ' KB' : ''}`
+                        : note.content?.substring(0, 100) ?? '(no preview)'}
                     </p>
                   </div>
                   <div style={{ display: 'flex', gap: '4px' }}>
-                    <button title="Generate MCQ from this note" onClick={() => { setGenMcqNote(note); setShowGenMcq(true) }}
-                      style={{ padding: '5px', border: `1px solid ${border}`, borderRadius: '6px', backgroundColor: cardBg, cursor: 'pointer', color: '#7c3aed' }}>
+                    <button title={note.fileUrl ? 'AI MCQ needs text content (not PDF)' : 'Generate MCQ from this note'}
+                      onClick={() => { if (!note.fileUrl) { setGenMcqNote(note); setShowGenMcq(true) } else alert('AI MCQ generation requires a text note. For PDF notes, use "Upload MCQ CSV" below instead.') }}
+                      style={{ padding: '5px', border: `1px solid ${border}`, borderRadius: '6px', backgroundColor: cardBg, cursor: 'pointer', color: note.fileUrl ? muted : '#7c3aed', opacity: note.fileUrl ? 0.5 : 1 }}>
                       <Brain style={{ width: '13px', height: '13px' }} />
                     </button>
                     <button onClick={() => handleDeleteNote(note.id)}
@@ -665,7 +675,7 @@ export default function AdminExamContent() {
             <span style={{ fontSize: '13px', color: muted }}>📄 Bulk import MCQ questions from CSV</span>
             <div style={{ display: 'flex', gap: '8px' }}>
               <button style={{ ...btnSm, backgroundColor: '#0369a1', color: '#fff', border: 'none' }}
-                onClick={() => { const a = document.createElement('a'); a.href = `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api/v1'}/admin/mcq/template`; a.download = 'mcq_template.csv'; a.click() }}>
+                onClick={() => { const a = document.createElement('a'); a.href = `${import.meta.env.VITE_API_BASE_URL || 'https://agrilearn-production-6f2e.up.railway.app/api/v1'}/admin/mcq/template`; a.download = 'mcq_template.csv'; a.click() }}>
                 ⬇ Download Template
               </button>
               <button style={{ ...btnSm, backgroundColor: '#7c3aed', color: '#fff', border: 'none' }}
