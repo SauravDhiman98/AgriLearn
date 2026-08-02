@@ -1,12 +1,14 @@
 package com.agrilearn.service.impl;
 
 import lombok.extern.slf4j.Slf4j;
+import org.apache.pdfbox.Loader;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDPage;
 import org.apache.pdfbox.pdmodel.PDPageContentStream;
 import org.apache.pdfbox.pdmodel.font.PDType1Font;
 import org.apache.pdfbox.pdmodel.font.Standard14Fonts;
 import org.apache.pdfbox.pdmodel.graphics.state.PDExtendedGraphicsState;
+import org.apache.pdfbox.util.Matrix;
 import org.springframework.stereotype.Service;
 
 import java.awt.geom.AffineTransform;
@@ -17,82 +19,72 @@ import java.io.InputStream;
 @Service
 public class PdfWatermarkServiceImpl {
 
-    /**
-     * Loads a PDF from {@code inputStream}, stamps each page with the user's
-     * email and name as a semi-transparent diagonal watermark, and returns the
-     * result as a byte array.  If anything fails the original bytes are returned
-     * so the user still sees their PDF.
-     */
     public byte[] watermark(InputStream inputStream, String userEmail, String userName) {
-        try (PDDocument doc = PDDocument.load(inputStream)) {
-            PDType1Font font = new PDType1Font(Standard14Fonts.FontName.HELVETICA_BOLD);
-            String line1 = userName  != null && !userName.isBlank()  ? userName  : "";
-            String line2 = userEmail != null && !userEmail.isBlank() ? userEmail : "";
-            String label = line1.isBlank() ? line2 : line1 + "  |  " + line2;
+        try {
+            // PDFBox 3.x: read bytes first, then use Loader.loadPDF(byte[])
+            byte[] pdfBytes = inputStream.readAllBytes();
 
-            for (PDPage page : doc.getPages()) {
-                float w = page.getMediaBox().getWidth();
-                float h = page.getMediaBox().getHeight();
+            try (PDDocument doc = Loader.loadPDF(pdfBytes)) {
+                PDType1Font font = new PDType1Font(Standard14Fonts.FontName.HELVETICA_BOLD);
+                String line1 = userName  != null && !userName.isBlank()  ? userName  : "";
+                String line2 = userEmail != null && !userEmail.isBlank() ? userEmail : "";
+                String label = line1.isBlank() ? line2 : line1 + "  |  " + line2;
 
-                PDExtendedGraphicsState gs = new PDExtendedGraphicsState();
-                gs.setNonStrokingAlphaConstant(0.12f); // 12% opacity — visible but not intrusive
-                gs.setAlphaSourceFlag(true);
+                for (PDPage page : doc.getPages()) {
+                    float w = page.getMediaBox().getWidth();
+                    float h = page.getMediaBox().getHeight();
 
-                try (PDPageContentStream cs = new PDPageContentStream(
-                        doc, page, PDPageContentStream.AppendMode.APPEND, true, true)) {
+                    PDExtendedGraphicsState gs = new PDExtendedGraphicsState();
+                    gs.setNonStrokingAlphaConstant(0.12f);
+                    gs.setAlphaSourceFlag(true);
 
-                    cs.setGraphicsStateParameters(gs);
-                    cs.setNonStrokingColor(0.3f, 0.3f, 0.3f); // dark gray
+                    try (PDPageContentStream cs = new PDPageContentStream(
+                            doc, page, PDPageContentStream.AppendMode.APPEND, true, true)) {
 
-                    float fontSize = 18f;
-                    float textWidth;
-                    try {
-                        textWidth = font.getStringWidth(label) / 1000 * fontSize;
-                    } catch (Exception e) {
-                        textWidth = 200f;
-                    }
+                        cs.setGraphicsStateParameters(gs);
+                        cs.setNonStrokingColor(0.3f, 0.3f, 0.3f);
 
-                    // Tile the watermark across the page in a diagonal grid
-                    float angle  = (float) Math.toRadians(35);
-                    float stepX  = textWidth + 60f;
-                    float stepY  = 90f;
-                    int   cols   = (int) (w / stepX) + 4;
-                    int   rows   = (int) (h / stepY) + 4;
+                        float fontSize = 18f;
+                        float textWidth;
+                        try {
+                            textWidth = font.getStringWidth(label) / 1000 * fontSize;
+                        } catch (Exception e) {
+                            textWidth = 200f;
+                        }
 
-                    for (int row = -2; row < rows; row++) {
-                        for (int col = -2; col < cols; col++) {
-                            float tx = col * stepX + (row % 2 == 0 ? 0 : stepX / 2f);
-                            float ty = row * stepY;
+                        float angle = (float) Math.toRadians(35);
+                        float stepX = textWidth + 60f;
+                        float stepY = 90f;
+                        int   cols  = (int) (w / stepX) + 4;
+                        int   rows  = (int) (h / stepY) + 4;
 
-                            cs.beginText();
-                            cs.setFont(font, fontSize);
+                        for (int row = -2; row < rows; row++) {
+                            for (int col = -2; col < cols; col++) {
+                                float tx = col * stepX + (row % 2 == 0 ? 0 : stepX / 2f);
+                                float ty = row * stepY;
 
-                            // Apply rotation around the text origin
-                            AffineTransform at = AffineTransform.getTranslateInstance(tx, ty);
-                            at.rotate(angle);
-                            cs.setTextMatrix(
-                                    (float) at.getScaleX(),    (float) at.getShearY(),
-                                    (float) at.getShearX(),    (float) at.getScaleY(),
-                                    (float) at.getTranslateX(), (float) at.getTranslateY());
-                            cs.showText(label);
-                            cs.endText();
+                                cs.beginText();
+                                cs.setFont(font, fontSize);
+
+                                // PDFBox 3.x: setTextMatrix requires a Matrix object
+                                AffineTransform at = AffineTransform.getTranslateInstance(tx, ty);
+                                at.rotate(angle);
+                                cs.setTextMatrix(new Matrix(at));
+                                cs.showText(label);
+                                cs.endText();
+                            }
                         }
                     }
                 }
-            }
 
-            ByteArrayOutputStream out = new ByteArrayOutputStream();
-            doc.save(out);
-            return out.toByteArray();
+                ByteArrayOutputStream out = new ByteArrayOutputStream();
+                doc.save(out);
+                return out.toByteArray();
+            }
 
         } catch (Exception e) {
             log.warn("PDF watermarking failed, returning original: {}", e.getMessage());
-            // Fall back: re-read and return original bytes
-            try {
-                return inputStream.readAllBytes();
-            } catch (Exception ex) {
-                return new byte[0];
-            }
+            return new byte[0];
         }
     }
 }
