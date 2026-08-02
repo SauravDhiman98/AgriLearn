@@ -15,6 +15,10 @@ apiClient.interceptors.request.use((config) => {
   if (token) {
     config.headers.Authorization = `Bearer ${token}`
   }
+  // Let axios set Content-Type automatically for FormData (multipart/form-data)
+  if (config.data instanceof FormData) {
+    delete config.headers['Content-Type']
+  }
   // Store request start time on the config object
   ;(config as any)._startTime = Date.now()
   return config
