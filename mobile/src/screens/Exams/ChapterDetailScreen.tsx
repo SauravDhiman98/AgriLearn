@@ -4,6 +4,7 @@ import { useNavigation, useRoute } from '@react-navigation/native'
 import { useSelector } from 'react-redux'
 import { WebView } from 'react-native-webview'
 import { usePreventScreenCapture } from 'expo-screen-capture'
+import * as FileSystem from 'expo-file-system'
 import { RootState } from '../../store'
 import { examApi, API_ORIGIN } from '../../services/api'
 import { useTheme } from '../../context/ThemeContext'
@@ -63,7 +64,9 @@ export default function ChapterDetailScreen() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [activeTab, setActiveTab] = useState<'notes' | 'videos' | 'tests'>('notes')
-  const [pdfModal, setPdfModal] = useState<{ url: string; title: string } | null>(null)
+  const [pdfModal, setPdfModal] = useState<{ title: string } | null>(null)
+  const [pdfBase64, setPdfBase64] = useState<string | null>(null)
+  const [pdfFetching, setPdfFetching] = useState(false)
 
   useEffect(() => {
     let active = true
@@ -102,14 +105,80 @@ export default function ChapterDetailScreen() {
     return API_ORIGIN + url
   }
 
-  const handleOpenNote = (note: NoteItem) => {
-    if (note.id) {
-      // Server watermarks the PDF with user name+email before streaming it
-      setPdfModal({ url: `${API_ORIGIN}/api/v1/notes/${note.id}/view`, title: note.title })
-    } else if (note.content) {
-      Alert.alert(note.title, note.content)
-    } else {
-      Alert.alert('Unavailable', 'No content available for this note.')
+  // Build a self-contained HTML page using PDF.js to render from base64
+  const buildPdfHtml = (base64: string) => {
+    const wm = watermarkLabel.replace(/'/g, "\\'")
+    return `<!DOCTYPE html><html><head>
+<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#3a3a3a;overflow-x:hidden}
+#pg{display:flex;flex-direction:column;align-items:center;padding:4px 0;gap:4px}
+canvas{box-shadow:0 2px 8px rgba(0,0,0,.5);max-width:100%}
+#msg{color:#fff;font:16px sans-serif;padding:40px;text-align:center}
+.wm{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:999;overflow:hidden}
+.wt{position:absolute;color:rgba(60,60,60,0.13);font:700 11px sans-serif;white-space:nowrap;transform:rotate(-30deg)}
+</style></head><body>
+<div id="msg">Loading PDF...</div>
+<div id="pg"></div>
+<div class="wm" id="wml"></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script>
+pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+(function(){
+  var wml=document.getElementById('wml'),wt='${wm}';
+  for(var r=-1;r<18;r++)for(var c=-1;c<5;c++){var d=document.createElement('div');d.className='wt';d.textContent=wt;d.style.top=(r*110+(c%2?55:0))+'px';d.style.left=(c*130-20)+'px';wml.appendChild(d);}
+  var b64='${base64}';
+  var bin=atob(b64),arr=new Uint8Array(bin.length);
+  for(var i=0;i<bin.length;i++)arr[i]=bin.charCodeAt(i);
+  var dw=window.innerWidth;
+  pdfjsLib.getDocument({data:arr}).promise.then(function(pdf){
+    document.getElementById('msg').style.display='none';
+    var pg=document.getElementById('pg'),n=pdf.numPages;
+    function renderPage(num){
+      pdf.getPage(num).then(function(page){
+        var vp0=page.getViewport({scale:1}),sc=dw/vp0.width,vp=page.getViewport({scale:sc});
+        var cv=document.createElement('canvas');cv.width=vp.width;cv.height=vp.height;
+        pg.appendChild(cv);
+        page.render({canvasContext:cv.getContext('2d'),viewport:vp}).promise.then(function(){
+          if(num<n)renderPage(num+1);
+        });
+      });
+    }
+    renderPage(1);
+  }).catch(function(e){document.getElementById('msg').textContent='Failed to render PDF: '+e.message;});
+})();
+</script></body></html>`
+  }
+
+  const handleOpenNote = async (note: NoteItem) => {
+    if (!note.id) {
+      if (note.content) Alert.alert(note.title, note.content)
+      else Alert.alert('Unavailable', 'No content available for this note.')
+      return
+    }
+    setPdfModal({ title: note.title })
+    setPdfBase64(null)
+    setPdfFetching(true)
+
+    try {
+      const pdfUrl = `${API_ORIGIN}/api/v1/notes/${note.id}/view`
+      const localPath = `${FileSystem.cacheDirectory}note_${note.id}.pdf`
+
+      const { uri, status } = await FileSystem.downloadAsync(pdfUrl, localPath, {
+        headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {},
+      })
+      if (status !== 200) throw new Error(`Server returned ${status}`)
+
+      const base64 = await FileSystem.readAsStringAsync(uri, {
+        encoding: FileSystem.EncodingType.Base64,
+      })
+      setPdfBase64(base64)
+    } catch (e: any) {
+      Alert.alert('Error', 'Could not load PDF. Please check your connection and try again.')
+      setPdfModal(null)
+    } finally {
+      setPdfFetching(false)
     }
   }
 
@@ -143,50 +212,32 @@ export default function ChapterDetailScreen() {
 
   return (
     <>
-      {/* In-app PDF viewer modal — no download, no external browser */}
-      <Modal visible={!!pdfModal} animationType="slide" onRequestClose={() => setPdfModal(null)}>
+      {/* In-app PDF viewer — PDF.js renders from base64, works on both iOS and Android */}
+      <Modal visible={!!pdfModal} animationType="slide" onRequestClose={() => { setPdfModal(null); setPdfBase64(null) }}>
         <SafeAreaView style={{ flex: 1, backgroundColor: '#000' }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#1e293b', paddingHorizontal: 16, paddingVertical: 12 }}>
             <Text style={{ color: '#fff', fontWeight: '700', fontSize: 15, flex: 1 }} numberOfLines={1}>{pdfModal?.title}</Text>
-            <TouchableOpacity onPress={() => setPdfModal(null)} style={{ backgroundColor: '#374151', borderRadius: 8, paddingHorizontal: 12, paddingVertical: 6 }}>
+            <TouchableOpacity onPress={() => { setPdfModal(null); setPdfBase64(null) }} style={{ backgroundColor: '#374151', borderRadius: 8, paddingHorizontal: 12, paddingVertical: 6 }}>
               <Text style={{ color: '#fff', fontWeight: '700' }}>✕ Close</Text>
             </TouchableOpacity>
           </View>
-          {pdfModal && (
-            <View style={{ flex: 1 }}>
-              <WebView
-                source={{ uri: pdfModal.url, headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {} }}
-                style={{ flex: 1 }}
-                onLongPress={() => {}}
-                injectedJavaScript={`
-                  document.addEventListener('contextmenu', e => e.preventDefault());
-                  document.addEventListener('selectstart', e => e.preventDefault());
-                  true;
-                `}
-              />
-              {/* Diagonal watermark overlay — pointerEvents none so WebView stays scrollable */}
-              <View style={{ position: 'absolute', inset: 0, pointerEvents: 'none' } as any}>
-                {Array.from({ length: 8 }).map((_, row) =>
-                  Array.from({ length: 4 }).map((__, col) => (
-                    <Text
-                      key={`${row}-${col}`}
-                      style={{
-                        position: 'absolute',
-                        top: row * 120 + (col % 2 === 0 ? 0 : 60),
-                        left: col * 100 - 40,
-                        color: 'rgba(30,30,30,0.12)',
-                        fontSize: 11,
-                        fontWeight: '700',
-                        transform: [{ rotate: '-30deg' }],
-                        width: 200,
-                      }}
-                      numberOfLines={1}
-                    >
-                      {watermarkLabel}
-                    </Text>
-                  ))
-                )}
-              </View>
+          {pdfFetching ? (
+            <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#3a3a3a' }}>
+              <ActivityIndicator size="large" color="#ffffff" />
+              <Text style={{ color: '#ccc', marginTop: 16, fontSize: 14 }}>Downloading PDF securely...</Text>
+            </View>
+          ) : pdfBase64 ? (
+            <WebView
+              key={pdfModal?.title}
+              source={{ html: buildPdfHtml(pdfBase64) }}
+              style={{ flex: 1, backgroundColor: '#3a3a3a' }}
+              originWhitelist={['*']}
+              javaScriptEnabled
+              injectedJavaScript={`document.addEventListener('contextmenu',e=>e.preventDefault());document.addEventListener('selectstart',e=>e.preventDefault());true;`}
+            />
+          ) : (
+            <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#3a3a3a' }}>
+              <Text style={{ color: '#ef4444', fontSize: 14 }}>Failed to load PDF</Text>
             </View>
           )}
         </SafeAreaView>
