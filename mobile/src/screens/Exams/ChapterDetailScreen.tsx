@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from 'react'
-import { ActivityIndicator, Alert, Linking, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native'
+import { ActivityIndicator, Alert, Modal, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native'
 import { useNavigation, useRoute } from '@react-navigation/native'
 import { useSelector } from 'react-redux'
 import { WebView } from 'react-native-webview'
+import { usePreventScreenCapture } from 'expo-screen-capture'
 import { RootState } from '../../store'
 import { examApi, API_ORIGIN } from '../../services/api'
 import { useTheme } from '../../context/ThemeContext'
@@ -54,10 +55,14 @@ export default function ChapterDetailScreen() {
   const { isAuthenticated } = useSelector((s: RootState) => s.auth)
   const chapterId = Number(route.params?.chapterId)
 
+  // Prevent screenshots and screen recordings on this screen
+  usePreventScreenCapture()
+
   const [chapter, setChapter] = useState<ChapterDetail | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [activeTab, setActiveTab] = useState<'notes' | 'videos' | 'tests'>('notes')
+  const [pdfModal, setPdfModal] = useState<{ url: string; title: string } | null>(null)
 
   useEffect(() => {
     let active = true
@@ -96,14 +101,11 @@ export default function ChapterDetailScreen() {
     return API_ORIGIN + url
   }
 
-  const handleOpenNote = async (note: NoteItem) => {
+  const handleOpenNote = (note: NoteItem) => {
     const url = resolveUrl(note.fileUrl)
     if (url) {
-      try {
-        await Linking.openURL(url)
-      } catch {
-        Alert.alert('Error', 'Could not open this file.')
-      }
+      // Open in-app modal WebView — prevents download via external browser
+      setPdfModal({ url, title: note.title })
     } else if (note.content) {
       Alert.alert(note.title, note.content)
     } else {
@@ -140,7 +142,34 @@ export default function ChapterDetailScreen() {
   }
 
   return (
-    <ScrollView style={[styles.container, { backgroundColor: colors.background }]} contentContainerStyle={styles.content}>
+    <>
+      {/* In-app PDF viewer modal — no download, no external browser */}
+      <Modal visible={!!pdfModal} animationType="slide" onRequestClose={() => setPdfModal(null)}>
+        <SafeAreaView style={{ flex: 1, backgroundColor: '#000' }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#1e293b', paddingHorizontal: 16, paddingVertical: 12 }}>
+            <Text style={{ color: '#fff', fontWeight: '700', fontSize: 15, flex: 1 }} numberOfLines={1}>{pdfModal?.title}</Text>
+            <TouchableOpacity onPress={() => setPdfModal(null)} style={{ backgroundColor: '#374151', borderRadius: 8, paddingHorizontal: 12, paddingVertical: 6 }}>
+              <Text style={{ color: '#fff', fontWeight: '700' }}>✕ Close</Text>
+            </TouchableOpacity>
+          </View>
+          {pdfModal && (
+            <WebView
+              source={{ uri: pdfModal.url }}
+              style={{ flex: 1 }}
+              // Block long-press context menu (prevents "Save image / Download")
+              onLongPress={() => {}}
+              // Inject JS to disable right-click and long-press saving
+              injectedJavaScript={`
+                document.addEventListener('contextmenu', e => e.preventDefault());
+                document.addEventListener('selectstart', e => e.preventDefault());
+                true;
+              `}
+            />
+          )}
+        </SafeAreaView>
+      </Modal>
+
+      <ScrollView style={[styles.container, { backgroundColor: colors.background }]} contentContainerStyle={styles.content}>
       <View style={[styles.headerCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
         <Text style={[styles.title, { color: colors.text }]}>{chapter?.title || 'Chapter'}</Text>
         <Text style={[styles.subtitle, { color: colors.primary }]}>
@@ -212,6 +241,7 @@ export default function ChapterDetailScreen() {
         )
       )}
     </ScrollView>
+    </>
   )
 }
 
