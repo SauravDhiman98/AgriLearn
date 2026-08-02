@@ -63,6 +63,10 @@ export default function AdminExamContent() {
   const [showCsvMcq, setShowCsvMcq] = useState(false)
   const [showDocUpload, setShowDocUpload] = useState(false)
   const [docFile, setDocFile] = useState<File | null>(null)
+  const [showBulkUpload, setShowBulkUpload] = useState(false)
+  type BulkEntry = { file: File; chapterName: string; status: 'pending' | 'uploading' | 'done' | 'error'; error?: string }
+  const [bulkEntries, setBulkEntries] = useState<BulkEntry[]>([])
+  const [bulkUploading, setBulkUploading] = useState(false)
   const [showAddExam, setShowAddExam] = useState(false)
   const [examForm, setExamForm] = useState({ name: '', description: '', icon: '', slug: '' })
   const [csvFile, setCsvFile] = useState<File | null>(null)
@@ -118,6 +122,47 @@ export default function AdminExamContent() {
   const flash = (type: 'ok' | 'err', text: string) => {
     setMsg({ type, text })
     setTimeout(() => setMsg(null), 3000)
+  }
+
+  const handleBulkFilesSelected = (fileList: FileList | null) => {
+    if (!fileList) return
+    const entries: BulkEntry[] = Array.from(fileList)
+      .filter(f => f.name.toLowerCase().endsWith('.pdf'))
+      .map(f => ({
+        file: f,
+        chapterName: f.name.replace(/\.[^.]+$/, '').replace(/[_\-]+/g, ' ').trim(),
+        status: 'pending' as const,
+      }))
+    setBulkEntries(entries)
+  }
+
+  const handleBulkUpload = async () => {
+    if (!selectedSubject || bulkEntries.length === 0) return
+    setBulkUploading(true)
+    let successCount = 0
+    for (let i = 0; i < bulkEntries.length; i++) {
+      const entry = bulkEntries[i]
+      setBulkEntries(prev => prev.map((e, idx) => idx === i ? { ...e, status: 'uploading' } : e))
+      try {
+        // Step 1: create chapter
+        const chRes = await examApi.createChapter(selectedSubject.id, { title: entry.chapterName, description: '' })
+        const chapterId = chRes.data.id
+        // Step 2: upload PDF as note
+        const fd = new FormData()
+        fd.append('file', entry.file)
+        fd.append('title', entry.chapterName)
+        await apiClient.post(`/admin/chapters/${chapterId}/notes/upload`, fd)
+        setBulkEntries(prev => prev.map((e, idx) => idx === i ? { ...e, status: 'done' } : e))
+        successCount++
+      } catch (err: any) {
+        setBulkEntries(prev => prev.map((e, idx) => idx === i ? { ...e, status: 'error', error: 'Upload failed' } : e))
+      }
+    }
+    setBulkUploading(false)
+    if (successCount > 0) {
+      loadChapters(selectedSubject)
+      flash('ok', `${successCount} chapter(s) uploaded successfully!`)
+    }
   }
 
   const handleAddSubject = async () => {
@@ -514,9 +559,14 @@ export default function AdminExamContent() {
           <div style={colStyle}>
             <div style={colHeader}>
               <span style={{ fontWeight: '700', fontSize: '14px', color: text }}>📑 Chapters</span>
-              <button style={btnSm} onClick={() => setShowAddChapter(true)}>
-                <Plus style={{ width: '13px', height: '13px' }} /> Add
-              </button>
+              <div style={{ display: 'flex', gap: '6px' }}>
+                <button style={{ ...btnSm, backgroundColor: '#0369a1', color: '#fff', border: 'none' }} onClick={() => { setBulkEntries([]); setShowBulkUpload(true) }}>
+                  <Upload style={{ width: '13px', height: '13px' }} /> Bulk Upload
+                </button>
+                <button style={btnSm} onClick={() => setShowAddChapter(true)}>
+                  <Plus style={{ width: '13px', height: '13px' }} /> Add
+                </button>
+              </div>
             </div>
             {loading && !selectedChapter && (
               <div style={{ padding: '20px', textAlign: 'center' }}><Loader2 style={{ width: '20px', height: '20px', animation: 'spin 1s linear infinite', margin: '0 auto', color: muted }} /></div>
@@ -740,6 +790,54 @@ export default function AdminExamContent() {
           <button style={btnPrimary} onClick={handleAddSubject} disabled={!subjectForm.name || saving}>
             {saving ? 'Saving...' : '+ Add Subject'}
           </button>
+        </Modal>
+      )}
+
+      {showBulkUpload && (
+        <Modal title={`📦 Bulk Upload PDFs → ${selectedSubject?.name}`} onClose={() => !bulkUploading && setShowBulkUpload(false)} cardBg={cardBg} border={border} text={text} muted={muted}>
+          <p style={{ fontSize: '13px', color: muted, marginBottom: '14px' }}>
+            Select multiple PDF files. Each filename becomes the chapter name automatically. You can edit names before uploading.
+          </p>
+          <Field label="Select PDF files" muted={muted}>
+            <input type="file" accept=".pdf,application/pdf" multiple style={{ ...inputStyle, padding: '7px' }}
+              onChange={e => handleBulkFilesSelected(e.target.files)} disabled={bulkUploading} />
+          </Field>
+          {bulkEntries.length > 0 && (
+            <div style={{ marginBottom: '16px' }}>
+              <p style={{ fontSize: '12px', fontWeight: '600', color: muted, marginBottom: '8px' }}>{bulkEntries.length} file(s) selected — edit chapter names if needed:</p>
+              <div style={{ maxHeight: '260px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                {bulkEntries.map((entry, idx) => (
+                  <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px', borderRadius: '8px', border: `1px solid ${border}`, backgroundColor: entry.status === 'done' ? '#dcfce7' : entry.status === 'error' ? '#fee2e2' : inputBg }}>
+                    <span style={{ fontSize: '18px', minWidth: '24px' }}>
+                      {entry.status === 'done' ? '✅' : entry.status === 'error' ? '❌' : entry.status === 'uploading' ? '⏳' : '📄'}
+                    </span>
+                    <input
+                      style={{ flex: 1, padding: '5px 8px', borderRadius: '6px', border: `1px solid ${border}`, backgroundColor: inputBg, color: text, fontSize: '13px' }}
+                      value={entry.chapterName}
+                      onChange={e => setBulkEntries(prev => prev.map((en, i) => i === idx ? { ...en, chapterName: e.target.value } : en))}
+                      disabled={bulkUploading || entry.status === 'done'}
+                    />
+                    <span style={{ fontSize: '11px', color: muted, minWidth: '60px', textAlign: 'right' }}>
+                      {entry.status === 'error' ? <span style={{ color: '#dc2626' }}>Failed</span>
+                        : entry.status === 'done' ? <span style={{ color: '#16a34a' }}>Done</span>
+                        : entry.status === 'uploading' ? 'Uploading...'
+                        : (entry.file.size / 1024).toFixed(0) + ' KB'}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+          <button
+            style={{ ...btnPrimary, opacity: bulkEntries.length === 0 || bulkUploading ? 0.6 : 1 }}
+            onClick={handleBulkUpload}
+            disabled={bulkEntries.length === 0 || bulkUploading}
+          >
+            {bulkUploading ? `Uploading ${bulkEntries.filter(e => e.status === 'done').length}/${bulkEntries.length}...` : `🚀 Upload ${bulkEntries.length} PDF(s)`}
+          </button>
+          {bulkEntries.length > 0 && !bulkUploading && bulkEntries.every(e => e.status === 'done' || e.status === 'error') && (
+            <button style={{ ...btnSm, marginTop: '10px', width: '100%', justifyContent: 'center' }} onClick={() => setShowBulkUpload(false)}>Close</button>
+          )}
         </Modal>
       )}
 
