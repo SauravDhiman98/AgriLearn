@@ -626,9 +626,9 @@ export default function AdminExamContent() {
                     </p>
                   </div>
                   <div style={{ display: 'flex', gap: '4px' }}>
-                    <button title={note.fileUrl ? 'AI MCQ needs text content (not PDF)' : 'Generate MCQ from this note'}
-                      onClick={() => { if (!note.fileUrl) { setGenMcqNote(note); setShowGenMcq(true) } else alert('AI MCQ generation requires a text note. For PDF notes, use "Upload MCQ CSV" below instead.') }}
-                      style={{ padding: '5px', border: `1px solid ${border}`, borderRadius: '6px', backgroundColor: cardBg, cursor: 'pointer', color: note.fileUrl ? muted : '#7c3aed', opacity: note.fileUrl ? 0.5 : 1 }}>
+                    <button title="Generate MCQ from this note"
+                      onClick={() => { setGenMcqNote(note); setShowGenMcq(true) }}
+                      style={{ padding: '5px', border: `1px solid ${border}`, borderRadius: '6px', backgroundColor: cardBg, cursor: 'pointer', color: '#7c3aed' }}>
                       <Brain style={{ width: '13px', height: '13px' }} />
                     </button>
                     <button onClick={() => handleDeleteNote(note.id)}
@@ -928,7 +928,8 @@ export default function AdminExamContent() {
       {showGenMcq && genMcqNote && (
         <Modal title="Generate MCQ Test with AI" onClose={() => setShowGenMcq(false)} cardBg={cardBg} border={border} text={text} muted={muted}>
           <div style={{ backgroundColor: isDark ? '#374151' : '#f0fdf4', borderRadius: '10px', padding: '12px 14px', marginBottom: '16px', fontSize: '13px', color: isDark ? '#bbf7d0' : '#166534', border: `1px solid ${border}` }}>
-            🧠 AI will read the notes "<strong>{genMcqNote.title}</strong>" and auto-generate MCQ questions for this chapter.
+            🧠 AI will read <strong>{genMcqNote.title}</strong> and auto-generate MCQ questions.
+            {genMcqNote.fileUrl ? ' 📄 PDF detected — text will be extracted automatically.' : ''}
           </div>
           <Field label="Number of Questions" muted={muted}>
             <input type="number" style={{ ...inputStyle, width: '120px' }} min={5} max={50} value={mcqCount} onChange={e => setMcqCount(Number(e.target.value))} />
