@@ -27,7 +27,7 @@
       "favicon": "./assets/favicon.png"
     },
     "extra": {
-      "apiBaseUrl": "https://agrilearn-production.up.railway.app/api/v1",
+      "apiBaseUrl": "https://agrilearn-production-6f2e.up.railway.app/api/v1",
       "eas": {
         "projectId": "684df1dc-5551-46f7-9539-62e1e37c397e"
       }
