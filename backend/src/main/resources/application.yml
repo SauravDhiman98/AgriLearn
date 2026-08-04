@@ -2,7 +2,24 @@ spring:
   application:
     name: agrilearn-backend
 
-  # datasource — set SPRING_DATASOURCE_URL / USERNAME / PASSWORD in Railway
+  # ===== MAIL CONFIGURATION =====
+  mail:
+    host: ${MAIL_HOST:smtp.gmail.com}
+    port: ${MAIL_PORT:587}
+    username: ${MAIL_USERNAME:tassypoint.learn@gmail.com}
+    password: ${MAIL_PASSWORD}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true
+          connectiontimeout: 5000
+          timeout: 5000
+          writetimeout: 5000
+
+  # ===== DATABASE =====
   datasource:
     url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/agrilearn}
     username: ${SPRING_DATASOURCE_USERNAME:agrilearn}
@@ -14,6 +31,7 @@ spring:
       connection-timeout: 30000
       connection-init-sql: SET TIME ZONE 'UTC'
 
+  # ===== JPA / HIBERNATE =====
   jpa:
     hibernate:
       ddl-auto: validate
@@ -27,6 +45,7 @@ spring:
         format_sql: true
         default_schema: public
 
+  # ===== FLYWAY =====
   flyway:
     enabled: true
     baseline-on-migrate: true
@@ -34,45 +53,34 @@ spring:
     out-of-order: false
     locations: classpath:db/migration
 
-  mail:
-    host: ${MAIL_HOST:smtp.gmail.com}
-    port: ${MAIL_PORT:587}
-    username: ${MAIL_USERNAME:}
-    password: ${MAIL_PASSWORD:}
-    properties:
-      mail:
-        smtp:
-          auth: true
-          starttls:
-            enable: true
-
+  # ===== FILE UPLOAD =====
   servlet:
     multipart:
       max-file-size: 500MB
       max-request-size: 500MB
 
+# ===== SERVER =====
 server:
   port: ${PORT:8080}
   servlet:
     context-path: /api/v1
 
-# CORS — set CORS_ALLOWED_ORIGINS in Railway to your frontend URL
+# ===== CORS =====
 cors:
   allowed-origins: ${CORS_ALLOWED_ORIGINS:*}
 
-# JWT Configuration
+# ===== JWT =====
 jwt:
   secret: ${JWT_SECRET:agrilearn-jwt-secret-key-change-in-production-minimum-256-bits-long}
-  expiration: 86400000       # 24 hours in ms
-  refresh-expiration: 604800000  # 7 days in ms
+  expiration: 86400000
+  refresh-expiration: 604800000
 
-# MinIO / File Storage
+# ===== MINIO / FILE STORAGE =====
 minio:
   url: ${MINIO_URL:http://localhost:9000}
   access-key: ${MINIO_ACCESS_KEY:agrilearn}
   secret-key: ${MINIO_SECRET_KEY:agrilearn123}
   region: ${MINIO_REGION:us-east-1}
-  # Set minio.local=true for local dev (no MinIO/B2 needed — files stored on disk)
   local: ${MINIO_LOCAL:true}
   local-dir: ${MINIO_LOCAL_DIR:uploads}
   bucket:
@@ -81,38 +89,32 @@ minio:
     documents: ${MINIO_BUCKET_DOCUMENTS:agrilearn-documents}
     avatars: ${MINIO_BUCKET_AVATARS:agrilearn-avatars}
 
-# Razorpay Payment Gateway
+# ===== RAZORPAY =====
 razorpay:
   key-id: ${RAZORPAY_KEY_ID:rzp_test_placeholder}
   key-secret: ${RAZORPAY_KEY_SECRET:placeholder_secret}
   webhook-secret: ${RAZORPAY_WEBHOOK_SECRET:placeholder_webhook_secret}
 
-# Google Gemini / GitHub Models AI
+# ===== AI PROVIDERS =====
 gemini:
   api-key: ${GEMINI_API_KEY:}
 
-# GitHub Models (fallback AI provider)
 github:
   models:
     token: ${GITHUB_TOKEN:}
 
-# App configuration
+# ===== APP CONFIGURATION =====
 app:
   frontend-url: ${FRONTEND_URL:https://tassypoint.in}
   email:
-    # Set MAIL_ENABLED=true + RESEND_API_KEY in Railway to enable real email sending.
-    # Uses Resend HTTP API (works on Railway — Railway blocks SMTP ports 587/465).
-    # When false, reset links are printed to logs only (safe default for dev/staging).
-    enabled: ${MAIL_ENABLED:false}
+    enabled: ${MAIL_ENABLED:true}
 
-# Resend email API (https://resend.com — 3,000 emails/month free, no SMTP needed)
+# ===== RESEND EMAIL API =====
 resend:
   api-key: ${RESEND_API_KEY:}
-  # Use onboarding@resend.dev for testing without domain verification.
-  # For production, add your domain in Resend dashboard and change this.
-  from: ${RESEND_FROM:Tassy Point <onboarding@resend.dev>}
+  from: ${RESEND_FROM:Tassy Point <tassypoint.learn@gmail.com>}
 
-# Springdoc OpenAPI
+# ===== SPRINGDOC / SWAGGER =====
 springdoc:
   api-docs:
     path: /api-docs
@@ -120,7 +122,7 @@ springdoc:
     path: /swagger-ui.html
     operationsSorter: method
 
-# Spring Boot Actuator
+# ===== ACTUATOR =====
 management:
   endpoints:
     web:
@@ -130,14 +132,14 @@ management:
     health:
       show-details: always
       probes:
-        enabled: true   # enables /health/liveness and /health/readiness
+        enabled: true
   health:
     mail:
-      enabled: false    # mail SMTP not available on startup → don't check it
+      enabled: false
     diskspace:
       enabled: false
 
-# Logging
+# ===== LOGGING =====
 logging:
   file:
     name: ${LOG_FILE:logs/agrilearn.log}
