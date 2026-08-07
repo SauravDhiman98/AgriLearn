@@ -16,11 +16,15 @@ export function formatDateTime(value?: string): string {
   return new Date(value).toLocaleString()
 }
 
-export function formatDateLabel(value: string): string {
-  return new Date(`${value}T00:00:00`).toLocaleDateString(undefined, {
+export function formatDateLabel(value: string): string { 
+  // Extract just the YYYY-MM-DD part before the 'T' (if it exists)
+  const dateOnly = value.split('T')[0]; 
+  // Now it will safely parse as local midnight
+  let date = new Date(`${dateOnly}T00:00:00`).toLocaleDateString(undefined, {
     month: 'short',
     day: 'numeric',
-  })
+  });
+  return date;
 }
 
 export function truncate(value: string, max = 18): string {
