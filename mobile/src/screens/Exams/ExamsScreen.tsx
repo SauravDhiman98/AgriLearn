@@ -56,7 +56,7 @@ function ExamCard({ item, onPress, isDark }: { item: any; onPress: () => void; i
         {/* icon + tag */}
         <View style={styles.cardHeader}>
           <View style={[styles.cardIconBox, { backgroundColor: meta.color + '18' }]}>
-            <Ionicons name={meta.iconName} size={22} color={meta.color} />
+            <Ionicons name={meta.iconName} size={22} color={'#fff'} />
           </View>
           <View style={[styles.cardTag, { backgroundColor: meta.color + '18' }]}>
             <Text style={[styles.cardTagText, { color: meta.color }]}>{meta.tag}</Text>
@@ -188,20 +188,29 @@ export default function ExamsScreen() {
       </View>
 
       {/* ── filter tabs ── */}
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tabsRow}>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false}
+        contentContainerStyle={{ paddingHorizontal: 14, paddingBottom: 10, paddingTop: 4 }}>
         {FILTER_TABS.map(tab => {
           const isActive = activeTab === tab
           return (
             <TouchableOpacity
               key={tab}
-              style={[
-                styles.tab,
-                isActive
-                  ? styles.tabActive
-                    : { backgroundColor: isDark ? '#0f172a' : '#ffffff', borderColor: '#16a34a' },
-              ]}
-              onPress={() => setActiveTab(tab)}>
-                <Text style={[styles.tabText, { color: isActive ? '#fff' : (isDark ? '#4ade80' : '#111827') }]}>
+              onPress={() => setActiveTab(tab)}
+              style={{
+                borderRadius: 20,
+                borderWidth: 2,
+                borderColor: isActive ? '#14532d' : '#9ca3af',
+                paddingVertical: 8,
+                paddingHorizontal: 18,
+                marginRight: 8,
+                backgroundColor: isActive ? '#14532d' : '#e5e7eb',
+              }}>
+              <Text style={{
+                fontSize: 14,
+                fontWeight: '700',
+                color: isActive ? '#ffffff' : '#1f2937',
+                opacity: 1,
+              }}>
                 {tab}
               </Text>
             </TouchableOpacity>

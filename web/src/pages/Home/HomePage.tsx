@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { useQuery } from 'react-query'
 import { useSelector } from 'react-redux'
 import { RootState } from '../../store'
-import { courseApi } from '../../api/services'
+import { courseApi, examApi } from '../../api/services'
 import CourseCard from '../../components/course/CourseCard'
 import { Users, BookOpen, Video, MessageSquare, ClipboardList, Info } from 'lucide-react'
 import { useTheme } from '../../context/ThemeContext'
@@ -34,6 +34,11 @@ export default function HomePage() {
   const muted = isDark ? '#9ca3af' : '#6b7280'
 
   const { data: featuredData } = useQuery('featuredCourses', courseApi.getFeatured, {
+    select: (res) => res.data,
+  })
+
+  // Also prefetch exams so we can map category tiles to explicit exam IDs
+  const { data: examsData } = useQuery('examsList', examApi.getAll, {
     select: (res) => res.data,
   })
 
@@ -96,8 +101,22 @@ export default function HomePage() {
         <div className="max-w-7xl mx-auto px-4">
           <h2 className="text-2xl font-bold text-gray-900 mb-8 text-center" style={{ color: text }}>Explore by Exam</h2>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
-            {CATEGORIES.map(cat => (
-              <Link key={cat.key} to={`/exams`}
+            {CATEGORIES.map(cat => {
+              // Find the corresponding exam from the API to get its internal ID
+              const targetExam = examsData?.find((exam: any) => {
+                const eName = exam.name.toLowerCase().replace(/[^a-z0-9]/g, '');
+                const cKey = cat.key.toLowerCase().replace(/[^a-z0-9]/g, '');
+                const cLabel = cat.label.toLowerCase().replace(/[^a-z0-9]/g, '');
+                
+                return eName.includes(cKey) || cKey.includes(eName) || 
+                       eName.includes(cLabel) || cLabel.includes(eName) ||
+                       // specific fallback for RRB SO
+                       (cKey.includes('rrbso') && eName.includes('rrb'));
+              });
+              const linkTo = targetExam ? `/exams/${targetExam.id}` : `/exams`;
+              
+              return (
+              <Link key={cat.key} to={linkTo}
                 className="bg-white rounded-xl p-5 text-center hover:shadow-md hover:border-green-300 border border-transparent transition-all cursor-pointer"
                 style={{ backgroundColor: cardBg, borderColor: border }}>
                 <div className="flex justify-center items-center mb-2" style={{ height: '48px' }}>
@@ -108,7 +127,7 @@ export default function HomePage() {
                 </div>
                 <div className="font-medium text-gray-700 text-sm" style={{ color: text }}>{cat.label}</div>
               </Link>
-            ))}
+            )})}
           </div>
         </div>
       </section>
