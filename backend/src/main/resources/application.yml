@@ -110,7 +110,7 @@ resend:
   api-key: ${RESEND_API_KEY:}
   # Use onboarding@resend.dev for testing without domain verification.
   # For production, add your domain in Resend dashboard and change this.
-  from: ${RESEND_FROM:Tassy Point <onboarding@resend.dev>}
+  from: ${RESEND_FROM:Tassy Point <support@tassypoint.in>}
 
 # Springdoc OpenAPI
 springdoc:

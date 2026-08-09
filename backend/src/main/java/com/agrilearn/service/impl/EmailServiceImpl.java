@@ -25,9 +25,7 @@ public class EmailServiceImpl implements EmailService {
     @Value("${resend.api-key:}")
     private String resendApiKey;
 
-    /** Sender address — must be a verified domain in Resend dashboard.
-     *  Use onboarding@resend.dev for testing (Resend's shared domain). */
-    @Value("${resend.from:Tassy Point <onboarding@resend.dev>}")
+    @Value("${resend.from:Tassy Point <support@tassypoint.in>}")
     private String fromAddress;
 
     private final RestTemplate restTemplate = new RestTemplate();
@@ -47,7 +45,7 @@ public class EmailServiceImpl implements EmailService {
             String html = """
                     <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:20px;">
                       <div style="background:#1a7a3c;padding:20px;border-radius:8px 8px 0 0;text-align:center;">
-                        <img src="https://agrilearn-4qhy.onrender.com/logo.png"
+                        <img src="https://tassypoint.in/logo.png"
                              alt="Tassy Point"
                              style="width:48px;height:48px;object-fit:contain;border-radius:10px;margin-bottom:8px;display:block;margin-left:auto;margin-right:auto;" />
                         <h1 style="color:#fff;margin:0;font-size:24px;letter-spacing:1px;">TASSY POINT</h1>
