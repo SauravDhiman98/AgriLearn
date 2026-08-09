@@ -77,7 +77,7 @@ export default function Footer() {
                 <Mail className="w-4 h-4" /> support@tassypoint.in
               </li>
               <li className="flex items-center gap-2" style={{ color: text }}>
-                <Phone className="w-4 h-4" /> +91 7071620214
+                <Phone className="w-4 h-4" /> +91 98765 43210
               </li>
             </ul>
           </div>

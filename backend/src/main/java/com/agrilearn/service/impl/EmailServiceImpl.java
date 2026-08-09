@@ -1,28 +1,36 @@
 package com.agrilearn.service.impl;
 
 import com.agrilearn.service.EmailService;
-import jakarta.mail.MessagingException;
-import jakarta.mail.internet.MimeMessage;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.mail.javamail.JavaMailSender;
-import org.springframework.mail.javamail.MimeMessageHelper;
+import org.springframework.http.*;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
+
+import java.util.Map;
 
 @Service
 @Slf4j
 public class EmailServiceImpl implements EmailService {
 
-    @Autowired
-    private JavaMailSender mailSender;
-
+    /** Set MAIL_ENABLED=true + RESEND_API_KEY in Railway to actually send emails */
     @Value("${app.email.enabled:false}")
     private boolean emailEnabled;
 
-    @Value("${spring.mail.username}")
+    /**
+     * Resend API key — get a free one at https://resend.com (3,000 emails/month free).
+     * Uses HTTPS so it works on Railway (Railway blocks SMTP ports 587/465).
+     */
+    @Value("${resend.api-key:}")
+    private String resendApiKey;
+
+    /** Sender address — must be a verified domain in Resend dashboard.
+     *  Use onboarding@resend.dev for testing (Resend's shared domain). */
+    @Value("${resend.from:Tassy Point <onboarding@resend.dev>}")
     private String fromAddress;
+
+    private final RestTemplate restTemplate = new RestTemplate();
 
     @Async
     @Override
@@ -31,7 +39,10 @@ public class EmailServiceImpl implements EmailService {
             log.info("Email disabled — password reset link for {}: {}", to, resetLink);
             return;
         }
-
+        if (resendApiKey == null || resendApiKey.isBlank()) {
+            log.warn("RESEND_API_KEY not set — password reset link for {}: {}", to, resetLink);
+            return;
+        }
         try {
             String html = """
                     <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:20px;">
@@ -58,23 +69,31 @@ public class EmailServiceImpl implements EmailService {
                     </div>
                     """.formatted(firstName, resetLink, resetLink, resetLink);
 
-            sendEmail(to, fromAddress, "Reset Your Tassy Point Password", html);
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            headers.setBearerAuth(resendApiKey);
 
+            Map<String, Object> body = Map.of(
+                "from", fromAddress,
+                "to", new String[]{to},
+                "subject", "Reset Your Tassy Point Password",
+                "html", html
+            );
+
+            ResponseEntity<String> response = restTemplate.exchange(
+                "https://api.resend.com/emails",
+                HttpMethod.POST,
+                new HttpEntity<>(body, headers),
+                String.class
+            );
+
+            if (response.getStatusCode().is2xxSuccessful()) {
+                log.info("Password reset email sent to {} via Resend", to);
+            } else {
+                log.error("Resend API returned {}: {}", response.getStatusCode(), response.getBody());
+            }
         } catch (Exception e) {
-            log.error("Failed to send password reset email to {}: {}", to, e.getMessage(), e);
+            log.error("Failed to send password reset email to {}: {}", to, e.getMessage());
         }
-    }
-
-    private void sendEmail(String toEmail, String fromEmail, String emailSubject, String emailContent) throws MessagingException {
-        MimeMessage message = mailSender.createMimeMessage();
-        MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
-
-        helper.setFrom(fromEmail);
-        helper.setTo(toEmail);
-        helper.setSubject(emailSubject);
-        helper.setText(emailContent, true); // true = HTML content
-
-        mailSender.send(message);
-        log.info("Email sent successfully to {}", toEmail);
     }
 }
