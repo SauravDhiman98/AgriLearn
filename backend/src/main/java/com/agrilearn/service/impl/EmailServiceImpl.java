@@ -53,7 +53,7 @@ public class EmailServiceImpl implements EmailService {
                       <div style="background:#f9f9f9;padding:30px;border-radius:0 0 8px 8px;border:1px solid #e0e0e0;">
                         <h2 style="color:#333;margin-top:0;">Reset Your Password</h2>
                         <p style="color:#555;">Hi %s,</p>
-                        <p style="color:#555;">We received a request to reset your password. Click the button below to create a new password. This link expires in <strong>1 hour</strong>.</p>
+                        <p style="color:#555;">We received a request to reset your password. Click the button below to create a new password. This link expires in <strong>5 minutes</strong>.</p>
                         <div style="text-align:center;margin:30px 0;">
                           <a href="%s"
                              style="background:#1a7a3c;color:#fff;padding:14px 28px;border-radius:6px;

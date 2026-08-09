@@ -35,7 +35,7 @@ public class AuthServiceImpl implements AuthService {
     private final JwtTokenProvider jwtTokenProvider;
     private final EmailService emailService;
 
-    @Value("${app.frontend-url:https://agrilearn-4qhy.onrender.com}")
+    @Value("${app.frontend-url:https://tassypoint.in}")
     private String frontendUrl;
 
     @Override
@@ -124,7 +124,7 @@ public class AuthServiceImpl implements AuthService {
         userRepository.findByEmail(email).ifPresent(user -> {
             String token = UUID.randomUUID().toString();
             user.setPasswordResetToken(token);
-            user.setPasswordResetTokenExpiry(LocalDateTime.now().plusHours(1));
+            user.setPasswordResetTokenExpiry(LocalDateTime.now().plusMinutes(5));
             userRepository.save(user);
 
             String resetLink = frontendUrl + "/reset-password?token=" + token;
