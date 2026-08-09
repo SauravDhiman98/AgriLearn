@@ -38,6 +38,11 @@ public class AuthServiceImpl implements AuthService {
     @Value("${app.frontend-url:https://tassypoint.in}")
     private String frontendUrl;
 
+    /** Removes trailing slash so reset links never get double-slash like //reset-password */
+    private String baseUrl() {
+        return frontendUrl.endsWith("/") ? frontendUrl.substring(0, frontendUrl.length() - 1) : frontendUrl;
+    }
+
     @Override
     public AuthResponse register(RegisterRequest request) {
         if (userRepository.existsByEmail(request.getEmail())) {
@@ -127,7 +132,7 @@ public class AuthServiceImpl implements AuthService {
             user.setPasswordResetTokenExpiry(LocalDateTime.now().plusMinutes(5));
             userRepository.save(user);
 
-            String resetLink = frontendUrl + "/reset-password?token=" + token;
+            String resetLink = baseUrl() + "/reset-password?token=" + token;
             emailService.sendPasswordResetEmail(email, user.getFirstName(), resetLink);
             log.info("Password reset email sent for: {}", email);
         });
