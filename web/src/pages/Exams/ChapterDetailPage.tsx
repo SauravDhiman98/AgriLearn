@@ -8,7 +8,7 @@ import { RootState } from '../../store'
 import { ChevronLeft, FileText, Video, Brain, Play } from 'lucide-react'
 
 type Tab = 'notes' | 'videos' | 'tests'
-const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api/v1'
+const API_BASE = import.meta.env.VITE_API_BASE_URL || 'https://agrilearn-production-6f2e.up.railway.app/api/v1'
 const API_ORIGIN = API_BASE.replace(/\/api\/v\d+\/?$/, '')
 function resolveUrl(url: string | null | undefined): string | null { if (!url) return null; if (url.startsWith('http://') || url.startsWith('https://')) return url; return API_ORIGIN + url }
 function extractYoutubeId(url: string | null | undefined): string | null { if (!url) return null; const match = url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?(?:.*&)?v=|embed\/|shorts\/))([A-Za-z0-9_-]{11})/); return match ? match[1] : null }
@@ -27,9 +27,9 @@ function PdfViewer({ noteId, title, userLabel }: { noteId: number; title: string
     let objectUrl: string | null = null
     setLoading(true); setError(null); setBlobUrl(null)
     const token = localStorage.getItem('accessToken')
-    fetch(`${API_BASE}/notes/${noteId}/view`, {
-      headers: token ? { Authorization: `Bearer ${token}` } : {},
-    })
+    const url = token ? `${API_BASE}/notes/${noteId}/view?token=${encodeURIComponent(token)}` : `${API_BASE}/notes/${noteId}/view`
+    fetch(url
+    )
       .then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.blob() })
       .then(blob => { objectUrl = URL.createObjectURL(blob); setBlobUrl(objectUrl) })
       .catch(err => setError(err.message))
