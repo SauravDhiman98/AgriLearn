@@ -675,7 +675,7 @@ export default function AdminExamContent() {
             <span style={{ fontSize: '13px', color: muted }}>📄 Bulk import MCQ questions from CSV</span>
             <div style={{ display: 'flex', gap: '8px' }}>
               <button style={{ ...btnSm, backgroundColor: '#0369a1', color: '#fff', border: 'none' }}
-                onClick={() => { const a = document.createElement('a'); a.href = `${import.meta.env.VITE_API_BASE_URL || 'https://agrilearn-production-6f2e.up.railway.app/api/v1'}/admin/mcq/template`; a.download = 'mcq_template.csv'; a.click() }}>
+                onClick={() => { const a = document.createElement('a'); a.href = `${import.meta.env.VITE_API_BASE_URL || 'https://agrilearn-production-6f2e.up.railway.app/api/v1/api/v1'}/admin/mcq/template`; a.download = 'mcq_template.csv'; a.click() }}>
                 ⬇ Download Template
               </button>
               <button style={{ ...btnSm, backgroundColor: '#7c3aed', color: '#fff', border: 'none' }}

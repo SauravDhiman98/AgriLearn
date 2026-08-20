@@ -14,6 +14,7 @@ import com.agrilearn.repository.UserRepository;
 import com.agrilearn.security.UserPrincipal;
 import com.agrilearn.service.MinioService;
 import com.agrilearn.service.impl.PdfWatermarkServiceImpl;
+import com.agrilearn.security.JwtTokenProvider;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
@@ -42,6 +43,8 @@ public class NotesFileController {
     private final MinioService minioService;
     private final PdfWatermarkServiceImpl pdfWatermarkService;
 
+    private final JwtTokenProvider jwtTokenProvider;
+
     @Value("${minio.bucket.documents}")
     private String documentsBucket;
 
@@ -52,6 +55,7 @@ public class NotesFileController {
     @GetMapping("/notes/{noteId}/view")
     public ResponseEntity<byte[]> viewWatermarkedNote(
             @PathVariable Long noteId,
+            @RequestParam(required = false) String token,
             @AuthenticationPrincipal UserPrincipal principal) {
 
         ChapterNotes note = notesRepository.findById(noteId)
@@ -61,11 +65,22 @@ public class NotesFileController {
             return ResponseEntity.notFound().build();
         }
 
-        String userEmail = principal != null ? principal.getEmail() : "Tassy Point User";
+        // Resolve identity from Spring Security OR ?token= query param (mobile browser fallback)
+        String userEmail = "Tassy Point User";
         String userName  = "";
         if (principal != null) {
+            userEmail = principal.getEmail();
             User user = userRepository.findByEmail(principal.getEmail()).orElse(null);
             if (user != null) userName = (user.getFirstName() + " " + user.getLastName()).trim();
+        } else if (token != null && !token.isBlank()) {
+            try {
+                if (jwtTokenProvider.validateToken(token)) {
+                    String email = jwtTokenProvider.getUsernameFromToken(token);
+                    userEmail = email;
+                    User user = userRepository.findByEmail(email).orElse(null);
+                    if (user != null) userName = (user.getFirstName() + " " + user.getLastName()).trim();
+                }
+            } catch (Exception ignored) {}
         }
 
         try {

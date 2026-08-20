@@ -32,8 +32,7 @@ public class SecurityConfig {
         "/auth/**",
         "/track/**",                 // analytics tracking — no auth needed
         "/files/**",                 // local dev file serving
-        "/files/proxy/**",           // proxied B2/MinIO file downloads
-        "/courses/public/**",
+        "/files/proxy/**",           // proxied B2/MinIO file downloads        "/courses/public/**",
         "/forum/posts/public/**",
         "/marketplace/products/public/**",
         "/quizzes/course/**",
@@ -45,7 +44,12 @@ public class SecurityConfig {
         "/v3/api-docs/**",
         // React SPA static assets
         "/", "/index.html", "/assets/**", "/*.js", "/*.css",
-        "/*.ico", "/*.png", "/*.svg", "/*.webmanifest"
+        "/*.ico", "/*.png", "/*.svg", "/*.webmanifest",
+        // Notes PDF viewer — auth checked inside controller; permitAll so
+        // Security doesn't block before CORS headers are applied (fixes 403 on mobile)
+        // Note: context-path is /api/v1, so Security sees the full path
+        "/notes/*/view",
+        "/api/v1/notes/*/view"
     };
 
     @Bean
