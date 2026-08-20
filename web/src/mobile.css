@@ -1,0 +1,304 @@
+/* ============================================================
+   TASSY POINT — MOBILE RESPONSIVE STYLES
+   Breakpoints: ≤480px (phone), ≤768px (tablet)
+   ============================================================ */
+
+/* ── Global ── */
+html, body {
+  overflow-x: hidden;
+  -webkit-text-size-adjust: 100%;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+img {
+  max-width: 100%;
+}
+
+/* ── Navbar ── */
+@media (max-width: 768px) {
+  nav .max-w-7xl {
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+
+  /* Logo text hidden on very small screens */
+  @media (max-width: 360px) {
+    nav span[style*="TASSY POINT"] {
+      display: none;
+    }
+  }
+}
+
+/* ── Hero Section ── */
+@media (max-width: 640px) {
+  /* Shrink hero padding */
+  section .py-20 { padding-top: 48px !important; }
+  section .sm\:py-28 { padding-bottom: 48px !important; }
+
+  /* Smaller hero heading */
+  .text-4xl { font-size: 28px !important; }
+  .md\:text-5xl { font-size: 28px !important; }
+
+  /* Stack hero buttons vertically (already flex-col sm:flex-row) */
+  .flex-col.sm\:flex-row {
+    flex-direction: column !important;
+  }
+
+  /* Hero CTA buttons full width on phone */
+  section .flex-col.sm\:flex-row > a,
+  section .flex-col.sm\:flex-row > button {
+    width: 100%;
+    text-align: center;
+  }
+}
+
+/* ── Stats Strip ── */
+@media (max-width: 480px) {
+  /* 2-column on small phones (already grid-cols-2) */
+  .grid-cols-2 { grid-template-columns: repeat(2, 1fr) !important; }
+}
+
+/* ── Category / Exam Cards ── */
+@media (max-width: 480px) {
+  /* 2-col on small phones */
+  .grid-cols-2.sm\:grid-cols-3.lg\:grid-cols-6 {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+}
+
+/* ── Features Section ── */
+@media (max-width: 768px) {
+  .grid-cols-1.md\:grid-cols-3 {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* ── Exams Page ── */
+@media (max-width: 480px) {
+  /* Force single column on tiny phones (auto-fill minmax breaks at ~280px) */
+  [style*="minmax(280px, 1fr)"] {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* ── Dashboard ── */
+@media (max-width: 640px) {
+  /* Stat cards: 2 columns */
+  .grid-cols-2.md\:grid-cols-4 {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+
+  /* Streak / Quick Actions stack below stats on mobile */
+  .grid-cols-1.lg\:grid-cols-3 {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Mock test attempt row — stack score below title */
+  [style*="gridTemplateColumns: '1fr auto'"] {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* ── Chapter Detail Page ── */
+
+/* Tab bar: scrollable row, no wrapping */
+.chapter-tabs {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  white-space: nowrap;
+  display: flex !important;
+  padding-bottom: 0 !important;
+}
+.chapter-tabs::-webkit-scrollbar {
+  display: none;
+}
+.chapter-tabs button {
+  flex-shrink: 0;
+}
+
+/* Notes sidebar + viewer: stack vertically on mobile */
+.notes-layout {
+  display: grid;
+  gap: 16px;
+}
+@media (min-width: 640px) {
+  .notes-layout.has-sidebar {
+    grid-template-columns: 220px 1fr;
+  }
+}
+@media (max-width: 639px) {
+  .notes-layout.has-sidebar {
+    grid-template-columns: 1fr !important;
+  }
+  /* Note selector: horizontal scroll strip */
+  .notes-sidebar {
+    display: flex !important;
+    flex-direction: row !important;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    gap: 8px;
+    padding-bottom: 4px;
+  }
+  .notes-sidebar::-webkit-scrollbar { display: none; }
+  .notes-sidebar button {
+    flex-shrink: 0;
+    max-width: 180px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* PDF iframe: use taller viewport on phone */
+  .pdf-viewer-frame {
+    height: 70vh !important;
+  }
+}
+
+/* ── PDF Viewer (iframe) ── */
+@media (max-width: 480px) {
+  iframe[title] {
+    height: 65vh !important;
+  }
+}
+
+/* ── MCQ / Mock Test ── */
+@media (max-width: 640px) {
+  /* Option buttons: full width */
+  .mcq-options button {
+    width: 100% !important;
+    text-align: left !important;
+  }
+
+  /* Timer + question header wrap */
+  .mock-header {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 8px !important;
+  }
+}
+
+/* ── Subject / Chapter list cards ── */
+@media (max-width: 480px) {
+  /* Chapter card flex row: shrink icon */
+  [style*="padding: '18px 20px'"] {
+    padding: 12px 14px !important;
+  }
+}
+
+/* ── Auth Pages ── */
+@media (max-width: 640px) {
+  /* Login / Register card */
+  .auth-card {
+    margin: 16px !important;
+    padding: 24px 20px !important;
+  }
+}
+
+/* ── Profile ── */
+@media (max-width: 640px) {
+  .profile-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* ── Forum ── */
+@media (max-width: 640px) {
+  .forum-layout {
+    flex-direction: column !important;
+  }
+  .forum-sidebar {
+    width: 100% !important;
+  }
+}
+
+/* ── Marketplace ── */
+@media (max-width: 640px) {
+  [style*="minmax(240px, 1fr)"] {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+}
+
+/* ── Pricing Page ── */
+@media (max-width: 768px) {
+  .pricing-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* ── Footer ── */
+@media (max-width: 768px) {
+  .grid-cols-1.md\:grid-cols-4 {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+}
+@media (max-width: 480px) {
+  .grid-cols-1.md\:grid-cols-4 {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* ── Utility overrides ── */
+@media (max-width: 480px) {
+  /* Smaller font for badge counts and meta text */
+  .text-xs { font-size: 11px !important; }
+
+  /* Ensure max-w containers don't overflow */
+  .max-w-7xl, .max-w-3xl, .max-w-xl {
+    max-width: 100% !important;
+    padding-left: 12px !important;
+    padding-right: 12px !important;
+  }
+
+  /* Buttons: full width when stacked */
+  .w-full { min-width: 0 !important; }
+
+  /* Reduce large heading sizes */
+  .text-3xl { font-size: 22px !important; }
+  .text-2xl { font-size: 20px !important; }
+}
+
+/* ── Touch improvements ── */
+button, a {
+  -webkit-tap-highlight-color: rgba(0, 0, 0, 0.1);
+  touch-action: manipulation;
+}
+
+/* Minimum tap target size for small interactive elements */
+@media (max-width: 768px) {
+  button, a[href] {
+    min-height: 36px;
+  }
+}
+
+/* ── Prevent text from overflowing cards ── */
+.card, [class*="rounded-xl"], [class*="rounded-2xl"] {
+  min-width: 0;
+  word-break: break-word;
+}
+
+/* ── Tables: horizontal scroll ── */
+table {
+  display: block;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  white-space: nowrap;
+  max-width: 100%;
+}
+
+/* ── Form inputs on mobile ── */
+@media (max-width: 640px) {
+  input, textarea, select {
+    font-size: 16px !important; /* prevents iOS zoom on focus */
+  }
+}
+
+/* ── Loading skeleton animation ── */
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}

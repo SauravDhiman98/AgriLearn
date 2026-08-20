@@ -2,6 +2,8 @@
 @tailwind components;
 @tailwind utilities;
 
+@import './mobile.css';
+
 @layer base {
   :root {
     --color-primary: #16a34a;
