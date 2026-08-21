@@ -5,7 +5,7 @@ import { useSelector } from 'react-redux'
 import { examApi } from '../../api/services'
 import { useTheme } from '../../context/ThemeContext'
 import { RootState } from '../../store'
-import { ChevronLeft, FileText, Video, Brain, Play } from 'lucide-react'
+import { ChevronLeft, FileText, Video, Brain, Play, Maximize2 } from 'lucide-react'
 
 type Tab = 'notes' | 'videos' | 'tests'
 const API_BASE = import.meta.env.VITE_API_BASE_URL || 'https://agrilearn-production-6f2e.up.railway.app/api/v1'
@@ -13,65 +13,224 @@ const API_ORIGIN = API_BASE.replace(/\/api\/v\d+\/?$/, '')
 function resolveUrl(url: string | null | undefined): string | null { if (!url) return null; if (url.startsWith('http://') || url.startsWith('https://')) return url; return API_ORIGIN + url }
 function extractYoutubeId(url: string | null | undefined): string | null { if (!url) return null; const match = url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?(?:.*&)?v=|embed\/|shorts\/))([A-Za-z0-9_-]{11})/); return match ? match[1] : null }
 
-/** Renders a watermarked PDF served by the backend, with a canvas overlay fallback */
+/** Build a self-contained PDF.js HTML page with watermark + fullscreen */
+function buildPdfHtml(base64: string, watermark: string): string {
+  const escaped = watermark.replace(/'/g, "\\'").replace(/\n/g, ' ')
+  return `<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1"/>
+<title>PDF Viewer</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"><\/script>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{background:#1a1a1a;height:100%;overflow:hidden;font-family:sans-serif;user-select:none}
+  #toolbar{display:flex;align-items:center;gap:8px;padding:6px 10px;background:#2d2d2d;border-bottom:1px solid #444;flex-shrink:0;flex-wrap:wrap;min-height:44px}
+  #toolbar button{background:#444;border:none;color:#fff;border-radius:6px;padding:5px 10px;cursor:pointer;font-size:13px;min-height:32px}
+  #toolbar button:hover{background:#555}
+  #toolbar button:disabled{opacity:0.4;cursor:default}
+  #page-info{color:#ccc;font-size:13px;white-space:nowrap}
+  #zoom-info{color:#aaa;font-size:12px}
+  #canvas-container{flex:1;overflow:auto;display:flex;flex-direction:column;align-items:center;padding:12px 8px;gap:12px}
+  canvas{box-shadow:0 2px 12px rgba(0,0,0,0.5);display:block;max-width:100%;border-radius:2px}
+  #wrap{display:flex;flex-direction:column;height:100vh}
+  #loading{color:#aaa;padding:40px;text-align:center;font-size:14px}
+</style>
+</head>
+<body>
+<div id="wrap">
+  <div id="toolbar">
+    <button id="btn-prev">&#9664; Prev</button>
+    <button id="btn-next">Next &#9654;</button>
+    <span id="page-info">Loading...</span>
+    <button id="btn-zoom-out">&#8722; Zoom</button>
+    <button id="btn-zoom-in">&#43; Zoom</button>
+    <span id="zoom-info"></span>
+    <button id="btn-fs" style="margin-left:auto">&#x26F6; Fullscreen</button>
+  </div>
+  <div id="canvas-container"><div id="loading">Loading PDF...</div></div>
+</div>
+<script>
+(function(){
+  pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+  var watermark='${escaped}';
+  var pdfDoc=null,curPage=1,numPages=0,scale=1.5,rendering=false;
+  var container=document.getElementById('canvas-container');
+  var info=document.getElementById('page-info');
+  var zoomInfo=document.getElementById('zoom-info');
+
+  var b64='${base64}';
+  var bin=atob(b64),len=bin.length,bytes=new Uint8Array(len);
+  for(var i=0;i<len;i++) bytes[i]=bin.charCodeAt(i);
+
+  pdfjsLib.getDocument({data:bytes}).promise.then(function(pdf){
+    pdfDoc=pdf; numPages=pdf.numPages;
+    renderAllPages();
+  }).catch(function(e){
+    container.innerHTML='<div style="color:#f87171;padding:20px">Failed to load PDF: '+e.message+'</div>';
+  });
+
+  function updateInfo(){ info.textContent='Page '+curPage+' / '+numPages; zoomInfo.textContent=Math.round(scale*100)+'%'; }
+
+  function renderAllPages(){
+    container.innerHTML='';
+    updateInfo();
+    var promises=[];
+    for(var p=1;p<=numPages;p++) promises.push(renderPage(p));
+    Promise.all(promises).then(function(){ scrollToPage(curPage); });
+  }
+
+  function renderPage(pageNum){
+    return pdfDoc.getPage(pageNum).then(function(page){
+      var viewport=page.getViewport({scale:scale});
+      var canvas=document.createElement('canvas');
+      canvas.id='page-'+pageNum;
+      canvas.width=viewport.width; canvas.height=viewport.height;
+      var ctx=canvas.getContext('2d');
+      container.appendChild(canvas);
+      return page.render({canvasContext:ctx,viewport:viewport}).promise.then(function(){
+        drawWatermark(ctx,canvas.width,canvas.height);
+      });
+    });
+  }
+
+  function drawWatermark(ctx,w,h){
+    ctx.save();
+    ctx.globalAlpha=0.08;
+    ctx.fillStyle='#1f2937';
+    ctx.font='bold 18px sans-serif';
+    ctx.translate(w/2,h/2);
+    ctx.rotate(-Math.PI/6);
+    var step=220;
+    for(var y=-h;y<h*2;y+=step) for(var x=-w;x<w*2;x+=step) ctx.fillText(watermark,x,y);
+    ctx.restore();
+  }
+
+  function scrollToPage(p){
+    var el=document.getElementById('page-'+p);
+    if(el) el.scrollIntoView({behavior:'smooth',block:'start'});
+  }
+
+  document.getElementById('btn-prev').addEventListener('click',function(){
+    if(curPage>1){curPage--;updateInfo();scrollToPage(curPage);}
+  });
+  document.getElementById('btn-next').addEventListener('click',function(){
+    if(curPage<numPages){curPage++;updateInfo();scrollToPage(curPage);}
+  });
+  document.getElementById('btn-zoom-in').addEventListener('click',function(){
+    if(scale<3){scale=Math.round((scale+0.25)*100)/100;renderAllPages();}
+  });
+  document.getElementById('btn-zoom-out').addEventListener('click',function(){
+    if(scale>0.5){scale=Math.round((scale-0.25)*100)/100;renderAllPages();}
+  });
+
+  // Detect page in view via scroll
+  container.addEventListener('scroll',function(){
+    var canvases=container.querySelectorAll('canvas');
+    var mid=container.scrollTop+container.clientHeight/2;
+    var top=container.scrollTop;
+    canvases.forEach(function(c,i){
+      if(c.offsetTop<=top+50) curPage=i+1;
+    });
+    updateInfo();
+  });
+
+  // Fullscreen
+  document.getElementById('btn-fs').addEventListener('click',function(){
+    if(!document.fullscreenElement) document.documentElement.requestFullscreen();
+    else document.exitFullscreen();
+  });
+  document.addEventListener('fullscreenchange',function(){
+    document.getElementById('btn-fs').textContent=document.fullscreenElement?'Exit FS':'&#x26F6; Fullscreen';
+  });
+
+  // Prevent context menu / selection
+  document.addEventListener('contextmenu',function(e){e.preventDefault();});
+  document.addEventListener('keydown',function(e){
+    if(e.ctrlKey&&['s','p','u'].indexOf(e.key.toLowerCase())>-1){e.preventDefault();}
+  });
+})();
+<\/script>
+</body>
+</html>`
+}
+
+/** Renders a watermarked PDF using PDF.js in a srcdoc iframe — works on all mobile browsers */
 function PdfViewer({ noteId, title, userLabel }: { noteId: number; title: string; userLabel: string }) {
-  const [blobUrl, setBlobUrl] = useState<string | null>(null)
+  const [htmlSrc, setHtmlSrc] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const canvasRef = useRef<HTMLCanvasElement>(null)
+  const containerRef = useRef<HTMLDivElement>(null)
   const { isDark } = useTheme()
   const muted = isDark ? '#9ca3af' : '#6b7280'
 
-  // Fetch from the server-side watermark endpoint (JWT auto-attached by axios interceptor)
   useEffect(() => {
-    let objectUrl: string | null = null
-    setLoading(true); setError(null); setBlobUrl(null)
+    setLoading(true); setError(null); setHtmlSrc(null)
     const token = localStorage.getItem('accessToken')
-    const url = token ? `${API_BASE}/notes/${noteId}/view?token=${encodeURIComponent(token)}` : `${API_BASE}/notes/${noteId}/view`
-    fetch(url
-    )
-      .then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.blob() })
-      .then(blob => { objectUrl = URL.createObjectURL(blob); setBlobUrl(objectUrl) })
+    const url = token
+      ? `${API_BASE}/notes/${noteId}/view?token=${encodeURIComponent(token)}`
+      : `${API_BASE}/notes/${noteId}/view`
+
+    fetch(url)
+      .then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.arrayBuffer() })
+      .then(buf => {
+        // Convert ArrayBuffer → base64
+        const bytes = new Uint8Array(buf)
+        let binary = ''
+        const chunk = 8192
+        for (let i = 0; i < bytes.length; i += chunk) {
+          binary += String.fromCharCode(...bytes.subarray(i, i + chunk))
+        }
+        const base64 = btoa(binary)
+        setHtmlSrc(buildPdfHtml(base64, userLabel))
+      })
       .catch(err => setError(err.message))
       .finally(() => setLoading(false))
-    return () => { if (objectUrl) URL.revokeObjectURL(objectUrl) }
-  }, [noteId])
+  }, [noteId, userLabel])
 
-  // Canvas overlay — repeating diagonal user label as secondary deterrent
-  useEffect(() => {
-    const canvas = canvasRef.current
-    if (!canvas || !blobUrl) return
-    const ctx = canvas.getContext('2d')
-    if (!ctx) return
-    canvas.width  = canvas.offsetWidth  || 800
-    canvas.height = canvas.offsetHeight || 600
-    ctx.clearRect(0, 0, canvas.width, canvas.height)
-    ctx.save()
-    ctx.globalAlpha = 0.07
-    ctx.fillStyle = '#1f2937'
-    ctx.font = 'bold 15px sans-serif'
-    ctx.rotate(-Math.PI / 6)
-    const step = 200
-    for (let y = -canvas.height; y < canvas.height * 2; y += step) {
-      for (let x = -canvas.width; x < canvas.width * 2; x += step) {
-        ctx.fillText(userLabel, x, y)
-      }
+  const toggleFullscreen = () => {
+    if (!document.fullscreenElement) {
+      containerRef.current?.requestFullscreen()
+    } else {
+      document.exitFullscreen()
     }
-    ctx.restore()
-  }, [blobUrl, userLabel])
+  }
 
-  if (loading) return <div style={{ padding: '60px', textAlign: 'center', color: muted }}>Loading PDF...</div>
-  if (error)   return <div style={{ padding: '40px', textAlign: 'center', color: muted }}>Could not load PDF: {error}</div>
+  if (loading) return (
+    <div style={{ padding: '60px', textAlign: 'center', color: muted }}>
+      <div style={{ fontSize: '14px', marginBottom: '8px' }}>📄 Loading PDF...</div>
+      <div style={{ fontSize: '12px', color: muted }}>This may take a moment</div>
+    </div>
+  )
+  if (error) return (
+    <div style={{ padding: '40px', textAlign: 'center', color: muted }}>
+      Could not load PDF: {error}
+    </div>
+  )
+
   return (
-    <div style={{ position: 'relative', userSelect: 'none' }} onContextMenu={e => e.preventDefault()}>
+    <div ref={containerRef} style={{ position: 'relative', userSelect: 'none', background: '#1a1a1a' }} onContextMenu={e => e.preventDefault()}>
+      {/* External fullscreen button (for browsers that block iframe fullscreen) */}
+      <button
+        onClick={toggleFullscreen}
+        title="Fullscreen"
+        style={{
+          position: 'absolute', top: '52px', right: '8px', zIndex: 20,
+          background: 'rgba(45,45,45,0.9)', border: '1px solid #555',
+          color: '#fff', borderRadius: '6px', padding: '4px 8px',
+          cursor: 'pointer', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '4px',
+        }}
+      >
+        <Maximize2 style={{ width: '13px', height: '13px' }} /> Fullscreen
+      </button>
       <iframe
-        src={`${blobUrl}#toolbar=0&navpanes=0&scrollbar=1`}
+        srcDoc={htmlSrc ?? ''}
         title={title}
         className="pdf-viewer-frame"
-        style={{ width: '100%', height: '80vh', border: 'none', display: 'block' }}
+        sandbox="allow-scripts allow-same-origin"
+        style={{ width: '100%', height: '85vh', border: 'none', display: 'block' }}
       />
-      {/* Canvas overlay — secondary client-side watermark */}
-      <canvas ref={canvasRef} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', zIndex: 5, pointerEvents: 'none' }} />
     </div>
   )
 }
