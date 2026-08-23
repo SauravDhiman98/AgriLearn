@@ -75,3 +75,19 @@ cron.schedule('0 0 * * *', async () => {
     console.error('Daily admin analytics maintenance failed:', error)
   }
 })
+
+// Keep-alive: self-ping every 10 minutes to prevent Railway free-tier cold-start
+const SELF_URL = process.env.RAILWAY_PUBLIC_DOMAIN
+  ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN}/health`
+  : `http://localhost:${PORT}/health`
+
+cron.schedule('*/10 * * * *', async () => {
+  try {
+    const http = SELF_URL.startsWith('https') ? require('https') : require('http')
+    http.get(SELF_URL, (res) => {
+      if (res.statusCode !== 200) console.warn('Keep-alive ping returned', res.statusCode)
+    }).on('error', (err) => console.warn('Keep-alive ping failed:', err.message))
+  } catch (err) {
+    console.warn('Keep-alive cron error:', err.message)
+  }
+})

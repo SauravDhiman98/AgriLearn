@@ -21,15 +21,29 @@ export default function LoginPage() {
     setLoading(true)
     setError('')
 
-    try {
-      await login(form.username, form.password)
-      navigate('/dashboard', { replace: true })
-    } catch (err) {
-      const axiosError = err as AxiosError<{ message?: string }>
-      setError(axiosError.response?.data?.message || 'Unable to login. Please try again.')
-    } finally {
-      setLoading(false)
+    // Retry up to 3 times with delay — handles Railway cold-start 502s
+    let lastErr: unknown
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      try {
+        await login(form.username, form.password)
+        navigate('/dashboard', { replace: true })
+        return
+      } catch (err) {
+        lastErr = err
+        const axiosError = err as AxiosError
+        const status = axiosError.response?.status
+        // Only retry on network errors or 502/503/504 (server not ready)
+        if (status && status < 500) break
+        if (attempt < 3) {
+          setError(`Server is starting up, retrying... (${attempt}/3)`)
+          await new Promise(r => setTimeout(r, 3000 * attempt))
+        }
+      }
     }
+
+    const axiosError = lastErr as AxiosError<{ message?: string }>
+    setError(axiosError.response?.data?.message || 'Unable to login. Please try again.')
+    setLoading(false)
   }
 
   return (
@@ -77,7 +91,7 @@ export default function LoginPage() {
             disabled={loading}
             className="w-full rounded-xl bg-accent px-4 py-3 text-sm font-semibold text-white transition hover:bg-green-600 disabled:cursor-not-allowed disabled:opacity-70"
           >
-            {loading ? 'Signing in...' : 'Login'}
+            {loading ? (error.includes('retrying') ? error : 'Signing in...') : 'Login'}
           </button>
         </form>
       </div>
