@@ -15,9 +15,12 @@ const PORT = Number(process.env.PORT || 3001)
 
 // Build and start Express immediately — DB errors must never prevent the server from binding
 const app = express()
+app.set('trust proxy', 1)
 
+// Echo back any origin instead of '*' so the header is always present, even for
+// preflight requests coming from as-yet-unlisted admin/staging front-ends
 const corsOptions = {
-  origin: '*',
+  origin: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
   optionsSuccessStatus: 204,
