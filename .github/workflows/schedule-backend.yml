@@ -1,9 +1,9 @@
 name: Schedule Railway Backend
 
 on:
-  schedule:
-    - cron: '30 12 * * *'   # 6:00 PM IST (12:30 UTC) — START
-    - cron: '30 21 * * *'   # 3:00 AM IST (21:30 UTC) — STOP
+  # schedule:
+  #   - cron: '30 12 * * *'   # 6:00 PM IST (12:30 UTC) — START
+  #   - cron: '30 21 * * *'   # 3:00 AM IST (21:30 UTC) — STOP
   workflow_dispatch:
     inputs:
       action:
